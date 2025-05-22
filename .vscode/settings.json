@@ -23,6 +23,10 @@
     { "rule": "*semi", "severity": "off", "fixable": true }
   ],
 
+  "files.associations": {
+    "*.css": "tailwindcss"
+  },
+
   // Enable eslint for all supported languages
   "eslint.validate": [
     "javascript",

@@ -1,0 +1,14 @@
+<template>
+  <nav class="navbar bg-primary text-primary-content">
+    <div class="navbar-start">
+      <NuxtLink to="/" class="btn btn-ghost text-xl">
+        Лог путешествий
+      </NuxtLink>
+    </div>
+    <div class="navbar-end">
+      <NuxtLink to="/login" class="btn btn-accent">
+        Войти
+      </NuxtLink>
+    </div>
+  </nav>
+</template>
