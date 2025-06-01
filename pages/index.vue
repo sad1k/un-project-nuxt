@@ -11,9 +11,7 @@
         <p class="py-6 text-lg">
           Создавай и просматривай путевки, отмечай посещенные места и делись с друзьями.
         </p>
-        <button class="btn btn-accent">
-          Войти c помощью Github <Icon name="tabler:brand-github" size="24" />
-        </button>
+        <AuthButton />
       </div>
     </div>
   </div>
