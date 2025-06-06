@@ -15,12 +15,14 @@ export const auth = betterAuth({
     },
   }),
   advanced: {
-    generateId: false,
+    database: {
+      generateId: false,
+    },
   },
   socialProviders: {
     github: {
-      clientId: env.GITHUB_CLIENT_ID as string,
-      clientSecret: env.GITHUB_CLIENT_SECRET as string,
+      clientId: env.AUTH_GITHUB_CLIENT_ID as string,
+      clientSecret: env.AUTH_GITHUB_CLIENT_SECRET as string,
     },
   },
 });
