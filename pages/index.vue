@@ -1,3 +1,7 @@
+<script lang="ts" setup>
+const authStore = useAuthStore();
+</script>
+
 <template>
   <div class="hero bg-base-200 container mx-auto mt-4">
     <div class="hero-content text-center min-h-[500px]">
@@ -11,7 +15,10 @@
         <p class="py-6 text-lg">
           Создавай и просматривай путевки, отмечай посещенные места и делись с друзьями.
         </p>
-        <AuthButton />
+        <AuthButton v-if="!authStore.user" />
+        <NuxtLink to="/dashboard" class="btn btn-primary">
+          Перейти в ленту историй
+        </NuxtLink>
       </div>
     </div>
   </div>
