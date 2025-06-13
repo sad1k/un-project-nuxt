@@ -22,7 +22,7 @@ const authStore = useAuthStore();
       <li>
         <NuxtLink to="/sign-out">
           <Icon name="tabler:logout-2" size="24" />
-          Sign Out
+          Выйти
         </NuxtLink>
       </li>
     </ul>

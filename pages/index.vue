@@ -16,7 +16,11 @@ const authStore = useAuthStore();
           Создавай и просматривай путевки, отмечай посещенные места и делись с друзьями.
         </p>
         <AuthButton v-if="!authStore.user" />
-        <NuxtLink to="/dashboard" class="btn btn-primary">
+        <NuxtLink
+          v-else
+          to="/dashboard"
+          class="btn btn-primary"
+        >
           Перейти в ленту историй
         </NuxtLink>
       </div>

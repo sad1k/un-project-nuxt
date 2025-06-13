@@ -1,4 +1,10 @@
+import type { User } from "better-auth";
+
 import { int, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
+
+export type UserWithId = Omit<User, "id"> & {
+  id: number;
+};
 
 export const user = sqliteTable("user", {
   id: int().primaryKey({ autoIncrement: true }),
@@ -18,14 +24,14 @@ export const session = sqliteTable("session", {
   updatedAt: integer().notNull(),
   ipAddress: text(),
   userAgent: text(),
-  userId: text().notNull().references(() => user.id, { onDelete: "cascade" }),
+  userId: integer().notNull().references(() => user.id, { onDelete: "cascade" }),
 });
 
 export const account = sqliteTable("account", {
   id: int().primaryKey({ autoIncrement: true }),
   accountId: text().notNull(),
   providerId: text().notNull(),
-  userId: text().notNull().references(() => user.id, { onDelete: "cascade" }),
+  userId: integer().notNull().references(() => user.id, { onDelete: "cascade" }),
   accessToken: text(),
   refreshToken: text(),
   idToken: text(),

@@ -4,3 +4,43 @@
     light --default,
     dark --prefersdark;
 }
+
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+
+.maplibregl-popup-close-button {
+  @apply px-2;
+}
+
+.location-list {
+  @apply flex flex-nowrap mt-4 gap-2 overflow-auto;
+}
+
+.page-content-top {
+  @apply p-4 min-h-72;
+}
+
+html[data-theme="dark"] {
+  .maplibregl-popup-content {
+    @apply text-white bg-gray-800;
+  }
+
+  .maplibregl-popup-anchor-bottom .maplibregl-popup-tip,
+  .maplibregl-popup-anchor-bottom-right .maplibregl-popup-tip,
+  .maplibregl-popup-anchor-bottom-left .maplibregl-popup-tip {
+    @apply border-t-gray-800;
+  }
+
+  .maplibregl-popup-anchor-top .maplibregl-popup-tip,
+  .maplibregl-popup-anchor-top-right .maplibregl-popup-tip,
+  .maplibregl-popup-anchor-top-left .maplibregl-popup-tip {
+    @apply border-b-gray-800;
+  }
+
+  .maplibregl-popup-anchor-left .maplibregl-popup-tip {
+    @apply border-r-gray-800;
+  }
+
+  .maplibregl-popup-anchor-right .maplibregl-popup-tip {
+    @apply border-l-gray-800;
+  }
+}
