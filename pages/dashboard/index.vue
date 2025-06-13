@@ -20,7 +20,7 @@ onMounted(() => {
       <div
         v-for="location in locations"
         :key="location.id"
-        class="card card-compact bg-base-200 h-30 w-47 shrink-0 cursor-pointer border-2 mb-2"
+        class="card card-compact bg-base-200 h-40 w-47 shrink-0 cursor-pointer border-2 mb-2"
         :class="{ 'border-accent': location === mapStore.selectedPoint, 'border-transparent': location !== mapStore.selectedPoint }"
         @mouseenter="mapStore.selectedPoint = location"
         @mouseleave="mapStore.selectedPoint = null"
@@ -30,6 +30,20 @@ onMounted(() => {
             {{ location.name }}
           </h3>
           <p>{{ location.description }}</p>
+          <button
+            v-if="mapStore.flyToPoint !== location"
+            class="btn btn-primary"
+            @click="mapStore.flyToPoint = location"
+          >
+            <span>Перейти к месту на карте</span>
+          </button>
+          <button
+            v-else
+            class="btn btn-accent"
+            @click="mapStore.flyToPoint = null"
+          >
+            <span>Сбросить</span>
+          </button>
         </div>
       </div>
     </div>

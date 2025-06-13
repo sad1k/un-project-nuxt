@@ -9,6 +9,8 @@ export const useMapStore = defineStore("useMapStore", () => {
 
   const addedPoint = ref<MapPoint | null>(null);
 
+  const flyToPoint = ref<MapPoint | null>(null);
+
   async function init() {
     const { useMap } = await import("@indoorequal/vue-maplibre-gl");
     const { LngLatBounds } = await import("maplibre-gl");
@@ -35,6 +37,19 @@ export const useMapStore = defineStore("useMapStore", () => {
         });
       }
     });
+
+    watch(flyToPoint, (newValue, oldValue) => {
+      if (newValue) {
+        map.map?.flyTo({
+          center: [newValue.long, newValue.lat],
+          zoom: 4,
+          speed: 40,
+        });
+      }
+      else if (!newValue && oldValue && bounds) {
+        map.map?.fitBounds(bounds, { padding: 60 });
+      }
+    });
   }
 
   return {
@@ -42,5 +57,6 @@ export const useMapStore = defineStore("useMapStore", () => {
     init,
     selectedPoint,
     addedPoint,
+    flyToPoint,
   };
 });
