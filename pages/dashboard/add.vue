@@ -3,6 +3,8 @@ import type { FetchError } from "ofetch";
 
 import { toTypedSchema } from "@vee-validate/zod";
 
+import type { SearchLocation } from "~/lib/types";
+
 import { CENTER_RUSSIA } from "~/lib/constants";
 import { InsertLocation as InsertLocationSchema } from "~/lib/db/schema";
 
@@ -10,9 +12,48 @@ import { InsertLocation as InsertLocationSchema } from "~/lib/db/schema";
 const submitError = ref<string>("");
 const loading = ref<boolean>(false);
 const submitted = ref<boolean>(false);
+const querySearchLocation = ref<string>("123");
+const searchLocations = ref<SearchLocation[]>([]);
+
+function debounce(func: (...args: any[]) => void, delay: number) {
+  let timeout: NodeJS.Timeout;
+  return (...args: any[]) => {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func.apply(this, args), delay);
+  };
+}
+
+async function fetchData(query: string) {
+  const response = await $fetch<SearchLocation[]>(`https://nominatim.openstreetmap.org/search?q=${query}&format=jsonv2`, {
+    method: "get",
+    credentials: "same-origin",
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+    },
+  });
+  return response;
+}
+
+const fetchDataDebounced = debounce(async (newQuerySearchLocation: string) => {
+  console.log("fetch");
+  searchLocations.value = await fetchData(newQuerySearchLocation);
+}, 400);
+
+watch(querySearchLocation, (newQuerySearchLocation) => {
+  console.log("fetching data", newQuerySearchLocation);
+  fetchDataDebounced(newQuerySearchLocation);
+});
+
 const mapStore = useMapStore();
 
-const { handleSubmit, errors, meta, setErrors, setFieldValue, controlledValues } = useForm({
+const {
+  handleSubmit,
+  errors,
+  meta,
+  setErrors,
+  setFieldValue,
+  controlledValues,
+} = useForm({
   validationSchema: toTypedSchema(InsertLocationSchema),
   initialValues: {
     name: "",
@@ -46,12 +87,29 @@ const onSubmit = handleSubmit(async (values) => {
     if (error.data?.data) {
       setErrors(error.data?.data);
     }
-    submitError.value = error.data?.statusMessage || error.statusMessage || "Неизвестная ошибка";
+    submitError.value
+      = error.data?.statusMessage || error.statusMessage || "Неизвестная ошибка";
   }
   finally {
     loading.value = false;
   }
 });
+
+function updateAddedPoint(location: SearchLocation) {
+  if (mapStore.addedPoint) {
+    const lat = Number.parseFloat(location.lat);
+    const lon = Number.parseFloat(location.lon);
+    setFieldValue("long", lon);
+    setFieldValue("lat", lat);
+    mapStore.addedPoint.lat = lat;
+    mapStore.addedPoint.long = lon;
+    mapStore.flyToPoint = {
+      ...mapStore.addedPoint,
+      lat,
+      long: lon,
+    };
+  }
+}
 
 effect(() => {
   if (mapStore.addedPoint) {
@@ -73,7 +131,9 @@ onMounted(() => {
 onBeforeRouteLeave(() => {
   if (meta.value.dirty && !submitted.value) {
     // eslint-disable-next-line no-alert
-    const confirm = window.confirm("Все не сохраненные изменения исчезнут. Вы уверены, что хотите покинуть страницу?");
+    const confirm = window.confirm(
+      "Все не сохраненные изменения исчезнут. Вы уверены, что хотите покинуть страницу?",
+    );
     if (!confirm) {
       return false;
     }
@@ -91,9 +151,10 @@ onBeforeRouteLeave(() => {
         Добавить место
       </h1>
       <p class="text-sm">
-        Здесь вы можете добавить место, которое вы посетили. Это поможет вам запомнить ваш путь и поделиться им с другими.
-        Просто нажмите на кнопку "Добавить место" и заполните необходимую информацию.
-        После этого ваше место будет добавлено в вашу ленту историй.
+        Здесь вы можете добавить место, которое вы посетили. Это поможет вам
+        запомнить ваш путь и поделиться им с другими. Просто нажмите на кнопку
+        "Добавить место" и заполните необходимую информацию. После этого ваше
+        место будет добавлено в вашу ленту историй.
       </p>
     </div>
 
@@ -132,16 +193,59 @@ onBeforeRouteLeave(() => {
         :disabled="loading"
         :error="errors.description"
       />
+
+      <label class="input w-full">
+        <svg
+          class="h-[1em] opacity-50"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+        >
+          <g
+            stroke-linejoin="round"
+            stroke-linecap="round"
+            stroke-width="2.5"
+            fill="none"
+            stroke="currentColor"
+          >
+            <circle
+              cx="11"
+              cy="11"
+              r="8"
+            />
+            <path d="m21 21-4.3-4.3" />
+          </g>
+        </svg>
+        <input
+          v-model="querySearchLocation"
+          type="search"
+          required
+          placeholder="Search"
+        >
+      </label>
+
+      <div
+        v-for="searchLocation in searchLocations"
+        :key="searchLocation.place_id"
+        class="flex flex-col gap-10 "
+        @click="updateAddedPoint(searchLocation)"
+      >
+        <p class="p-2 rounded-2xl border-gray-500 border-2 cursor-pointer">
+          {{ searchLocation.display_name }}
+        </p>
+      </div>
+
       <p>
-        Перенесите <Icon name="tabler:map-pin-filled" class="text-warning" /> маркер на необходимое место и добавьте его.
+        Перенесите
+        <Icon name="tabler:map-pin-filled" class="text-warning" /> маркер на
+        необходимое место и добавьте его.
       </p>
-      <p>
-        Или двойным нажатием на карту.
-      </p>
+      <p>Или двойным нажатием на карту.</p>
 
       <p class="text-xs text-gray-400">
         Текущее положение:
-        {{ formatNumber(controlledValues.lat) }} {{ formatNumber(controlledValues.long) }}
+        {{ formatNumber(controlledValues.lat) }}
+
+        {{ formatNumber(controlledValues.long) }}
       </p>
       <div class="flex justify-end gap-4">
         <button

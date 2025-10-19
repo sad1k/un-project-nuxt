@@ -40,9 +40,10 @@ export const useMapStore = defineStore("useMapStore", () => {
 
     watch(flyToPoint, (newValue, oldValue) => {
       if (newValue) {
+        console.log("flying to point", newValue);
         map.map?.flyTo({
           center: [newValue.long, newValue.lat],
-          zoom: 4,
+          zoom: 13,
           speed: 2,
         });
       }

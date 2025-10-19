@@ -17,3 +17,11 @@ export type MapPoint = {
   name: string;
   description?: string | null;
 } & LatLongItem;
+
+export type SearchLocation = {
+  place_id: number;
+  lat: string;
+  lon: string;
+  display_name: string;
+  boundingbox: string[];
+};
