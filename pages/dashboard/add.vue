@@ -3,8 +3,6 @@ import type { FetchError } from "ofetch";
 
 import { toTypedSchema } from "@vee-validate/zod";
 
-import type { SearchLocation } from "~/lib/types";
-
 import { CENTER_RUSSIA } from "~/lib/constants";
 import { InsertLocation as InsertLocationSchema } from "~/lib/db/schema";
 
@@ -12,37 +10,6 @@ import { InsertLocation as InsertLocationSchema } from "~/lib/db/schema";
 const submitError = ref<string>("");
 const loading = ref<boolean>(false);
 const submitted = ref<boolean>(false);
-const querySearchLocation = ref<string>("123");
-const searchLocations = ref<SearchLocation[]>([]);
-
-function debounce(func: (...args: any[]) => void, delay: number) {
-  let timeout: NodeJS.Timeout;
-  return (...args: any[]) => {
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func.apply(this, args), delay);
-  };
-}
-
-async function fetchData(query: string) {
-  const response = await $fetch<SearchLocation[]>(`https://nominatim.openstreetmap.org/search?q=${query}&format=jsonv2`, {
-    method: "get",
-    credentials: "same-origin",
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-    },
-  });
-  return response;
-}
-
-const fetchDataDebounced = debounce(async (newQuerySearchLocation: string) => {
-  console.log("fetch");
-  searchLocations.value = await fetchData(newQuerySearchLocation);
-}, 400);
-
-watch(querySearchLocation, (newQuerySearchLocation) => {
-  console.log("fetching data", newQuerySearchLocation);
-  fetchDataDebounced(newQuerySearchLocation);
-});
 
 const mapStore = useMapStore();
 
@@ -95,21 +62,21 @@ const onSubmit = handleSubmit(async (values) => {
   }
 });
 
-function updateAddedPoint(location: SearchLocation) {
-  if (mapStore.addedPoint) {
-    const lat = Number.parseFloat(location.lat);
-    const lon = Number.parseFloat(location.lon);
-    setFieldValue("long", lon);
-    setFieldValue("lat", lat);
-    mapStore.addedPoint.lat = lat;
-    mapStore.addedPoint.long = lon;
-    mapStore.flyToPoint = {
-      ...mapStore.addedPoint,
-      lat,
-      long: lon,
-    };
-  }
-}
+// function updateAddedPoint(location: SearchLocation) {
+//   if (mapStore.addedPoint) {
+//     const lat = Number.parseFloat(location.lat);
+//     const lon = Number.parseFloat(location.lon);
+//     setFieldValue("long", lon);
+//     setFieldValue("lat", lat);
+//     mapStore.addedPoint.lat = lat;
+//     mapStore.addedPoint.long = lon;
+//     mapStore.flyToPoint = {
+//       ...mapStore.addedPoint,
+//       lat,
+//       long: lon,
+//     };
+//   }
+// }
 
 effect(() => {
   if (mapStore.addedPoint) {
@@ -193,46 +160,6 @@ onBeforeRouteLeave(() => {
         :disabled="loading"
         :error="errors.description"
       />
-
-      <label class="input w-full">
-        <svg
-          class="h-[1em] opacity-50"
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-        >
-          <g
-            stroke-linejoin="round"
-            stroke-linecap="round"
-            stroke-width="2.5"
-            fill="none"
-            stroke="currentColor"
-          >
-            <circle
-              cx="11"
-              cy="11"
-              r="8"
-            />
-            <path d="m21 21-4.3-4.3" />
-          </g>
-        </svg>
-        <input
-          v-model="querySearchLocation"
-          type="search"
-          required
-          placeholder="Search"
-        >
-      </label>
-
-      <div
-        v-for="searchLocation in searchLocations"
-        :key="searchLocation.place_id"
-        class="flex flex-col gap-10 "
-        @click="updateAddedPoint(searchLocation)"
-      >
-        <p class="p-2 rounded-2xl border-gray-500 border-2 cursor-pointer">
-          {{ searchLocation.display_name }}
-        </p>
-      </div>
 
       <p>
         Перенесите
