@@ -21,10 +21,11 @@ onMounted(() => {
   mapStore.init();
 });
 
-function onDoubleClick(mglEvent: MglEvent<"dbclick">) {
+function onDoubleClick(mglEvent: MglEvent<"dblclick">) {
   if (mapStore.addedPoint) {
-    mapStore.addedPoint.lat = mglEvent.event.lngLat.lat;
-    mapStore.addedPoint.long = mglEvent.event.lngLat.lng;
+    const event = mglEvent.event as { lngLat: { lat: number; lng: number } };
+    mapStore.addedPoint.lat = event.lngLat.lat;
+    mapStore.addedPoint.long = event.lngLat.lng;
   }
 }
 </script>
@@ -32,7 +33,7 @@ function onDoubleClick(mglEvent: MglEvent<"dbclick">) {
 <template>
   <MglMap
     :map-style="style"
-    :center="CENTER_RUSSIA"
+    :center="[CENTER_RUSSIA[0], CENTER_RUSSIA[1]] as [number, number]"
     :zoom="zoom"
     @map:dblclick="onDoubleClick"
   >
@@ -40,14 +41,11 @@ function onDoubleClick(mglEvent: MglEvent<"dbclick">) {
     <MglMarker
       v-if="mapStore.addedPoint"
       :coordinates="[mapStore.addedPoint.long, mapStore.addedPoint.lat]"
-      draggable="true"
+      :draggable="true"
       @update:coordinates="updateAddedPoint"
     >
       <template #marker>
-        <div
-          class="tooltip tooltip-top tooltip-open hover:cursor-pointer"
-          data-tip="Перенесите на необходимое место"
-        >
+        <div class="tooltip tooltip-top tooltip-open hover:cursor-pointer" data-tip="Перенесите на необходимое место">
           <Icon
             name="tabler:map-pin-filled"
             size="24"
@@ -67,7 +65,7 @@ function onDoubleClick(mglEvent: MglEvent<"dbclick">) {
           class="tooltip hover:cursor-pointer"
           :data-tip="point.name"
           :class="{
-            'tooltip-open': mapStore.selectedPoint === point,
+            'tooltip-open': isPointSelected(point, mapStore.selectedPoint),
           }"
           @mouseenter="mapStore.selectedPoint = point"
           @mouseleave="mapStore.selectedPoint = null"
@@ -75,7 +73,7 @@ function onDoubleClick(mglEvent: MglEvent<"dbclick">) {
           <Icon
             name="tabler:map-pin-filled"
             size="24"
-            :class="mapStore.selectedPoint === point ? 'text-accent' : 'text-secondary'"
+            :class="isPointSelected(point, mapStore.selectedPoint) ? 'text-accent' : 'text-secondary'"
           />
         </div>
       </template>
@@ -84,6 +82,20 @@ function onDoubleClick(mglEvent: MglEvent<"dbclick">) {
           {{ point.name }}
         </h3>
         <p>{{ point.description }}</p>
+        <div class="flex justify-end mt-2">
+          <NuxtLink
+            v-if="point.to"
+            class="btn btn-primary"
+            :to="point.to"
+          >
+            <Icon
+              name="tabler:link"
+              size="24"
+              class="text-secondary"
+            />
+            {{ point.toLabel }}
+          </NuxtLink>
+        </div>
       </MglPopup>
     </MglMarker>
   </MglMap>

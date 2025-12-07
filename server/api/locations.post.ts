@@ -4,11 +4,11 @@ import { customAlphabet } from "nanoid";
 import slugify from "slug";
 
 import { findLocationByName, findLocationBySlug, insertLocation } from "~/lib/db/queries/location";
-import { InsertLocation } from "~/lib/db/schema";
+import { InsertLocationSchema } from "~/lib/db/schema";
 import defineAuthenticatedHandler from "~/utils/define-authenticated-handler";
 
 export default defineAuthenticatedHandler(async (event) => {
-  const body = await readValidatedBody(event, InsertLocation.safeParse);
+  const body = await readValidatedBody(event, InsertLocationSchema.safeParse);
 
   if (!body.success) {
     const statusMessage = body.error.issues.map(issue => `${issue.path.join("")}: ${issue.message}`).join("; ");
@@ -36,13 +36,13 @@ export default defineAuthenticatedHandler(async (event) => {
 
   const originalSlug = slugify(body.data.name);
   let slug = originalSlug;
-  let existingSlug = !!(await findLocationBySlug(originalSlug));
+  let existingSlug = !!(await findLocationBySlug(event.context.user.id, originalSlug));
 
   const nanoid = customAlphabet("1234567890abcdefghkl", 5);
   while (existingSlug) {
     const id = nanoid();
     const idSlug = `${originalSlug}-${id}`;
-    existingSlug = !!(await findLocationBySlug(idSlug));
+    existingSlug = !!(await findLocationBySlug(event.context.user.id, idSlug));
     if (!existingSlug) {
       slug = idSlug;
     }

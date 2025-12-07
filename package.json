@@ -2,6 +2,7 @@
   "name": "nuxt-app",
   "type": "module",
   "private": true,
+  "packageManager": "pnpm@10.24.0+sha512.01ff8ae71b4419903b65c60fb2dc9d34cf8bb6e06d03bde112ef38f7a34d6904c424ba66bea5cdcf12890230bf39f9580473140ed9c946fef328b6e5238a345a",
   "scripts": {
     "build": "nuxt build",
     "dev": "nuxt dev",
@@ -11,15 +12,20 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "prepare": "husky",
+    "typecheck": "nuxt typecheck",
     "dev:db": "turso dev --db-file local.db"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.943.0",
+    "@aws-sdk/s3-presigned-post": "^3.943.0",
+    "@aws-sdk/s3-request-presigner": "^3.946.0",
     "@indoorequal/vue-maplibre-gl": "^8.4.0",
     "@libsql/client": "^0.15.7",
     "@nuxt/eslint": "1.4.1",
     "@nuxt/icon": "1.13.0",
     "@nuxtjs/color-mode": "3.5.2",
     "@pinia/nuxt": "0.11.0",
+    "@sentry/nuxt": "^10.29.0",
     "@tailwindcss/vite": "^4.1.7",
     "@types/node": "^22.15.29",
     "@vee-validate/nuxt": "^4.15.1",
@@ -28,10 +34,12 @@
     "drizzle-orm": "^0.43.1",
     "drizzle-zod": "^0.8.2",
     "eslint": "^9.0.0",
+    "import-in-the-middle": "^2.0.0",
     "maplibre-gl": "^4.7.1",
     "nanoid": "^5.1.5",
     "nuxt": "^3.17.3",
     "nuxt-csurf": "^1.6.5",
+    "nuxt-easy-lightbox": "1.1.0",
     "nuxt-maplibre": "1.1.1",
     "pinia": "^3.0.2",
     "slug": "^11.0.0",
@@ -48,6 +56,11 @@
     "eslint-plugin-format": "^1.0.1",
     "husky": "^9.1.7",
     "lint-staged": "^16.0.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "@vercel/nft": "^0.27.4"
+    }
   },
   "lint-staged": {
     "*": "pnpm lint"

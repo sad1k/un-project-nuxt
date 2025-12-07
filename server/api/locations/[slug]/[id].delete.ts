@@ -1,0 +1,48 @@
+import { z } from "zod";
+
+import {
+  deleteLocationLogById,
+  findLocationBySlug,
+} from "~/lib/db/queries/location";
+import defineAuthenticatedHandler from "~/utils/define-authenticated-handler";
+
+export default defineAuthenticatedHandler(async (event) => {
+  const slug = getRouterParam(event, "slug") as string;
+
+  const location = await findLocationBySlug(event.context.user.id, slug);
+
+  if (!location) {
+    return sendError(
+      event,
+      createError({
+        statusCode: 404,
+        statusMessage: "Место не найдено",
+      }),
+    );
+  }
+
+  const id = getRouterParam(event, "id") as string;
+  if (!z.coerce.number().safeParse(id).success) {
+    return sendError(
+      event,
+      createError({
+        statusCode: 422,
+        statusMessage: "Неверный ID",
+      }),
+    );
+  }
+
+  const deletedLog = await deleteLocationLogById(Number(id), event.context.user.id);
+
+  if (!deletedLog) {
+    return sendError(
+      event,
+      createError({
+        statusCode: 404,
+        statusMessage: "Лог не найден",
+      }),
+    );
+  }
+
+  setResponseStatus(event, 204);
+});

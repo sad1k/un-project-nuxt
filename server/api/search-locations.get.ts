@@ -7,10 +7,11 @@ export default defineAuthenticatedHandler(defineCachedFunction(async (event) => 
   const { q } = await getValidatedQuery(event, SearchLocationQuery.parse);
 
   try {
-    const response = await fetch(`https://nominatim.openstreetmap.org/search?=${q}&format=json`, {
+    const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json`, {
       headers: { "User-Agent": "test-project | misha.kirillov.0990@gmail.com" },
     });
 
+    console.log(response, "response@@");
     if (!response.ok) {
       return sendError(event, createError({
         statusCode: 504,

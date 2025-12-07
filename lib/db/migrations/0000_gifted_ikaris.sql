@@ -58,7 +58,7 @@ CREATE TABLE `location` (
 	`userId` integer NOT NULL,
 	`createdAt` integer NOT NULL,
 	`updateAt` integer NOT NULL,
-	FOREIGN KEY (`userId`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE no action
+	FOREIGN KEY (`userId`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `location_slug_unique` ON `location` (`slug`);--> statement-breakpoint
@@ -75,8 +75,8 @@ CREATE TABLE `locationLog` (
 	`locationId` integer NOT NULL,
 	`createdAt` integer NOT NULL,
 	`updateAt` integer NOT NULL,
-	FOREIGN KEY (`userId`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE no action,
-	FOREIGN KEY (`locationId`) REFERENCES `location`(`id`) ON UPDATE no action ON DELETE no action
+	FOREIGN KEY (`userId`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade,
+	FOREIGN KEY (`locationId`) REFERENCES `location`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
 CREATE TABLE `locationLogImage` (
@@ -87,6 +87,6 @@ CREATE TABLE `locationLogImage` (
 	`userId` integer NOT NULL,
 	`createdAt` integer NOT NULL,
 	`updateAt` integer NOT NULL,
-	FOREIGN KEY (`locationLogId`) REFERENCES `locationLog`(`id`) ON UPDATE no action ON DELETE no action,
-	FOREIGN KEY (`userId`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE no action
+	FOREIGN KEY (`locationLogId`) REFERENCES `locationLog`(`id`) ON UPDATE no action ON DELETE cascade,
+	FOREIGN KEY (`userId`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade
 );

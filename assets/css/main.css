@@ -16,7 +16,7 @@
 }
 
 .page-content-top {
-  @apply p-4 min-h-72;
+  @apply p-4 min-h-80;
 }
 
 html[data-theme="dark"] {
