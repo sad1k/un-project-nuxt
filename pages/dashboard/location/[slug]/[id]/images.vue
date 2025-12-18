@@ -11,10 +11,12 @@ const loading = ref(false);
 const { $csrfFetch } = useNuxtApp();
 const route = useRoute();
 
-const uploadError = ref<string | null>(null);
+const notifications = ref([
 
-function onFileChange(event: Event) {
-  const file = (event.target as HTMLInputElement).files?.[0];
+]);
+
+function onFileChange(file: File) {
+  console.log(file, "file");
   if (file) {
     imageFile.value = file;
     imageUrl.value = URL.createObjectURL(file);
@@ -30,6 +32,7 @@ async function getChecksum(blob: Blob) {
 async function uploadImage() {
   if (!imageFile.value || !imageUrl.value)
     return;
+
   loading.value = true;
   const newImage = new Image();
   newImage.src = imageUrl.value;
@@ -82,7 +85,16 @@ async function uploadImage() {
     }
     catch (error) {
       const errorMessage = error as unknown as FetchError;
-      uploadError.value = errorMessage.data?.statusMessage || errorMessage.statusMessage || "Неизвестная ошибка";
+      notifications.value.push({
+        id: "123",
+        name: "Ошибка загрузки изображения",
+        description: errorMessage.data?.statusMessage || errorMessage.statusMessage || "Неизвестная ошибка",
+        time: "Now",
+        color: "",
+      });
+      setTimeout(() => {
+        notifications.value.shift();
+      }, 5000);
     }
     finally {
       loading.value = false;
@@ -98,8 +110,14 @@ async function uploadImage() {
 
 <template>
   <div class="page-content-top h-[600px] flex flex-col gap-4">
-    <div v-if="uploadError" class="alert alert-error">
-      <span>{{ uploadError }}</span>
+    <div class="toast z-[9999]">
+      <div
+        v-for="notification in notifications"
+        :key="notification.id"
+        class="alert alert-error"
+      >
+        <span>{{ notification.description }}</span>
+      </div>
     </div>
     <h2 class="font-bold mb-4">
       Управление изображениями для {{ currentLocationLog?.name || "Загрузка..." }}
@@ -108,7 +126,7 @@ async function uploadImage() {
       <div v-if="currentLocationLog && !loading">
         <div class="w-[250px] h-[160px]">
           <div class="flex flex-col gap-2 h-full">
-            <div class="bg-base-100 shadow-sm flex items-center justify-center h-full p-4">
+            <div class="hidden">
               <p v-if="!imageUrl" class="text-center">
                 Выберите изображение для загрузки
               </p>
@@ -123,16 +141,16 @@ async function uploadImage() {
                 class=" size-10 mx-auto absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 loading loading-spinner loading-lg"
               />
             </div>
-            <input
-              ref="inputRef"
-              type="file"
-              class="file-input file-input-bordered w-full max-w-xs"
-              :disabled="loading"
-              @change="onFileChange"
-            >
+            <ClientOnly>
+              <FileUpload @on-change="onFileChange">
+                <FileUploadGrid />
+              </FileUpload>
+            </ClientOnly>
+
             <button
+              v-if="imageFile"
               class="btn btn-primary"
-              :disabled="!imageFile || loading"
+              :disabled="loading"
               @click="uploadImage"
             >
               Загрузить
@@ -141,6 +159,7 @@ async function uploadImage() {
           </div>
         </div>
       </div>
+
       <ImageList
         v-if="currentLocationLog && !loading"
         :location-log="currentLocationLog"

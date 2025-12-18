@@ -1,6 +1,6 @@
 export const CENTER_RUSSIA = [66.25, 66.25];
 
-export const LOCATION_PAGES = ["dashboard", "dashboard-add"];
+export const LOCATION_PAGES = ["dashboard", "dashboard-add", "dashboard-publish"];
 export const CURRENT_LOCATION_PAGES = [
   "dashboard-location-slug",
   "dashboard-location-slug-edit",

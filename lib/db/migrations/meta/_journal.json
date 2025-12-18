@@ -8,6 +8,13 @@
       "when": 1765044594854,
       "tag": "0000_gifted_ikaris",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1765395153026,
+      "tag": "0001_wild_zaran",
+      "breakpoints": true
     }
   ]
 }

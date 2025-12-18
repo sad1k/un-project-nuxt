@@ -71,7 +71,9 @@ async function deleteLocation() {
             </ul>
           </div>
         </h1>
-        <p>{{ location.description }}</p>
+        <p class="break-words">
+          {{ location.description }}
+        </p>
       </div>
       <dialog id="deleteLocationModal" class="modal">
         <div class="modal-box flex flex-col gap-4">
