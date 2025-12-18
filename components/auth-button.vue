@@ -30,10 +30,10 @@ const authStore = useAuthStore();
   <button
     v-else
     :disabled="authStore.loading"
-    class="btn btn-accent"
+    class="btn bg-brand-gold text-brand-dark border-none hover:bg-white"
     @click="authStore.signIn"
   >
-    Войти c помощью Github
+    Войти через Github
     <span v-if="authStore.loading" class="loading loading-spinner loading-md" />
     <Icon
       v-else

@@ -1,8 +1,41 @@
+@import "https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Poiret+One&family=Inter:wght@400;600;700&display=swap";
 @import "tailwindcss";
+
 @plugin "daisyui" {
   themes:
     light --default,
     dark --prefersdark;
+}
+
+@theme {
+  --color-brand-sangria: #b03b60;
+  --color-brand-emerald: #1f7877;
+  --color-brand-ultramarine: #0924a6;
+  --color-brand-violet: #9267b8;
+  --color-brand-gold: #f3d19e;
+  --color-brand-dark: #050505;
+
+  --font-display: "Poiret One", cursive;
+  --font-headline: "Dela Gothic One", cursive;
+  --font-body: "Inter", sans-serif;
+}
+
+/* Custom aesthetic overrides */
+:root {
+  --font-display: "Poiret One", sans-serif;
+}
+
+html[data-theme="dark"] {
+  background-color: var(--color-brand-dark);
+  color: white;
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.font-headline {
+  font-family: var(--font-headline);
 }
 
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
