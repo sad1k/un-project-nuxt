@@ -45,14 +45,19 @@ const FALLBACK_POINTS: RoutePoint[] = [
   { id: 'fb5', day: 2, name: 'Sunset Viewpoint', type: 'adventure', lat: 40.7484, lng: -73.9857, emoji: '⛰️' },
 ]
 
-export function useRouteGenerator() {
-  const destination = ref('')
-  const selectedDays = ref(3)
-  const selectedInterests = ref(new Set<string>())
-  const generating = ref(false)
-  const points = ref<RoutePoint[]>([])
+const destination = ref('')
+const selectedDays = ref(3)
+const selectedInterests = ref(new Set<string>())
+const generating = ref(false)
+const points = ref<RoutePoint[]>([])
 
-  function generate() {
+const stats = computed<RouteStats>(() => ({
+  estimatedHours: points.value.length * 2,
+  placeCount: points.value.length,
+  matchPercentage: points.value.length > 0 ? Math.min(95, 70 + points.value.length * 3) : 0,
+}))
+
+function generate() {
     generating.value = true
     points.value = []
 
@@ -75,12 +80,6 @@ export function useRouteGenerator() {
       generating.value = false
     }, 2000)
   }
-
-  const stats = computed<RouteStats>(() => ({
-    estimatedHours: points.value.length * 2,
-    placeCount: points.value.length,
-    matchPercentage: points.value.length > 0 ? Math.min(95, 70 + points.value.length * 3) : 0,
-  }))
 
   return {
     destination,

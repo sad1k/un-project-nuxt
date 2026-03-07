@@ -2,7 +2,7 @@
 definePageMeta({ layout: false })
 
 const mapbox = useMapbox()
-const router = useRouteGenerator()
+const { points } = useRouteGenerator()
 
 const mapLoaded = ref(false)
 
@@ -10,11 +10,11 @@ function onMapLoaded() {
   mapLoaded.value = true
 }
 
-watch(() => router.points.value, (points) => {
-  if (!points.length) return
-  mapbox.addMarkers(points)
-  mapbox.drawRouteLine(points)
-  mapbox.fitToRoute(points)
+watch(points, (pts) => {
+  if (!pts.length) return
+  mapbox.addMarkers(pts)
+  mapbox.drawRouteLine(pts)
+  mapbox.fitToRoute(pts)
 })
 </script>
 
@@ -42,15 +42,7 @@ watch(() => router.points.value, (points) => {
 
     <!-- UI Overlays -->
     <ExploreHeaderOverlay />
-    <ExploreRoutePanel
-      :destination="router.destination"
-      :selected-days="router.selectedDays"
-      :selected-interests="router.selectedInterests"
-      :points="router.points"
-      :generating="router.generating"
-      :stats="router.stats"
-      @generate="router.generate"
-    />
+    <ExploreRoutePanel />
     <ExploreQuickActions />
   </div>
 </template>

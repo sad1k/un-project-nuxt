@@ -1,18 +1,5 @@
 <script lang="ts" setup>
-import type { RoutePoint, RouteStats } from '~/composables/useRouteGenerator'
-
-const props = defineProps<{
-  destination: Ref<string>
-  selectedDays: Ref<number>
-  selectedInterests: Ref<Set<string>>
-  points: Ref<RoutePoint[]>
-  generating: Ref<boolean>
-  stats: ComputedRef<RouteStats>
-}>()
-
-const emit = defineEmits<{
-  generate: []
-}>()
+const { destination, selectedDays, selectedInterests, points, generating, stats, generate } = useRouteGenerator()
 
 const collapsed = ref(false)
 
@@ -27,12 +14,11 @@ const interests = [
 ]
 
 function toggleInterest(label: string) {
-  const set = props.selectedInterests.value
-  if (set.has(label)) {
-    set.delete(label)
+  if (selectedInterests.value.has(label)) {
+    selectedInterests.value.delete(label)
   }
   else {
-    set.add(label)
+    selectedInterests.value.add(label)
   }
 }
 </script>
@@ -78,10 +64,9 @@ function toggleInterest(label: string) {
           class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
         />
         <input
-          :value="destination.value"
+          v-model="destination"
           placeholder="Where to?"
           class="pl-10 pr-4 py-3 w-full bg-white/60 border border-gray-200 rounded-xl text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-400/50 focus:border-amber-400 transition-all"
-          @input="destination.value = ($event.target as HTMLInputElement).value"
         >
       </div>
 
@@ -93,10 +78,10 @@ function toggleInterest(label: string) {
             v-for="d in durations"
             :key="d"
             class="px-3 py-2 rounded-lg text-sm font-medium transition-all"
-            :class="selectedDays.value === d
+            :class="selectedDays === d
               ? 'bg-gradient-to-r from-amber-400 to-orange-500 text-white shadow-lg shadow-amber-500/30'
               : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
-            @click="selectedDays.value = d"
+            @click="selectedDays = d"
           >
             {{ d }}d
           </button>
@@ -111,7 +96,7 @@ function toggleInterest(label: string) {
             v-for="interest in interests"
             :key="interest.label"
             class="px-3 py-1.5 rounded-full text-sm cursor-pointer transition-all flex items-center gap-1"
-            :class="selectedInterests.value.has(interest.label)
+            :class="selectedInterests.has(interest.label)
               ? 'ring-2 ring-amber-400 bg-amber-50'
               : 'bg-gray-100 hover:bg-gray-200'"
             @click="toggleInterest(interest.label)"
@@ -123,33 +108,33 @@ function toggleInterest(label: string) {
       </div>
 
       <!-- Quick stats -->
-      <div v-if="points.value.length > 0" class="grid grid-cols-3 gap-3 mb-5">
+      <div v-if="points.length > 0" class="grid grid-cols-3 gap-3 mb-5">
         <div class="text-center p-2 bg-white/50 rounded-lg">
           <Icon name="tabler:clock" size="16" class="text-amber-500 mx-auto mb-1" />
-          <div class="text-sm font-semibold text-gray-700">~{{ stats.value.estimatedHours }}h</div>
+          <div class="text-sm font-semibold text-gray-700">~{{ stats.estimatedHours }}h</div>
         </div>
         <div class="text-center p-2 bg-white/50 rounded-lg">
           <Icon name="tabler:map-pin" size="16" class="text-amber-500 mx-auto mb-1" />
-          <div class="text-sm font-semibold text-gray-700">{{ stats.value.placeCount }} places</div>
+          <div class="text-sm font-semibold text-gray-700">{{ stats.placeCount }} places</div>
         </div>
         <div class="text-center p-2 bg-white/50 rounded-lg">
           <Icon name="tabler:target" size="16" class="text-amber-500 mx-auto mb-1" />
-          <div class="text-sm font-semibold text-gray-700">{{ stats.value.matchPercentage }}%</div>
+          <div class="text-sm font-semibold text-gray-700">{{ stats.matchPercentage }}%</div>
         </div>
       </div>
 
       <!-- Generate button -->
       <button
         class="w-full py-3 rounded-xl font-bold text-white bg-gradient-to-r from-amber-400 to-orange-500 hover:shadow-lg hover:shadow-amber-500/30 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-        :disabled="generating.value"
-        @click="emit('generate')"
+        :disabled="generating"
+        @click="generate()"
       >
-        <span v-if="generating.value" class="flex items-center justify-center gap-2">
+        <span v-if="generating" class="flex items-center justify-center gap-2">
           <Icon name="tabler:loader-2" size="18" class="animate-spin" />
           Generating...
         </span>
         <span v-else>
-          {{ points.value.length > 0 ? 'Regenerate' : 'Generate Route' }}
+          {{ points.length > 0 ? 'Regenerate' : 'Generate Route' }}
         </span>
       </button>
     </div>
