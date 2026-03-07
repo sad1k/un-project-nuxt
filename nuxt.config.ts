@@ -41,6 +41,7 @@ export default defineNuxtConfig({
     public: {
       s3BucketUrl: env.S3_BUCKET_URL,
       sentryDsn: env.SENTRY_DSN,
+      mapboxToken: env.MAPBOX_TOKEN,
     },
   },
 
