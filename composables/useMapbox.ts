@@ -1,6 +1,8 @@
 import mapboxgl from 'mapbox-gl'
-import type { RoutePoint } from './useRouteGenerator'
+
 import { createMarkerElement, createPopupHTML } from '~/components/explore/RouteMarker'
+
+import type { RoutePoint } from './useRouteGenerator'
 
 export function useMapbox() {
   const mapInstance = shallowRef<mapboxgl.Map | null>(null)

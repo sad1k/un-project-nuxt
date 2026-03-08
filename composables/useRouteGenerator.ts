@@ -58,29 +58,30 @@ const stats = computed<RouteStats>(() => ({
 }))
 
 function generate() {
-    generating.value = true
-    points.value = []
+  generating.value = true
+  points.value = []
 
-    setTimeout(() => {
-      const dest = destination.value.toLowerCase().trim()
-      let matched: RoutePoint[]
+  setTimeout(() => {
+    const dest = destination.value.toLowerCase().trim()
+    let matched: RoutePoint[]
 
-      if (dest.includes('tokyo')) {
-        matched = TOKYO_POINTS
-      }
-      else if (dest.includes('paris')) {
-        matched = PARIS_POINTS
-      }
-      else {
-        matched = FALLBACK_POINTS
-      }
+    if (dest.includes('tokyo')) {
+      matched = TOKYO_POINTS
+    }
+    else if (dest.includes('paris')) {
+      matched = PARIS_POINTS
+    }
+    else {
+      matched = FALLBACK_POINTS
+    }
 
-      const maxDay = Math.min(selectedDays.value, 3)
-      points.value = matched.filter(p => p.day <= maxDay)
-      generating.value = false
-    }, 2000)
-  }
+    const maxDay = Math.min(selectedDays.value, 3)
+    points.value = matched.filter(p => p.day <= maxDay)
+    generating.value = false
+  }, 2000)
+}
 
+export function useRouteGenerator() {
   return {
     destination,
     selectedDays,
