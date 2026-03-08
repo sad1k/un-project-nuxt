@@ -19,6 +19,7 @@ const EnvSchema = z.object({
   S3_BUCKET: z.string(),
   S3_BUCKET_URL: z.string(),
   SENTRY_DSN: z.string(),
+  MAPBOX_TOKEN: z.string(),
 });
 
 export type EnvSchema = z.infer<typeof EnvSchema>;
