@@ -23,7 +23,7 @@ watch(points, (pts) => {
     <!-- Loading screen -->
     <div
       v-if="!mapLoaded"
-      class="absolute inset-0 z-50 flex flex-col items-center justify-center bg-gray-900"
+      class="absolute inset-0 z-50 flex flex-col items-center justify-center bg-brand-dark"
     >
       <div class="text-6xl animate-spin">
         🌍

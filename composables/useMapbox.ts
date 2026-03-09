@@ -17,7 +17,7 @@ export function useMapbox() {
 
     const map = new mapboxgl.Map({
       container,
-      style: 'mapbox://styles/mapbox/light-v11',
+      style: 'mapbox://styles/mapbox/dark-v11',
       projection: 'globe',
       pitch: 45,
       bearing: -17.6,
@@ -29,11 +29,11 @@ export function useMapbox() {
 
     map.on('style.load', () => {
       map.setFog({
-        color: 'rgb(255, 245, 235)',
-        'high-color': 'rgb(255, 220, 180)',
+        color: 'rgb(10, 10, 15)',
+        'high-color': 'rgb(20, 20, 40)',
         'horizon-blend': 0.08,
-        'space-color': 'rgb(15, 15, 30)',
-        'star-intensity': 0.6,
+        'space-color': 'rgb(5, 5, 10)',
+        'star-intensity': 0.8,
       })
     })
 
@@ -142,7 +142,7 @@ export function useMapbox() {
         'line-cap': 'round',
       },
       paint: {
-        'line-color': '#f59e0b',
+        'line-color': '#1f7877',
         'line-width': 3,
         'line-dasharray': [2, 2],
       },

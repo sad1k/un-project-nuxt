@@ -12,9 +12,9 @@ const actions = [
     <button
       v-for="action in actions"
       :key="action.icon"
-      class="w-11 h-11 bg-white/80 backdrop-blur-md rounded-xl shadow-lg border border-white/20 flex items-center justify-center hover:bg-white hover:scale-105 hover:shadow-xl transition-all duration-200"
+      class="w-11 h-11 bg-white/5 backdrop-blur-md rounded-xl border border-white/10 flex items-center justify-center hover:bg-white/15 hover:scale-105 hover:border-white/20 transition-all duration-200"
     >
-      <Icon :name="action.icon" size="20" class="text-gray-600" />
+      <Icon :name="action.icon" size="20" class="text-white/70" />
     </button>
   </div>
 </template>
