@@ -163,7 +163,7 @@ export function useMapbox() {
     points.forEach(p => bounds.extend([p.lng, p.lat]))
 
     map.fitBounds(bounds, {
-      padding: { top: 100, bottom: 80, left: 420, right: 80 },
+      padding: { top: 100, bottom: 80, left: 80, right: 420 },
       duration: 1500,
     })
   }

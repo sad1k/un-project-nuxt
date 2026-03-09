@@ -41,8 +41,8 @@ watch(points, (pts) => {
     <div class="absolute bottom-0 inset-x-0 h-24 bg-gradient-to-t from-black/20 to-transparent pointer-events-none z-10" />
 
     <!-- UI Overlays -->
+    <ExploreNavSidebar />
     <ExploreHeaderOverlay />
     <ExploreRoutePanel />
-    <ExploreQuickActions />
   </div>
 </template>

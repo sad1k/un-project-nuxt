@@ -25,7 +25,7 @@ function toggleInterest(label: string) {
 
 <template>
   <div
-    class="absolute left-4 top-20 bottom-4 z-20 transition-all duration-300"
+    class="absolute right-4 top-20 bottom-4 z-20 transition-all duration-300"
     :class="collapsed ? 'w-3.5' : 'w-[380px]'"
   >
     <!-- Collapsed strip -->
@@ -34,7 +34,7 @@ function toggleInterest(label: string) {
       class="w-full h-full bg-white/5 backdrop-blur-md rounded-xl border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors"
       @click="collapsed = false"
     >
-      <Icon name="tabler:chevron-right" size="16" class="text-white/60" />
+      <Icon name="tabler:chevron-left" size="16" class="text-white/60" />
     </button>
 
     <!-- Expanded panel -->
@@ -52,7 +52,7 @@ function toggleInterest(label: string) {
           class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors"
           @click="collapsed = true"
         >
-          <Icon name="tabler:chevron-left" size="16" class="text-white/50" />
+          <Icon name="tabler:chevron-right" size="16" class="text-white/50" />
         </button>
       </div>
 

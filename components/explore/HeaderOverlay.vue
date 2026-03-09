@@ -1,35 +1,12 @@
 <script lang="ts" setup>
-const navItems = [
-  { icon: 'tabler:home', to: '/', label: 'Feed' },
-  { icon: 'tabler:compass', to: '/explore', label: 'Explore' },
-  { icon: 'tabler:map', to: '/dashboard', label: 'My Places' },
-]
-
-const route = useRoute()
 </script>
 
 <template>
   <div class="absolute top-0 inset-x-0 z-30 px-6 py-4 flex justify-between items-center">
-    <!-- Left: Logo + Nav icons -->
-    <div class="flex items-center gap-4">
-      <NuxtLink to="/" class="font-headline text-white text-xl tracking-tighter uppercase">
-        WANDERLOG
-      </NuxtLink>
-      <div class="flex items-center gap-1 ml-2">
-        <NuxtLink
-          v-for="item in navItems"
-          :key="item.to"
-          :to="item.to"
-          class="w-9 h-9 rounded-lg flex items-center justify-center transition-colors tooltip tooltip-bottom"
-          :class="route.path === item.to
-            ? 'bg-white/15 text-brand-gold'
-            : 'text-white/50 hover:text-white hover:bg-white/10'"
-          :data-tip="item.label"
-        >
-          <Icon :name="item.icon" size="20" />
-        </NuxtLink>
-      </div>
-    </div>
+    <!-- Left: Logo -->
+    <NuxtLink to="/" class="font-headline text-white text-xl tracking-tighter uppercase ml-14">
+      WANDERLOG
+    </NuxtLink>
 
     <!-- Right: Actions -->
     <div class="flex items-center gap-3">
