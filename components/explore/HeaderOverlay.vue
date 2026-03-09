@@ -4,6 +4,7 @@
 <template>
   <div class="absolute top-0 inset-x-0 z-30 px-6 py-4 flex justify-between items-center">
     <!-- Left: Logo -->
+    <!-- ml-14 offsets past the NavSidebar (w-14) -->
     <NuxtLink to="/" class="font-headline text-white text-xl tracking-tighter uppercase ml-14">
       WANDERLOG
     </NuxtLink>
