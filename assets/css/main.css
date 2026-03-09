@@ -44,6 +44,17 @@ html[data-theme="dark"] {
   @apply px-2;
 }
 
+/* Mapbox GL popup overrides for explore page */
+.mapboxgl-popup-content {
+  background: transparent;
+  padding: 0;
+  box-shadow: none;
+}
+
+.mapboxgl-popup-tip {
+  border-top-color: #0a0a0a;
+}
+
 .location-list {
   @apply flex flex-nowrap mt-4 gap-2 overflow-auto;
 }

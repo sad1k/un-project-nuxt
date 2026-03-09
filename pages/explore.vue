@@ -23,7 +23,7 @@ watch(points, (pts) => {
     <!-- Loading screen -->
     <div
       v-if="!mapLoaded"
-      class="absolute inset-0 z-50 flex flex-col items-center justify-center bg-gray-900"
+      class="absolute inset-0 z-50 flex flex-col items-center justify-center bg-brand-dark"
     >
       <div class="text-6xl animate-spin">
         🌍
@@ -41,8 +41,8 @@ watch(points, (pts) => {
     <div class="absolute bottom-0 inset-x-0 h-24 bg-gradient-to-t from-black/20 to-transparent pointer-events-none z-10" />
 
     <!-- UI Overlays -->
+    <ExploreNavSidebar />
     <ExploreHeaderOverlay />
     <ExploreRoutePanel />
-    <ExploreQuickActions />
   </div>
 </template>
