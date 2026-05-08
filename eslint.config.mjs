@@ -12,7 +12,7 @@ export default withNuxt(antfu({
     semi: true,
     quotes: "double",
   },
-  ignores: [".omx/**", ".planning/**", ".pnpm-store/**", "**/migrations/*", "**/dist/**", "**/node_modules/**", "**/public/**", "**/package-lock.json", "pnpm-lock.yaml"],
+  ignores: [".omx/**", ".planning/**", ".pnpm-store/**", "AGENTS.md", "**/migrations/*", "**/dist/**", "**/node_modules/**", "**/public/**", "**/package-lock.json", "pnpm-lock.yaml"],
 }, {
   rules: {
     "vue/max-attributes-per-line": ["error", {

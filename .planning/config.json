@@ -1,0 +1,20 @@
+{
+  "mode": "yolo",
+  "granularity": "coarse",
+  "parallelization": true,
+  "commit_docs": true,
+  "model_profile": "inherit",
+  "project_mode": "standard",
+  "workflow": {
+    "research": true,
+    "plan_check": true,
+    "verifier": true,
+    "nyquist_validation": true,
+    "auto_advance": false
+  },
+  "runtime": {
+    "name": "codex-app",
+    "sdk_available": false,
+    "notes": "gsd-sdk was not available in PATH during initialization; artifacts were generated inline from the GSD workflow templates."
+  }
+}
