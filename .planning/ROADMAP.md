@@ -1,116 +1,150 @@
 # Roadmap: WanderLog
 
 **Created:** 2026-05-08
+**Updated:** 2026-05-08 after Explore scope discussion
 **Mode:** standard
 **Granularity:** coarse
 **Execution:** parallel where dependencies allow
 
 ## Overview
 
-The user selected a Horizontal Layers structure. Phases complete technical layers in dependency order, then integrate them into the AI/PWA MVP.
+The project now centers on a fully working Explore page. The target user flow is:
+
+```text
+enter city with autocomplete -> choose days/interests -> AI generates route -> route appears on map with animations -> save to diary
+```
+
+The user selected a Horizontal Layers structure, so phases build the supporting layers first and then integrate them into a complete Explore experience.
 
 | # | Phase | Goal | Requirements |
 |---|-------|------|--------------|
-| 1 | Verification Foundation | Make new AI/PWA work testable and avoid planning artifacts breaking project gates | FOUND-01, FOUND-02, FOUND-03 |
-| 2 | AI Data and Streaming API | Add user-owned AI persistence and authenticated streaming server endpoint | AIDATA-01, AIDATA-02, AIDATA-03, AIAPI-01, AIAPI-02, AIAPI-03, AIAPI-04, AIAPI-05 |
-| 3 | AI Client and Map Integration | Add assistant UI and render AI route suggestions in existing Explore/map flow | AICLI-01, AICLI-02, AICLI-03, AICLI-04 |
-| 4 | PWA Shell and Offline Behavior | Add installable app shell and safe offline/read-only behavior | PWA-01, PWA-02, PWA-03, PWA-04 |
-| 5 | Hardening and Release Readiness | Verify security, ownership, observability, and deployment readiness | OBS-01, OBS-02, OBS-03 |
+| 1 | Explore Scope and Verification Foundation | Lock the Explore feature contract, preserve template intent, and make new Explore/AI work testable | FOUND-01, FOUND-02, FOUND-03, FOUND-04 |
+| 2 | Explore Inputs and Context Layer | Implement city autocomplete, days/interests, search/filter controls, current location, saved places, and diary context selection | EXPIN-01, EXPIN-02, EXPIN-03, EXPIN-04, EXPIN-05 |
+| 3 | AI Route Generation and Streaming | Add user-owned AI route conversations, streaming generation, follow-up questions, and structured route output | AIROUTE-01, AIROUTE-02, AIROUTE-03, AIROUTE-04, AIROUTE-05, AIROUTE-06 |
+| 4 | Animated Map Route Experience | Render AI route markers, route line, day groups, animations, distance information, and saved places on the map | MAP-01, MAP-02, MAP-03, MAP-04, MAP-05, MAP-06 |
+| 5 | Place Intelligence and Weather Tips | Add rich place popups with photos/reviews/ratings/cost/community signals and weather-aware route tips | PLACE-01, PLACE-02, PLACE-03, PLACE-04, PLACE-05, PLACE-06, TIPS-01, TIPS-02 |
+| 6 | Save to Diary and Release Hardening | Save generated routes/places into the diary and verify security, ownership, observability, and release readiness | DIARY-01, DIARY-02, DIARY-03, OBS-01, OBS-02, OBS-03 |
 
 ## Phase Details
 
-### Phase 1: Verification Foundation
+### Phase 1: Explore Scope and Verification Foundation
 
-**Goal:** Make the codebase safe to extend with AI/PWA behavior by establishing scoped verification and documenting or fixing blockers.
+**Goal:** Lock the Explore feature contract, preserve the current Explore template intent, update docs, and make new Explore/AI work testable before implementation.
 
-**Requirements:** FOUND-01, FOUND-02, FOUND-03
+**Requirements:** FOUND-01, FOUND-02, FOUND-03, FOUND-04
+
+**Plans:** 2 plans
+
+Plans:
+- [ ] 01-01-PLAN.md - Establish scoped verification scripts, server/data test harness, and quality baseline.
+- [ ] 01-02-PLAN.md - Lock Explore decision traceability and later-phase handoff contract.
 
 **Success Criteria:**
-1. `.planning/**` and `.omx/**` do not appear in project lint errors.
-2. A focused test runner or test command exists for new server/data code.
-3. Current lint/typecheck failures that affect AI/PWA work are listed with owners or resolved.
-4. New AI/PWA code has a clear verification command before implementation proceeds.
+1. PROJECT, REQUIREMENTS, ROADMAP, research docs, and phase context capture the full Explore feature list.
+2. `components/explore/`, `pages/explore.vue`, and `composables/useRouteGenerator.ts` are documented as template/prototype assets to preserve conceptually, not exact implementation.
+3. `.planning/**`, `.omx/**`, and `AGENTS.md` do not appear in project lint errors.
+4. A focused verification path exists for new Explore/AI source work.
+5. Current lint/typecheck blockers relevant to Explore work are listed or resolved.
+
+**Canonical refs:**
+- `.planning/PROJECT.md`
+- `.planning/REQUIREMENTS.md`
+- `.planning/research/FEATURES.md`
+- `.planning/codebase/STRUCTURE.md`
+- `.planning/codebase/CONCERNS.md`
+- `components/explore/`
+- `pages/explore.vue`
+- `composables/useRouteGenerator.ts`
+
+### Phase 2: Explore Inputs and Context Layer
+
+**Goal:** Implement the non-AI input and context layer for Explore: city autocomplete, duration, interests, filters, current location, saved places, and diary context.
+
+**Requirements:** EXPIN-01, EXPIN-02, EXPIN-03, EXPIN-04, EXPIN-05
+
+**Success Criteria:**
+1. User can search for a city with autocomplete suggestions.
+2. User can choose trip days and interests before generation.
+3. User can search/filter generated or candidate places.
+4. User can include current location when browser permission/data is available.
+5. User can include saved places and prior diary logs as route context.
+
+### Phase 3: AI Route Generation and Streaming
+
+**Goal:** Add the authenticated AI route layer: conversations/messages, streaming response text, follow-up questions, saved context usage, and structured route output.
+
+**Requirements:** AIROUTE-01, AIROUTE-02, AIROUTE-03, AIROUTE-04, AIROUTE-05, AIROUTE-06
+
+**Success Criteria:**
+1. User can submit an Explore route-generation request.
+2. Server validates request body and keeps provider credentials server-only.
+3. Assistant response text streams to the client.
+4. User can ask follow-up questions in the same conversation.
+5. Server can include saved locations/logs as bounded context.
+6. AI output includes structured route points that Phase 4 can render.
+
+### Phase 4: Animated Map Route Experience
+
+**Goal:** Turn structured AI route output into an animated map experience with route markers, lines, days, saved places, and distances.
+
+**Requirements:** MAP-01, MAP-02, MAP-03, MAP-04, MAP-05, MAP-06
+
+**Success Criteria:**
+1. Generated route places appear as map markers.
+2. Route line connects generated places in the planned order.
+3. Day-by-day route grouping is visible and selectable.
+4. Map animates when the route appears and when a user selects a place/day.
+5. Distance information appears for route legs or selected places.
+6. Saved places can be displayed alongside generated places without confusion.
+
+### Phase 5: Place Intelligence and Weather Tips
+
+**Goal:** Enrich place popups and route guidance with photos, reviews, ratings, costs, community visit signals, and weather-aware preparation tips.
+
+**Requirements:** PLACE-01, PLACE-02, PLACE-03, PLACE-04, PLACE-05, PLACE-06, TIPS-01, TIPS-02
+
+**Success Criteria:**
+1. Clicking a place opens a popup with name, description/info, and useful actions.
+2. Popup shows place photos when available.
+3. Popup shows reviews and rating when provider/app data is available.
+4. Popup shows estimated cost when available.
+5. Popup shows how many WanderLog users visited the place when app data exists.
+6. Popup shows best-effort "users likely/currently there" app signal only when data supports it.
+7. Route tips correlate weather with what the user should take.
 
 **Notes:**
-- Current `pnpm lint` and `pnpm typecheck` fail on existing unrelated source issues.
-- Start with minimal test infrastructure rather than broad refactor.
+- Interactive audio history/storytelling is tracked as v2 unless pulled forward later.
+- Community presence must not be fabricated.
 
-### Phase 2: AI Data and Streaming API
+### Phase 6: Save to Diary and Release Hardening
 
-**Goal:** Add the authenticated server-side AI layer: database schema, query functions, request validation, provider call, streaming response, persistence, and safe errors.
+**Goal:** Complete the Explore loop by saving generated routes/places into the diary and hardening security, ownership, observability, and release checks.
 
-**Requirements:** AIDATA-01, AIDATA-02, AIDATA-03, AIAPI-01, AIAPI-02, AIAPI-03, AIAPI-04, AIAPI-05
-
-**Success Criteria:**
-1. Drizzle schema and migrations define user-owned conversations and messages.
-2. Query functions enforce `userId` ownership for every conversation/message access.
-3. `server/api/ai/chat.post.ts` accepts a validated authenticated prompt request.
-4. The endpoint streams assistant response chunks to the client.
-5. The final assistant response is persisted after successful completion.
-6. Provider errors are sanitized and observable without leaking secrets or prompt bodies.
-
-**Notes:**
-- Prefer native `fetch` for the first OpenAI-compatible implementation unless a provider SDK is explicitly approved.
-- Keep provider credentials server-only in `lib/env.ts`.
-
-### Phase 3: AI Client and Map Integration
-
-**Goal:** Add the user-facing assistant experience and connect structured route suggestions to the existing Explore/map UI.
-
-**Requirements:** AICLI-01, AICLI-02, AICLI-03, AICLI-04
+**Requirements:** DIARY-01, DIARY-02, DIARY-03, OBS-01, OBS-02, OBS-03
 
 **Success Criteria:**
-1. User can open an assistant panel from Explore or dashboard.
-2. UI displays idle, loading, streaming, complete, retry, and error states.
-3. Streamed response text appears incrementally.
-4. Structured route suggestions can be converted into map route points.
-5. Generated route points render on the existing map route UI without breaking current mocked routes.
-
-**Notes:**
-- `composables/useRouteGenerator.ts` is currently mock data; preserve the prototype until the API-backed route path replaces it intentionally.
-
-### Phase 4: PWA Shell and Offline Behavior
-
-**Goal:** Add the real PWA layer described in the architecture diagrams without unsafe caching of authenticated mutations or AI streams.
-
-**Requirements:** PWA-01, PWA-02, PWA-03, PWA-04
-
-**Success Criteria:**
-1. App has installable manifest metadata.
-2. Static app shell and critical assets are cached after first successful visit.
-3. Offline users see clear read-only/offline states.
-4. Service worker does not cache AI streaming responses or authenticated mutation requests.
-5. PWA behavior is manually verified in browser.
-
-**Notes:**
-- Push notifications remain v2.
-- Add service worker behavior after online AI path is stable.
-
-### Phase 5: Hardening and Release Readiness
-
-**Goal:** Verify the AI/PWA MVP is safe, observable, and ready for deployment review.
-
-**Requirements:** OBS-01, OBS-02, OBS-03
-
-**Success Criteria:**
-1. AI endpoint failures are visible in Sentry or sanitized server logs.
-2. No AI provider credentials are exposed to browser runtime config.
-3. Cross-user conversation/message access is covered by tests.
-4. Secret scan of planning and source changes passes.
-5. Release checklist covers lint, typecheck, tests, build, and manual PWA/browser verification.
+1. User can save a generated route to the diary.
+2. User can save selected places into existing location/location-log structures where appropriate.
+3. Saved records remain scoped to the authenticated user.
+4. AI, weather, review, and place-data failures are observable through sanitized logs or Sentry.
+5. Provider credentials are not exposed to browser runtime config.
+6. Cross-user data access is covered by tests or explicit verification.
+7. Release checklist covers lint, typecheck, tests, build, and manual Explore map/browser verification.
 
 ## Requirement Coverage
 
 | Phase | Requirement Count |
 |-------|-------------------|
-| Phase 1 | 3 |
-| Phase 2 | 8 |
-| Phase 3 | 4 |
-| Phase 4 | 4 |
-| Phase 5 | 3 |
+| Phase 1 | 4 |
+| Phase 2 | 5 |
+| Phase 3 | 6 |
+| Phase 4 | 6 |
+| Phase 5 | 8 |
+| Phase 6 | 6 |
 
-All 22 v1 requirements are mapped to exactly one phase.
+All 35 v1 requirements are mapped to exactly one phase.
 
 ---
 
 *Roadmap created: 2026-05-08*
+*Last updated: 2026-05-08 after Explore scope update*
