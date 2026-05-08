@@ -10,7 +10,10 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "lint": "eslint .",
+    "lint:source": "eslint . --no-warn-ignored",
     "lint:fix": "eslint . --fix",
+    "test:server": "node scripts/run-node-tests.mjs tests/server",
+    "verify:explore-foundation": "npm run lint:source && npm run test:server",
     "prepare": "husky",
     "typecheck": "nuxt typecheck",
     "dev:db": "turso dev --db-file local.db"

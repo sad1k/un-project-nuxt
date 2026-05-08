@@ -25,6 +25,18 @@
 
 ## v1 AI/PWA Feature Categories
 
+### Explore Route Builder
+
+Table stakes:
+- User enters a city with autocomplete/typeahead.
+- User chooses number of days and interests.
+- User can search and filter places.
+- User can include current location, saved places, and prior diary logs.
+
+Differentiators:
+- City/interests inputs directly shape AI prompt context.
+- Explore template is upgraded rather than discarded wholesale.
+
 ### AI Conversation
 
 Table stakes:
@@ -55,6 +67,7 @@ Table stakes:
 - Chat or assistant panel is available from Explore or dashboard.
 - Streaming state is visible.
 - User can cancel or retry a request.
+- User can ask follow-up questions after a generated route.
 
 Differentiators:
 - Route points are drawn live on the existing Mapbox/MapLibre map.
@@ -71,6 +84,17 @@ Differentiators:
 - Recent travel logs/images metadata are available offline.
 - Push notifications are supported.
 
+### Place Intelligence
+
+Table stakes:
+- Place popup shows useful info, photos, reviews/ratings when available, estimated cost, and distance.
+- Place popup can show WanderLog app-community visit counts when available.
+- Route tips correlate weather with what the user should take.
+
+Differentiators:
+- Best-effort current-time community presence for a place.
+- Interactive audio/history storytelling about a place.
+
 ### Quality and Safety
 
 Table stakes:
@@ -85,11 +109,16 @@ Differentiators:
 ## Feature Boundaries For v1
 
 Include in v1:
+- City autocomplete, trip days, interests, search, and filters.
 - Authenticated AI chat endpoint.
 - Streaming AI response path.
 - Conversation/message persistence.
 - Basic client assistant UI.
 - Route suggestion integration with the existing Explore/map prototype.
+- Animated route markers, route line, day-by-day route grouping, saved places, and distances.
+- Place popups with photos/reviews/ratings/costs when available.
+- Weather-aware route tips.
+- Save generated route or selected places into the diary.
 - PWA install/offline app-shell support.
 - Tests for new AI data/API behavior.
 
@@ -99,6 +128,7 @@ Defer to v2:
 - Multi-provider AI model configuration UI.
 - Admin moderation for AI content.
 - Full offline editing/sync conflict resolution.
+- Full narrated/audio history production pipeline for places.
 
 ## Sources
 

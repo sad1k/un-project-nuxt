@@ -36,8 +36,8 @@ The user selected a Horizontal Layers structure, so phases build the supporting 
 **Plans:** 2 plans
 
 Plans:
-- [ ] 01-01-PLAN.md - Establish scoped verification scripts, server/data test harness, and quality baseline.
-- [ ] 01-02-PLAN.md - Lock Explore decision traceability and later-phase handoff contract.
+- [x] 01-01-PLAN.md - Establish scoped verification scripts, server/data test harness, and quality baseline.
+- [x] 01-02-PLAN.md - Lock Explore decision traceability and later-phase handoff contract.
 
 **Success Criteria:**
 1. PROJECT, REQUIREMENTS, ROADMAP, research docs, and phase context capture the full Explore feature list.

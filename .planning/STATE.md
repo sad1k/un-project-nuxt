@@ -2,15 +2,15 @@
 
 **Initialized:** 2026-05-08
 **Updated:** 2026-05-08
-**Current phase:** Phase 1 - Explore Scope and Verification Foundation
-**Status:** Ready to execute
+**Current phase:** Phase 2 - Explore Inputs and Context Layer
+**Status:** Phase 1 complete; ready to discuss or plan Phase 2
 
 ## Project Reference
 
 See: `.planning/PROJECT.md` (updated 2026-05-08)
 
 **Core value:** Users can turn their own travel context and preferences into an animated, explainable AI route that they can inspect on the map and save into their travel diary.
-**Current focus:** Lock Explore feature scope and verification foundation before implementing the fully working Explore page.
+**Current focus:** Begin Explore input/context work: city autocomplete, days/interests, search/filter controls, current location, saved places, and diary context.
 
 ## Workflow Preferences
 
@@ -25,11 +25,11 @@ See: `.planning/PROJECT.md` (updated 2026-05-08)
 
 ## Latest Session
 
-- Stopped at: Phase 1 planned for execution.
-- Resume file: `.planning/phases/01-explore-scope-and-verification-foundation/01-CONTEXT.md`
-- Plans ready:
-  - `.planning/phases/01-explore-scope-and-verification-foundation/01-01-PLAN.md`
-  - `.planning/phases/01-explore-scope-and-verification-foundation/01-02-PLAN.md`
+- Stopped at: Phase 1 executed and verified.
+- Verification file: `.planning/phases/01-explore-scope-and-verification-foundation/01-VERIFICATION.md`
+- Completed plans:
+  - `.planning/phases/01-explore-scope-and-verification-foundation/01-01-SUMMARY.md`
+  - `.planning/phases/01-explore-scope-and-verification-foundation/01-02-SUMMARY.md`
 
 ## Artifact Index
 
@@ -44,8 +44,8 @@ See: `.planning/PROJECT.md` (updated 2026-05-08)
 
 ## Next Step
 
-Run `$gsd-execute-phase 1` to execute the Explore scope/verification foundation plans.
+Run `$gsd-discuss-phase 2` to gather context for Explore inputs, or `$gsd-plan-phase 2` to plan directly from the roadmap.
 
 ---
 
-*State updated: 2026-05-08 after Phase 1 planning*
+*State updated: 2026-05-08 after Phase 1 execution*
