@@ -31,11 +31,15 @@ const ExploreInterestSchema = z.enum([
 
 const SelectedExploreCitySchema = z.object({
   id: z.string().min(1),
+  provider: z.enum(["mapbox", "nominatim"]),
+  providerId: z.string().min(1),
+  label: z.string().min(1),
   name: z.string().min(1),
-  provider: z.string().min(1),
-  providerId: z.string().optional(),
-  coordinates: ExploreCoordinatesSchema.optional(),
-}).passthrough();
+  description: z.string().optional(),
+  coordinates: ExploreCoordinatesSchema,
+  bbox: z.tuple([z.number(), z.number(), z.number(), z.number()]).optional(),
+  source: z.enum(["provider", "fallback"]).optional(),
+});
 
 const ExploreCandidatePlaceSchema = z.object({
   id: z.string().min(1),
