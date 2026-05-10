@@ -227,3 +227,17 @@ External Systems
 ---
 
 *Architecture analysis: 2026-05-08*
+
+## Phase 3 Update - AI Route Architecture
+
+AI route generation is now an authenticated route-event pipeline:
+
+1. `components/explore/route-panel.vue` submits `useExploreContext().requestContext` through `useAiRouteSession().generateRoute`.
+2. `server/api/ai/route.post.ts` authenticates with `defineAuthenticatedHandler` and validates the request with `RouteGenerationRequestSchema`.
+3. `lib/ai/route-context.ts` re-reads selected saved places and diary logs by authenticated `userId`, then caps/truncates provider-bound context.
+4. `lib/ai/openai-compatible.ts` streams OpenAI-compatible Responses API chunks using server-only env config.
+5. The endpoint validates app route events with `RouteEventEnvelopeSchema` before persisting or emitting them.
+6. `lib/db/queries/ai-route.ts` persists user-owned sessions, variants, route points, and event logs.
+7. The client stores points by `variantId`, supports `activeVariantId` switching, and keeps follow-up refinement secondary to the map-first route state.
+
+Phase 4 should use `.planning/phases/03-ai-route-generation-and-streaming/03-HANDOFF.md` as the map-rendering contract.

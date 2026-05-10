@@ -24,12 +24,12 @@ Requirements for the fully working Explore page and AI route planning MVP. Exist
 
 ### AI Route Generation
 
-- [ ] **AIROUTE-01**: User can request an AI-generated route from Explore.
-- [ ] **AIROUTE-02**: User receives streamed assistant text while route generation is in progress.
-- [ ] **AIROUTE-03**: AI can use the user's saved locations and logs as context.
-- [ ] **AIROUTE-04**: User can ask follow-up questions to refine the route.
-- [ ] **AIROUTE-05**: Server persists route conversations/messages and scopes them to the authenticated user.
-- [ ] **AIROUTE-06**: AI response includes structured route data suitable for map rendering.
+- [x] **AIROUTE-01**: User can request an AI-generated route from Explore.
+- [x] **AIROUTE-02**: User receives streamed assistant text while route generation is in progress.
+- [x] **AIROUTE-03**: AI can use the user's saved locations and logs as context.
+- [x] **AIROUTE-04**: User can ask follow-up questions to refine the route.
+- [x] **AIROUTE-05**: Server persists route conversations/messages and scopes them to the authenticated user.
+- [x] **AIROUTE-06**: AI response includes structured route data suitable for map rendering.
 
 ### Map Route Experience
 
@@ -120,12 +120,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | EXPIN-03 | Phase 2 | Pending |
 | EXPIN-04 | Phase 2 | Pending |
 | EXPIN-05 | Phase 2 | Pending |
-| AIROUTE-01 | Phase 3 | Pending |
-| AIROUTE-02 | Phase 3 | Pending |
-| AIROUTE-03 | Phase 3 | Pending |
-| AIROUTE-04 | Phase 3 | Pending |
-| AIROUTE-05 | Phase 3 | Pending |
-| AIROUTE-06 | Phase 3 | Pending |
+| AIROUTE-01 | Phase 3 | Complete |
+| AIROUTE-02 | Phase 3 | Complete |
+| AIROUTE-03 | Phase 3 | Complete |
+| AIROUTE-04 | Phase 3 | Complete |
+| AIROUTE-05 | Phase 3 | Complete |
+| AIROUTE-06 | Phase 3 | Complete |
 | MAP-01 | Phase 4 | Pending |
 | MAP-02 | Phase 4 | Pending |
 | MAP-03 | Phase 4 | Pending |

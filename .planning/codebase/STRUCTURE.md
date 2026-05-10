@@ -184,3 +184,19 @@ un-project-nuxt/
 ---
 
 *Structure analysis: 2026-05-08*
+
+## Phase 3 Update - AI Route Generation
+
+New Phase 3 source locations:
+
+- `lib/ai/route-contract.ts` - Zod contract for route requests, route points, and app route events.
+- `lib/ai/openai-compatible.ts` - Server-only OpenAI-compatible Responses API streaming adapter.
+- `lib/ai/route-context.ts` - Selected Explore context summarizer for provider input.
+- `lib/ai/route-prompts.ts` - Route-generation prompt instructions and input assembly.
+- `server/api/ai/route.post.ts` - Authenticated route-generation SSE endpoint.
+- `lib/db/schema/ai-route.ts` - AI route sessions, messages, variants, points, and event log tables.
+- `lib/db/queries/ai-route.ts` - Ownership-safe route persistence and history helpers.
+- `composables/use-ai-route-session.ts` - Client route stream state, variants, and follow-up submission.
+- `components/explore/route-history.vue` - Generated route variant switcher.
+- `components/explore/route-follow-up.vue` - Follow-up refinement input.
+- `tests/server/ai-route-*.test.mjs` - Source-level AI route regression tests.

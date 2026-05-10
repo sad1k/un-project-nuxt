@@ -126,3 +126,26 @@ No committed test directory or colocated test pattern exists.
 ---
 
 *Testing analysis: 2026-05-08*
+
+## Phase 3 Update - Node Source Tests
+
+Current source-level tests use Node's built-in `node:test` runner through `scripts/run-node-tests.mjs`.
+
+Run commands:
+
+```bash
+pnpm test:server
+pnpm verify:explore-foundation
+```
+
+Current test files:
+
+- `tests/server/explore-context.test.mjs`
+- `tests/server/explore-search.test.mjs`
+- `tests/server/ai-route-contract.test.mjs`
+- `tests/server/ai-route-persistence.test.mjs`
+- `tests/server/ai-route-stream.test.mjs`
+- `tests/server/ai-route-context.test.mjs`
+- `tests/server/ai-route-client.test.mjs`
+
+`pnpm typecheck` remains available but currently fails on pre-existing unrelated project errors outside Phase 3.

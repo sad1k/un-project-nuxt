@@ -109,3 +109,16 @@
 ---
 
 *Integration audit: 2026-05-08*
+
+## Phase 3 Update - AI Route Provider
+
+OpenAI-compatible route generation is now implemented for Explore.
+
+- Endpoint: `server/api/ai/route.post.ts`.
+- Provider adapter: `lib/ai/openai-compatible.ts`, using native `fetch` against `/responses`.
+- Server-only env names: optional-at-boot `OPENAI_API_KEY`, optional `OPENAI_BASE_URL`, defaulted `OPENAI_ROUTE_MODEL`.
+- Contract: `lib/ai/route-contract.ts` validates route events and points before persistence/emission.
+- Prompt/context: `lib/ai/route-prompts.ts` and `lib/ai/route-context.ts` keep raw JSON internal and use only selected sidebar context.
+- Client: `composables/use-ai-route-session.ts`, `components/explore/route-history.vue`, and `components/explore/route-follow-up.vue`.
+- No OpenAI/Anthropic SDK dependency is used.
+- Remote Turso schema push is blocked by HTTP 401 as of Phase 3 verification; local Drizzle push against `file:local.db` succeeded.
