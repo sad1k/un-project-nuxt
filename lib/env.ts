@@ -2,6 +2,13 @@ import { z } from "zod";
 
 import tryParseEnv from "./try-parse-env";
 
+const EnvBooleanSchema = z.preprocess((value) => {
+  if (value === undefined || value === "")
+    return false;
+
+  return value === "true" || value === "1" || value === true;
+}, z.boolean());
+
 const EnvSchema = z.object({
   NODE_ENV: z.string(),
   TURSO_DATABASE_URL: z.string(),
@@ -24,6 +31,7 @@ const EnvSchema = z.object({
   OPENAI_API_KEY: z.string().optional(),
   OPENAI_BASE_URL: z.string().url().optional(),
   OPENAI_ROUTE_MODEL: z.string().default("gpt-5.1"),
+  AI_ROUTE_MOCK_ENABLED: EnvBooleanSchema,
 });
 
 export type EnvSchema = z.infer<typeof EnvSchema>;

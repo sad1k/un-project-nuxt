@@ -1,3 +1,4 @@
+import { createMockAiRouteEventStream } from "~/lib/ai/mock-route-stream";
 import { fetchOpenAiCompatibleRouteStream, sanitizeProviderError } from "~/lib/ai/openai-compatible";
 import { buildSelectedRouteContext } from "~/lib/ai/route-context";
 import { createRouteWarningEvent, isRoutePointEvent, RouteEventEnvelopeSchema, RouteGenerationRequestSchema } from "~/lib/ai/route-contract";
@@ -12,6 +13,7 @@ import {
   persistAiRouteEvent,
   persistAiRoutePoint,
 } from "~/lib/db/queries/ai-route";
+import env from "~/lib/env";
 import defineAuthenticatedHandler from "~/utils/define-authenticated-handler";
 
 export default defineAuthenticatedHandler(async (event) => {
@@ -119,36 +121,51 @@ export default defineAuthenticatedHandler(async (event) => {
           parentVariantId: body.activeVariantId,
         });
 
-        const providerStream = fetchOpenAiCompatibleRouteStream({
-          instructions: ROUTE_SYSTEM_INSTRUCTIONS,
-          input: buildRouteGenerationInput(body, selectedContext),
-        });
+        if (env.AI_ROUTE_MOCK_ENABLED) {
+          const mockStream = createMockAiRouteEventStream({
+            request: body,
+            sessionId: session.id,
+            variantId: variant.id,
+            startSequence: sequence,
+          });
 
-        for await (const providerEvent of providerStream) {
-          textBuffer += extractProviderTextDelta(providerEvent);
-          const [lines, rest] = splitReadyJsonLines(textBuffer);
-          textBuffer = rest;
+          for await (const routeEvent of mockStream) {
+            sequence = routeEvent.sequence + 1;
+            await emit(routeEvent);
+          }
+        }
+        else {
+          const providerStream = fetchOpenAiCompatibleRouteStream({
+            instructions: ROUTE_SYSTEM_INSTRUCTIONS,
+            input: buildRouteGenerationInput(body, selectedContext),
+          });
 
-          for (const line of lines) {
-            const candidate = parseJsonLine(line);
-            if (!candidate)
-              continue;
+          for await (const providerEvent of providerStream) {
+            textBuffer += extractProviderTextDelta(providerEvent);
+            const [lines, rest] = splitReadyJsonLines(textBuffer);
+            textBuffer = rest;
 
-            await emit(enrichRouteEvent(candidate, {
+            for (const line of lines) {
+              const candidate = parseJsonLine(line);
+              if (!candidate)
+                continue;
+
+              await emit(enrichRouteEvent(candidate, {
+                sessionId: session.id,
+                variantId: variant.id,
+                sequence: sequence++,
+              }));
+            }
+          }
+
+          const finalCandidate = parseJsonLine(textBuffer);
+          if (finalCandidate) {
+            await emit(enrichRouteEvent(finalCandidate, {
               sessionId: session.id,
               variantId: variant.id,
               sequence: sequence++,
             }));
           }
-        }
-
-        const finalCandidate = parseJsonLine(textBuffer);
-        if (finalCandidate) {
-          await emit(enrichRouteEvent(finalCandidate, {
-            sessionId: session.id,
-            variantId: variant.id,
-            sequence: sequence++,
-          }));
         }
 
         if (!completed) {
