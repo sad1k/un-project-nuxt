@@ -103,6 +103,13 @@ Plans:
 
 **Requirements:** PLACE-01, PLACE-02, PLACE-03, PLACE-04, PLACE-05, PLACE-06, TIPS-01, TIPS-02
 
+**Plans:** 3 plans
+
+Plans:
+- [ ] 05-01-PLAN.md - Create the server-side place intelligence contract and endpoint for rich generated-route popups.
+- [ ] 05-02-PLAN.md - Render photo-first rich place popups for generated route markers.
+- [ ] 05-03-PLAN.md - Add weather-aware route preparation tips to the Explore route sidebar.
+
 **Success Criteria:**
 1. Clicking a place opens a popup with name, description/info, and useful actions.
 2. Popup shows place photos when available.
