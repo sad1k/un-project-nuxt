@@ -19,6 +19,11 @@ const EnvSchema = z.object({
   S3_BUCKET: z.string(),
   S3_BUCKET_URL: z.string(),
   SENTRY_DSN: z.string(),
+  MAPBOX_TOKEN: z.string(),
+  YANDEX_MAPS_API_KEY: z.string(),
+  OPENAI_API_KEY: z.string().optional(),
+  OPENAI_BASE_URL: z.string().url().optional(),
+  OPENAI_ROUTE_MODEL: z.string().default("gpt-5.1"),
 });
 
 export type EnvSchema = z.infer<typeof EnvSchema>;
