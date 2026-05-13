@@ -6,6 +6,7 @@
       </NuxtLink>
     </div>
     <div class="navbar-end">
+      <AppRouteGenerationIndicator />
       <AppThemeToggle />
       <div class="ml-2">
         <AuthButton />

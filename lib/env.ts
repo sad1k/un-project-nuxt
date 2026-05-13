@@ -6,7 +6,12 @@ const EnvBooleanSchema = z.preprocess((value) => {
   if (value === undefined || value === "")
     return false;
 
-  return value === "true" || value === "1" || value === true;
+  if (typeof value === "string") {
+    const normalized = value.trim().replace(/^["']|["']$/g, "").toLowerCase();
+    return normalized === "true" || normalized === "1";
+  }
+
+  return value === true;
 }, z.boolean());
 
 const EnvSchema = z.object({
@@ -28,10 +33,19 @@ const EnvSchema = z.object({
   SENTRY_DSN: z.string(),
   MAPBOX_TOKEN: z.string(),
   YANDEX_MAPS_API_KEY: z.string(),
+  GOOGLE_PLACES_API_KEY: z.string().optional(),
+  AI_ROUTE_PROVIDER: z.enum(["openai_compatible", "cerebras", "mistral", "openrouter"]).default("openai_compatible"),
   OPENAI_API_KEY: z.string().optional(),
   OPENAI_BASE_URL: z.string().url().optional(),
+  OPENAI_ROUTE_API: z.enum(["responses", "chat_completions"]).default("responses"),
   OPENAI_ROUTE_MODEL: z.string().default("gpt-5.1"),
+  CEREBRAS_API_KEY: z.string().optional(),
+  MISTRAL_API_KEY: z.string().optional(),
+  MISTRAL_ROUTE_MODEL: z.string().optional(),
+  OPENROUTER_API_KEY: z.string().optional(),
+  OPENROUTER_ROUTE_MODEL: z.string().optional(),
   AI_ROUTE_MOCK_ENABLED: EnvBooleanSchema,
+  ROUTE_NOTIFICATION_VAPID_PUBLIC_KEY: z.string().optional(),
 });
 
 export type EnvSchema = z.infer<typeof EnvSchema>;

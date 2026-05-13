@@ -19,17 +19,19 @@ export default defineNuxtConfig({
     "nuxt-maplibre",
     "@sentry/nuxt/module",
     "nuxt-easy-lightbox",
+    "vue-yandex-maps/nuxt",
   ],
 
   routeRules: {
     "/dashboard": { ssr: false },
+    "/explore": { ssr: false },
   },
 
   build: {
     transpile: ["nuxt-maplibre"], // <------
   },
 
-  css: ["~/assets/css/main.css"],
+  css: ["~/assets/css/main.css", "mapbox-gl/dist/mapbox-gl.css"],
 
   eslint: {
     config: {
@@ -41,7 +43,15 @@ export default defineNuxtConfig({
     public: {
       s3BucketUrl: env.S3_BUCKET_URL,
       sentryDsn: env.SENTRY_DSN,
+      mapboxToken: env.MAPBOX_TOKEN,
+      routeNotificationVapidPublicKey: env.ROUTE_NOTIFICATION_VAPID_PUBLIC_KEY,
     },
+  },
+
+  yandexMaps: {
+    apikey: env.YANDEX_MAPS_API_KEY,
+    lang: "ru_RU",
+    initializeOn: "onPluginInit",
   },
 
   vite: {
@@ -56,7 +66,10 @@ export default defineNuxtConfig({
     },
     server: {
       watch: {
-        ignored: ["./docker-data/**"],
+        ignored: [
+          "./docker-data/**",
+          "**/local.db*",
+        ],
       },
     },
   },
@@ -78,6 +91,6 @@ export default defineNuxtConfig({
   },
 
   devServer: {
-    port: 3000,
+    port: 3001,
   },
 });

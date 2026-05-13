@@ -1,6 +1,7 @@
-import type { LngLatBounds } from "maplibre-gl";
-
+import type { MapAdapter, MapBounds } from "~/lib/map";
 import type { MapPoint } from "~/lib/types";
+
+import { defaultMapAdapterFactory } from "~/lib/map";
 
 export const useMapStore = defineStore("useMapStore", () => {
   const mapPoints = ref<MapPoint[]>([]);
@@ -11,26 +12,30 @@ export const useMapStore = defineStore("useMapStore", () => {
 
   const flyToPoint = ref<MapPoint | null>(null);
 
-  async function init() {
-    const { useMap } = await import("@indoorequal/vue-maplibre-gl");
-    const { LngLatBounds } = await import("maplibre-gl");
+  // Store the adapter instance
+  const adapter = ref<MapAdapter | null>(null);
 
-    let bounds: LngLatBounds | null = null;
-    const map = useMap();
+  async function init(customAdapterFactory = defaultMapAdapterFactory) {
+    adapter.value = await customAdapterFactory();
+
+    let bounds: MapBounds | null = null;
 
     effect(() => {
       const firstPoint = mapPoints.value[0];
-      if (!firstPoint)
+      if (!firstPoint || !adapter.value)
         return;
-      bounds = mapPoints.value.reduce((bounds, point) => {
-        return bounds.extend([point.long, point.lat]);
-      }, new LngLatBounds([firstPoint.long, firstPoint.lat], [firstPoint.long, firstPoint.lat]));
-      map.map?.fitBounds(bounds, { padding: 60 });
+      bounds = mapPoints.value.reduce((currentBounds, point) => {
+        return currentBounds.extend([point.long, point.lat]);
+      }, adapter.value.createBounds(
+        [firstPoint.long, firstPoint.lat],
+        [firstPoint.long, firstPoint.lat],
+      ));
+      adapter.value.fitBounds(bounds, { padding: 60 });
     });
 
     watch(addedPoint, (newValue, oldValue) => {
-      if (newValue && !oldValue) {
-        map.map?.flyTo({
+      if (newValue && !oldValue && adapter.value) {
+        adapter.value.flyTo({
           center: [newValue.long, newValue.lat],
           zoom: 6,
           speed: 40,
@@ -39,16 +44,16 @@ export const useMapStore = defineStore("useMapStore", () => {
     });
 
     watch(flyToPoint, (newValue, oldValue) => {
-      if (newValue) {
+      if (newValue && adapter.value) {
         console.log("flying to point", newValue);
-        map.map?.flyTo({
+        adapter.value.flyTo({
           center: [newValue.long, newValue.lat],
           zoom: 13,
           speed: 2,
         });
       }
-      else if (!newValue && oldValue && bounds) {
-        map.map?.fitBounds(bounds, { padding: 60 });
+      else if (!newValue && oldValue && bounds && adapter.value) {
+        adapter.value.fitBounds(bounds, { padding: 60 });
       }
     });
   }
@@ -59,5 +64,6 @@ export const useMapStore = defineStore("useMapStore", () => {
     selectedPoint,
     addedPoint,
     flyToPoint,
+    adapter,
   };
 });

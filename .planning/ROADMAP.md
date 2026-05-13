@@ -23,6 +23,7 @@ The user selected a Horizontal Layers structure, so phases build the supporting 
 | 3 | AI Route Generation and Streaming | Add user-owned AI route conversations, streaming generation, follow-up questions, and structured route output | AIROUTE-01, AIROUTE-02, AIROUTE-03, AIROUTE-04, AIROUTE-05, AIROUTE-06 |
 | 4 | Animated Map Route Experience | Render AI route markers, route line, day groups, animations, distance information, and saved places on the map | MAP-01, MAP-02, MAP-03, MAP-04, MAP-05, MAP-06 |
 | 5 | Place Intelligence and Weather Tips | Add rich place popups with photos/reviews/ratings/cost/community signals and weather-aware route tips | PLACE-01, PLACE-02, PLACE-03, PLACE-04, PLACE-05, PLACE-06, TIPS-01, TIPS-02 |
+| 5.1 | Route Generation Continuity and Completion Notifications | Keep route generation durable when users leave Explore, show global progress, restore completed output, and notify on completion | GENLIFE-01, GENLIFE-02, GENLIFE-03, GENLIFE-04, GENLIFE-05, GENLIFE-06 |
 | 6 | Save to Diary and Release Hardening | Save generated routes/places into the diary and verify security, ownership, observability, and release readiness | DIARY-01, DIARY-02, DIARY-03, OBS-01, OBS-02, OBS-03 |
 
 ## Phase Details
@@ -123,6 +124,33 @@ Plans:
 - Interactive audio history/storytelling is tracked as v2 unless pulled forward later.
 - Community presence must not be fabricated.
 
+### Phase 5.1: Route Generation Continuity and Completion Notifications
+
+**Goal:** Decouple route generation from the active Explore page connection so users can leave Explore while a route is generating, see generation progress elsewhere in the app, recover the completed/failed result later, and receive a completion notification when available.
+
+**Requirements:** GENLIFE-01, GENLIFE-02, GENLIFE-03, GENLIFE-04, GENLIFE-05, GENLIFE-06
+
+**Plans:** 4 plans
+
+Plans:
+- [ ] 05.1-01-PLAN.md - Decouple AI route generation from the active Explore streaming connection.
+- [ ] 05.1-02-PLAN.md - Expose active route-generation progress and recoverable route-session history in the interface.
+- [ ] 05.1-03-PLAN.md - Add completion notifications with reliable in-app delivery and gated browser-push groundwork.
+- [ ] 05.1-04-PLAN.md - Harden stale-job handling, observability, and end-to-end continuity verification.
+
+**Success Criteria:**
+1. Route generation continues server-side after the Explore page is left, refreshed, or temporarily disconnected.
+2. A global app surface shows active route-generation status/progress and links back to the relevant route session.
+3. Completed and failed background generations are persisted in user-owned route history and recoverable from the interface.
+4. Users receive an in-app completion notification when still in the app.
+5. Browser push notification is sent only when service worker support, permission, and a saved subscription are present; otherwise the feature degrades to visible in-app status.
+6. Background generation, progress polling/stream replay, notification delivery, and history reads remain scoped to the authenticated user and use sanitized observability.
+
+**Notes:**
+- This phase is an urgent insertion discovered during live AI route testing.
+- Current route persistence exists, but the streaming request is still coupled to the client connection; this phase owns the durable job boundary.
+- General feed/travel notification preferences remain v2 unless this phase needs a narrow route-generation preference.
+
 ### Phase 6: Save to Diary and Release Hardening
 
 **Goal:** Complete the Explore loop by saving generated routes/places into the diary and hardening security, ownership, observability, and release checks.
@@ -147,9 +175,10 @@ Plans:
 | Phase 3 | 6 |
 | Phase 4 | 6 |
 | Phase 5 | 8 |
+| Phase 5.1 | 6 |
 | Phase 6 | 6 |
 
-All 35 v1 requirements are mapped to exactly one phase.
+All 41 v1 requirements are mapped to exactly one phase.
 
 ---
 

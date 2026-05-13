@@ -15,6 +15,12 @@ test("client route session composable consumes the app route stream", () => {
   assert.match(sessionSource, /generateRoute/);
   assert.match(sessionSource, /submitFollowUp/);
   assert.match(sessionSource, /setActiveVariant/);
+  assert.match(sessionSource, /restoreRouteSession/);
+  assert.match(sessionSource, /useCsrf/);
+  assert.match(sessionSource, /csrf-token/);
+  assert.match(sessionSource, /sessionStorage/);
+  assert.match(sessionSource, /Route stream response rejected/);
+  assert.match(sessionSource, /Previous page unload happened during route generation/);
   assert.doesNotMatch(sessionSource, /OPENAI_API_KEY/);
   assert.doesNotMatch(sessionSource, /OPENAI_ROUTE_MODEL/);
 });
@@ -24,6 +30,8 @@ test("Explore primary route generation uses AI route session state", () => {
   assert.match(routePanelSource, /generateRoute\(requestContext\.value\)/);
   assert.match(pageSource, /useAiRouteSession/);
   assert.match(pageSource, /activePoints/);
+  assert.match(pageSource, /restoreRouteSession/);
+  assert.match(pageSource, /onMounted/);
 });
 
 test("route history and follow-up expose variant switching and refinements", () => {

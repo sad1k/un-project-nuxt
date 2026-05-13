@@ -33,7 +33,7 @@ const authStore = useAuthStore();
     class="btn bg-brand-gold text-brand-dark border-none hover:bg-white"
     @click="authStore.signIn"
   >
-    Войти через Github
+    Войти
     <span v-if="authStore.loading" class="loading loading-spinner loading-md" />
     <Icon
       v-else

@@ -50,6 +50,12 @@ export const aiRouteVariant = sqliteTable("aiRouteVariant", {
   title: text(),
   summary: text(),
   failureCode: text(),
+  generationStartedAt: int(),
+  generationHeartbeatAt: int(),
+  generationCompletedAt: int(),
+  runnerId: text(),
+  notificationStatus: text().notNull().default("pending"),
+  retryCount: int().default(0),
   createdAt: int()
     .notNull()
     .$default(() => Date.now()),

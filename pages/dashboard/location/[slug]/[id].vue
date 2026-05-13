@@ -30,7 +30,7 @@ async function deleteLocationLog() {
 </script>
 
 <template>
-  <div class="page-content-top h-[600px]">
+  <div class="page-content-top h-[400px]">
     <div v-if="loading">
       <span class="loading loading-spinner loading-xl" />
     </div>

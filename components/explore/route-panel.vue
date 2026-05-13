@@ -1,8 +1,21 @@
 <script lang="ts" setup>
+import {
+  buildRouteLegs,
+  filterRoutePointsByDay,
+  getRouteDayGroups,
+  toRouteMapPoints,
+} from "~/lib/explore/route-map";
+
 const { requestContext, selectedCity } = useExploreContext();
 const aiRouteSession = useAiRouteSession();
+const routeWeatherTips = useRouteWeatherTips();
 
 const collapsed = ref(false);
+const selectedDay = useState<number | null>("explore-selected-route-day", () => null);
+const routeMapPoints = computed(() => toRouteMapPoints(aiRouteSession.activePoints.value));
+const routeDayGroups = computed(() => getRouteDayGroups(routeMapPoints.value));
+const selectedRoutePoints = computed(() => filterRoutePointsByDay(routeMapPoints.value, selectedDay.value));
+const selectedRouteLegs = computed(() => buildRouteLegs(selectedRoutePoints.value));
 const readyToGenerate = computed(() => Boolean(selectedCity.value));
 const showRouteSession = computed(() => Boolean(
   aiRouteSession.sessionId.value
@@ -10,13 +23,25 @@ const showRouteSession = computed(() => Boolean(
   || aiRouteSession.activePoints.value.length,
 ));
 const routeStats = computed(() => ({
-  estimatedHours: Math.ceil(aiRouteSession.activePoints.value.reduce(
+  estimatedHours: Math.ceil(selectedRoutePoints.value.reduce(
     (total, point) => total + (point.estimatedDurationMinutes || 90),
     0,
   ) / 60),
-  placeCount: aiRouteSession.activePoints.value.length,
-  dayCount: new Set(aiRouteSession.activePoints.value.map(point => point.day)).size,
+  placeCount: selectedRoutePoints.value.length,
+  dayCount: routeDayGroups.value.length,
 }));
+
+watch(
+  [selectedRoutePoints, () => requestContext.value.selectedDays, selectedCity],
+  ([points, selectedDays, city]) => {
+    void routeWeatherTips.loadWeatherTips({
+      points,
+      selectedDays,
+      cityLabel: city?.label,
+    });
+  },
+  { immediate: true },
+);
 
 async function generateRoute() {
   if (!selectedCity.value)
@@ -79,6 +104,12 @@ async function generateRoute() {
         <ExploreCandidatePlaces />
 
         <div class="space-y-4">
+          <ExploreRouteDaySelector
+            v-if="showRouteSession"
+            v-model="selectedDay"
+            :day-groups="routeDayGroups"
+          />
+
           <div
             v-if="showRouteSession"
             class="grid grid-cols-3 gap-2"
@@ -115,6 +146,18 @@ async function generateRoute() {
             </div>
           </div>
 
+          <ExploreRouteDistanceSummary
+            v-if="selectedRouteLegs.length"
+            :legs="selectedRouteLegs"
+          />
+
+          <ExploreRouteWeatherTips
+            v-if="showRouteSession"
+            :error="routeWeatherTips.error.value"
+            :status="routeWeatherTips.status.value"
+            :tips="routeWeatherTips.tips.value"
+          />
+
           <div
             v-if="aiRouteSession.lastWarning.value"
             class="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800"
@@ -130,7 +173,7 @@ async function generateRoute() {
           </div>
 
           <div
-            v-if="aiRouteSession.activePoints.value.length"
+            v-if="selectedRoutePoints.length"
             class="space-y-2"
           >
             <h3 class="text-sm font-semibold text-gray-900">
@@ -138,7 +181,7 @@ async function generateRoute() {
             </h3>
             <ol class="space-y-2">
               <li
-                v-for="point in aiRouteSession.activePoints.value"
+                v-for="point in selectedRoutePoints"
                 :key="point.id"
                 class="rounded-lg border border-gray-100 bg-white px-3 py-2"
               >
@@ -163,7 +206,7 @@ async function generateRoute() {
           class="flex w-full items-center justify-center gap-2 rounded-lg bg-gray-900 px-4 py-3 text-sm font-bold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
           :disabled="aiRouteSession.isGenerating.value || !readyToGenerate"
           type="button"
-          @click="generateRoute"
+          @click.prevent.stop="generateRoute"
         >
           <Icon
             v-if="aiRouteSession.isGenerating.value"

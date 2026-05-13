@@ -33,7 +33,7 @@ const mapStore = useMapStore();
           class="btn btn-sm bg-brand-emerald text-white border-none hover:bg-white hover:text-brand-dark w-full font-bold"
           @click.prevent="mapStore.flyToPoint = mapPoint"
         >
-          <span>View on Map</span>
+          <span>Перейти к месту</span>
         </button>
         <button
           v-else

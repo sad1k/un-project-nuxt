@@ -57,7 +57,7 @@ function onSelect(searchLocation: SearchLocation) {
     <Form
       ref="form"
       v-slot="{ errors }"
-      class="join w-full mt-4 mb-4 justify-center"
+      class="join w-full my-2 justify-center"
       :validation-schema="toTypedSchema(SearchLocationQuery)"
       :initial-values="{
         q: '',
@@ -131,7 +131,7 @@ function onSelect(searchLocation: SearchLocation) {
     <div v-if="loading" class="flex justify-center items-center">
       <span class="loading loading-spinner text-primary" />
     </div>
-    <div v-else-if="searchLocations && searchLocations.length > 0" class="flex flex-col overflow-auto gap-2 max-h-50">
+    <div v-else-if="searchLocations && searchLocations.length > 0" class="flex flex-col overflow-auto gap-2 max-h-35">
       <div
         v-for="searchLocation in searchLocations"
         :key="searchLocation.place_id"

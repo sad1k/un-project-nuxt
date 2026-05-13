@@ -7,7 +7,22 @@ type RouteVariantState = {
   status: "generating" | "completed" | "failed";
   title?: string;
   summary?: string;
+  failureCode?: string;
+  generationStartedAt?: number;
+  generationHeartbeatAt?: number;
+  generationCompletedAt?: number;
+  notificationStatus?: "pending" | "delivered" | "failed" | "dismissed";
   pointCount: number;
+};
+
+type RouteSessionSnapshot = {
+  sessionId: number;
+  status: "generating" | "completed" | "failed";
+  activeVariantId: number | null;
+  requestContext: ExploreRequestContext | null;
+  variants: RouteVariantState[];
+  events: RouteEventEnvelope[];
+  pointsByVariantId: Record<number, RoutePoint[]>;
 };
 
 const sessionId = ref<number | null>(null);
@@ -19,6 +34,9 @@ const isGenerating = ref(false);
 const error = ref<string | null>(null);
 const lastWarning = ref<string | null>(null);
 const lastRequestContext = ref<ExploreRequestContext | null>(null);
+const ROUTE_UNLOAD_DIAGNOSTIC_KEY = "wanderlog.routeGeneration.unload";
+const ROUTE_SESSION_STORAGE_KEY = "wanderlog.routeGeneration.sessionId";
+let routeDiagnosticsInstalled = false;
 
 const activePoints = computed(() => activeVariantId.value
   ? pointsByVariantId.value[activeVariantId.value] || []
@@ -58,6 +76,33 @@ function resetRouteSession() {
   error.value = null;
   lastWarning.value = null;
   lastRequestContext.value = null;
+  persistRouteSessionReference(null);
+}
+
+async function restoreRouteSession(explicitSessionId?: number) {
+  if (!import.meta.client)
+    return;
+
+  const nextSessionId = explicitSessionId ?? readStoredRouteSessionId();
+  if (!nextSessionId || (!explicitSessionId && sessionId.value))
+    return;
+
+  try {
+    const snapshot = await loadRouteSessionSnapshot(nextSessionId);
+    applyRouteSessionSnapshot(snapshot);
+  }
+  catch (caughtError) {
+    console.error("[useAiRouteSession] Route session restore failed", {
+      error: serializeError(caughtError),
+      storedSessionId: nextSessionId,
+      ...getClientDiagnosticContext(),
+    });
+    persistRouteSessionReference(null);
+  }
+}
+
+async function loadRouteSessionSnapshot(nextSessionId: number) {
+  return $fetch<RouteSessionSnapshot>(`/api/ai/route/${nextSessionId}`);
 }
 
 async function streamRouteEvents(payload: {
@@ -71,16 +116,28 @@ async function streamRouteEvents(payload: {
   lastWarning.value = null;
 
   try {
+    const { csrf } = useCsrf();
+    if (!csrf) {
+      console.error("[useAiRouteSession] Missing CSRF token before route stream request", getClientDiagnosticContext());
+    }
+
     const response = await fetch("/api/ai/route", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "csrf-token": csrf,
       },
       body: JSON.stringify(payload),
     });
 
-    if (!response.ok || !response.body)
-      throw new Error("route_stream_unavailable");
+    if (!response.ok || !response.body) {
+      const failure = await readRouteStreamFailure(response);
+      console.error("[useAiRouteSession] Route stream response rejected", {
+        ...failure,
+        ...getClientDiagnosticContext(),
+      });
+      throw new Error(`route_stream_unavailable:${response.status}`);
+    }
 
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
@@ -106,7 +163,11 @@ async function streamRouteEvents(payload: {
     if (buffer)
       appendSseBlock(buffer);
   }
-  catch {
+  catch (caughtError) {
+    console.error("[useAiRouteSession] Route stream failed", {
+      error: serializeError(caughtError),
+      ...getClientDiagnosticContext(),
+    });
     error.value = "Route generation failed. Try again with adjusted preferences.";
   }
   finally {
@@ -125,7 +186,12 @@ function appendSseBlock(block: string) {
     try {
       appendRouteEvent(JSON.parse(line) as RouteEventEnvelope);
     }
-    catch {
+    catch (caughtError) {
+      console.error("[useAiRouteSession] Route SSE block could not be parsed", {
+        error: serializeError(caughtError),
+        linePreview: line.slice(0, 500),
+        ...getClientDiagnosticContext(),
+      });
       lastWarning.value = "A route update could not be displayed.";
     }
   }
@@ -137,6 +203,7 @@ function appendRouteEvent(event: RouteEventEnvelope) {
   if (event.type === "route.session.created") {
     sessionId.value = event.sessionId;
     activeVariantId.value = event.activeVariantId ?? activeVariantId.value;
+    persistRouteSessionReference(event.sessionId);
     return;
   }
 
@@ -176,6 +243,12 @@ function appendRouteEvent(event: RouteEventEnvelope) {
   }
 
   if (event.type === "route.failed") {
+    console.error("[useAiRouteSession] Route generation failed event received", {
+      code: event.code,
+      message: event.message,
+      sessionId: event.sessionId,
+      variantId: event.variantId,
+    });
     error.value = event.message;
     if (event.variantId) {
       upsertVariant({
@@ -236,12 +309,148 @@ function getVariant(variantId: number) {
   return variants.value.find(variant => variant.id === variantId);
 }
 
+function applyRouteSessionSnapshot(snapshot: RouteSessionSnapshot) {
+  sessionId.value = snapshot.sessionId;
+  activeVariantId.value = snapshot.activeVariantId ?? snapshot.variants[0]?.id ?? null;
+  variants.value = snapshot.variants;
+  events.value = snapshot.events;
+  pointsByVariantId.value = snapshot.pointsByVariantId;
+  lastRequestContext.value = snapshot.requestContext;
+  isGenerating.value = false;
+  error.value = null;
+  lastWarning.value = snapshot.status === "generating"
+    ? "Route generation was interrupted. Restored the latest saved progress."
+    : null;
+  persistRouteSessionReference(snapshot.sessionId);
+}
+
+function readStoredRouteSessionId() {
+  const stored = window.sessionStorage.getItem(ROUTE_SESSION_STORAGE_KEY);
+  if (!stored)
+    return null;
+
+  const parsed = Number(stored);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    persistRouteSessionReference(null);
+    return null;
+  }
+
+  return parsed;
+}
+
+function persistRouteSessionReference(nextSessionId: number | null) {
+  if (!import.meta.client)
+    return;
+
+  if (nextSessionId) {
+    window.sessionStorage.setItem(ROUTE_SESSION_STORAGE_KEY, String(nextSessionId));
+    return;
+  }
+
+  window.sessionStorage.removeItem(ROUTE_SESSION_STORAGE_KEY);
+}
+
 function splitReadyEventBlocks(buffer: string): [string[], string] {
   const blocks = buffer.split(/\r?\n\r?\n/);
   return [blocks.slice(0, -1), blocks.at(-1) || ""];
 }
 
+async function readRouteStreamFailure(response: Response) {
+  let bodyPreview = "";
+
+  try {
+    bodyPreview = (await response.clone().text()).slice(0, 1000);
+  }
+  catch (caughtError) {
+    bodyPreview = `Could not read error body: ${serializeError(caughtError).message}`;
+  }
+
+  return {
+    status: response.status,
+    statusText: response.statusText,
+    contentType: response.headers.get("content-type"),
+    bodyPreview,
+  };
+}
+
+function getClientDiagnosticContext() {
+  if (!import.meta.client) {
+    return {
+      activeVariantId: activeVariantId.value,
+      eventCount: events.value.length,
+      pointCount: activePoints.value.length,
+      sessionId: sessionId.value,
+    };
+  }
+
+  return {
+    activeVariantId: activeVariantId.value,
+    eventCount: events.value.length,
+    href: window.location.href,
+    isGenerating: isGenerating.value,
+    isOnline: window.navigator.onLine,
+    pointCount: activePoints.value.length,
+    sessionId: sessionId.value,
+  };
+}
+
+function serializeError(input: unknown) {
+  if (input instanceof Error) {
+    return {
+      message: input.message,
+      name: input.name,
+      stack: input.stack,
+    };
+  }
+
+  return {
+    message: String(input),
+    name: typeof input,
+  };
+}
+
+function installRouteReloadDiagnostics() {
+  if (!import.meta.client || routeDiagnosticsInstalled)
+    return;
+
+  routeDiagnosticsInstalled = true;
+
+  const previousUnload = window.sessionStorage.getItem(ROUTE_UNLOAD_DIAGNOSTIC_KEY);
+  if (previousUnload) {
+    console.error("[useAiRouteSession] Previous page unload happened during route generation", parseStoredDiagnostic(previousUnload));
+    window.sessionStorage.removeItem(ROUTE_UNLOAD_DIAGNOSTIC_KEY);
+  }
+
+  const recordUnload = (reason: string) => {
+    if (!isGenerating.value)
+      return;
+
+    const diagnostic = {
+      ...getClientDiagnosticContext(),
+      reason,
+      timestamp: new Date().toISOString(),
+    };
+
+    window.sessionStorage.setItem(ROUTE_UNLOAD_DIAGNOSTIC_KEY, JSON.stringify(diagnostic));
+    console.error("[useAiRouteSession] Page is unloading during route generation", diagnostic);
+  };
+
+  window.addEventListener("beforeunload", () => recordUnload("beforeunload"));
+  window.addEventListener("pagehide", () => recordUnload("pagehide"));
+}
+
+function parseStoredDiagnostic(input: string) {
+  try {
+    return JSON.parse(input) as Record<string, unknown>;
+  }
+  catch {
+    return { raw: input };
+  }
+}
+
 export function useAiRouteSession() {
+  installRouteReloadDiagnostics();
+
   return {
     sessionId,
     activeVariantId,
@@ -255,6 +464,7 @@ export function useAiRouteSession() {
     generateRoute,
     submitFollowUp,
     setActiveVariant,
+    restoreRouteSession,
     resetRouteSession,
   };
 }

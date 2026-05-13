@@ -1,0 +1,119 @@
+digraph DFD {
+    graph [
+        fontname="Arial" fontsize=11 bgcolor="white"
+        pad=0.5 nodesep=1.2 ranksep=1.5
+        splines=true
+    ]
+    node [fontname="Arial" fontsize=10]
+    edge [fontname="Arial" fontsize=9 color="#7C3AED" fontcolor="#333333" penwidth=1.8 arrowsize=0.8 minlen=2]
+
+    // EXTERNAL ENTITY
+    user [shape=box style="filled,bold" fillcolor="#EDE9FE" color="#7C3AED" penwidth=2.5
+        label=<<FONT POINT-SIZE="14"><B>Пользователь</B></FONT>>]
+
+    // PROCESSES
+    node [shape=box style="filled,rounded,bold" fillcolor="#7C3AED" color="#5B21B6" penwidth=2 width=2.0 height=0.8]
+
+    p_load    [label=<<FONT COLOR="white" POINT-SIZE="11"><B>2.1. Загрузка<BR/>ленты постов</B></FONT>>]
+    p_create  [label=<<FONT COLOR="white" POINT-SIZE="11"><B>2.2. Создание<BR/>публикации</B></FONT>>]
+    p_check   [label=<<FONT COLOR="white" POINT-SIZE="11"><B>2.3. Проверка<BR/>уникальности</B></FONT>>]
+    p_like    [label=<<FONT COLOR="white" POINT-SIZE="11"><B>2.4. Обработка<BR/>лайка</B></FONT>>]
+    p_comment [label=<<FONT COLOR="white" POINT-SIZE="11"><B>2.5. Обработка<BR/>комментария</B></FONT>>]
+    p_page    [label=<<FONT COLOR="white" POINT-SIZE="11"><B>2.6. Пагинация<BR/>(cursor-based)</B></FONT>>]
+
+    // DATA STORES
+    node [shape=none width=0 height=0]
+    ds_posts [label=<
+        <TABLE BORDER="1" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" COLOR="#7C3AED" BGCOLOR="white">
+        <TR><TD BGCOLOR="#EDE9FE" WIDTH="25" COLOR="#7C3AED"><FONT POINT-SIZE="13"><B>1</B></FONT></TD>
+        <TD WIDTH="130" BORDER="0"><FONT POINT-SIZE="12"><B>База постов</B></FONT></TD></TR>
+        </TABLE>>]
+
+    ds_likes [label=<
+        <TABLE BORDER="1" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" COLOR="#7C3AED" BGCOLOR="white">
+        <TR><TD BGCOLOR="#EDE9FE" WIDTH="25" COLOR="#7C3AED"><FONT POINT-SIZE="13"><B>2</B></FONT></TD>
+        <TD WIDTH="130" BORDER="0"><FONT POINT-SIZE="12"><B>База лайков</B></FONT></TD></TR>
+        </TABLE>>]
+
+    ds_comments [label=<
+        <TABLE BORDER="1" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" COLOR="#7C3AED" BGCOLOR="white">
+        <TR><TD BGCOLOR="#EDE9FE" WIDTH="25" COLOR="#7C3AED"><FONT POINT-SIZE="13"><B>3</B></FONT></TD>
+        <TD WIDTH="160" BORDER="0"><FONT POINT-SIZE="12"><B>База<BR/>комментариев</B></FONT></TD></TR>
+        </TABLE>>]
+
+    ds_s3 [label=<
+        <TABLE BORDER="1" CELLBORDER="1" CELLSPACING="0" CELLPADDING="5" COLOR="#7C3AED" BGCOLOR="white">
+        <TR><TD BGCOLOR="#EDE9FE" WIDTH="25" COLOR="#7C3AED"><FONT POINT-SIZE="13"><B>4</B></FONT></TD>
+        <TD WIDTH="160" BORDER="0"><FONT POINT-SIZE="12"><B>Хранилище<BR/>изображений (S3)</B></FONT></TD></TR>
+        </TABLE>>]
+
+    // LAYOUT
+    { rank=min; user }
+    { rank=same; p_create; p_load }
+    { rank=same; p_check; p_page }
+    { rank=same; p_like; p_comment }
+    { rank=same; ds_posts; ds_s3 }
+    { rank=max; ds_likes; ds_comments }
+
+    // =====================================
+    // FLOWS
+    // =====================================
+
+    // User → Создание публикации
+    user -> p_create [label=<<FONT POINT-SIZE="9">Изображение,<BR/>подпись (caption)</FONT>>]
+
+    // Создание → User (ответ)
+    p_create -> user [label=<<FONT POINT-SIZE="9">Успех / Ошибка</FONT>> style=dashed constraint=false]
+
+    // User → Загрузка ленты
+    user -> p_load [label=<<FONT POINT-SIZE="9">Открытие ленты</FONT>>]
+
+    // Загрузка → User (список)
+    p_load -> user [label=<<FONT POINT-SIZE="9">Список постов<BR/>(FeedPost[])</FONT>> style=dashed constraint=false]
+
+    // User → Лайк
+    user -> p_like [label=<<FONT POINT-SIZE="9">ID поста,<BR/>запрос лайка</FONT>>]
+
+    // User → Комментарий
+    user -> p_comment [label=<<FONT POINT-SIZE="9">Текст,<BR/>ID поста</FONT>>]
+
+    // Создание → Проверка уникальности
+    p_create -> p_check [label=<<FONT POINT-SIZE="9">locationLogImageId</FONT>>]
+
+    // Проверка → Создание (результат)
+    p_check -> p_create [label=<<FONT POINT-SIZE="9">Доступно /<BR/>Уже опубликовано</FONT>> style=dashed]
+
+    // Загрузка ↔ Пагинация
+    p_load -> p_page [label=<<FONT POINT-SIZE="9">Scroll event<BR/>(конец списка)</FONT>>]
+    p_page -> p_load [label=<<FONT POINT-SIZE="9">nextCursor,<BR/>limit=20</FONT>> style=dashed]
+
+    // Создание → База постов
+    p_create -> ds_posts [label=<<FONT POINT-SIZE="9">INSERT post</FONT>>]
+
+    // Создание → S3
+    p_create -> ds_s3 [label=<<FONT POINT-SIZE="9">S3 key<BR/>изображения</FONT>>]
+
+    // Проверка → База постов
+    p_check -> ds_posts [label=<<FONT POINT-SIZE="9">EXISTS<BR/>по imageId</FONT>>]
+
+    // Загрузка → База постов
+    p_load -> ds_posts [label=<<FONT POINT-SIZE="9">SELECT + JOIN<BR/>+ COUNT</FONT>>]
+
+    // База постов → Загрузка
+    ds_posts -> p_load [label=<<FONT POINT-SIZE="9">Данные постов,<BR/>likesCount,<BR/>commentsCount</FONT>> style=dashed]
+
+    // S3 → Загрузка
+    ds_s3 -> p_load [label=<<FONT POINT-SIZE="9">URL<BR/>изображений</FONT>> style=dashed]
+
+    // Лайк → База лайков
+    p_like -> ds_likes [label=<<FONT POINT-SIZE="9">INSERT / DELETE<BR/>(toggle like)</FONT>>]
+
+    // База лайков → Загрузка
+    ds_likes -> p_load [label=<<FONT POINT-SIZE="9">isLikedByUser</FONT>> style=dashed]
+
+    // Комментарий → База комментариев
+    p_comment -> ds_comments [label=<<FONT POINT-SIZE="9">INSERT / DELETE<BR/>comment</FONT>>]
+
+    // Лайк → User (optimistic)
+    p_like -> user [label=<<FONT POINT-SIZE="9">Мгновенное<BR/>обновление UI<BR/>(Optimistic Update)</FONT>> style=dashed constraint=false]
+}

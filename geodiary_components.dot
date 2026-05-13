@@ -1,0 +1,316 @@
+digraph GeoDiary_Components {
+    graph [
+        rankdir=TB
+        fontname="Arial"
+        fontsize=12
+        bgcolor="white"
+        pad=0.5
+        nodesep=0.5
+        ranksep=0.7
+        label=<<TABLE BORDER="0" CELLBORDER="0"><TR><TD><FONT FACE="Arial" POINT-SIZE="18"><B>Диаграмма компонентов модуля геолокационного дневника</B></FONT></TD></TR></TABLE>>
+        labelloc=t
+    ]
+
+    node [fontname="Arial" fontsize=9 shape=none margin=0]
+    edge [fontname="Arial" fontsize=8 color="#555555" arrowsize=0.7]
+
+    // ===== PAGES =====
+    subgraph cluster_pages {
+        label=<<FONT FACE="Arial" POINT-SIZE="12" COLOR="#444"><B>Страницы (Pages)</B></FONT>>
+        style="rounded,dashed" color="#AAAAAA" bgcolor="#FAFAFA"
+
+        dashboard [label=<
+            <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="5" BGCOLOR="white" COLOR="#6B46C1">
+                <TR><TD BGCOLOR="#6B46C1"><FONT COLOR="white" POINT-SIZE="10"><B>  /pages/dashboard.vue  </B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="9">Панель управления локациями</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8" COLOR="#888">SSR: false (client-only)</FONT></TD></TR>
+            </TABLE>
+        >]
+
+        explore [label=<
+            <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="5" BGCOLOR="white" COLOR="#6B46C1">
+                <TR><TD BGCOLOR="#6B46C1"><FONT COLOR="white" POINT-SIZE="10"><B>  /pages/explore.vue  </B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="9">Исследование маршрутов</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8" COLOR="#888">SSR: false (client-only)</FONT></TD></TR>
+            </TABLE>
+        >]
+
+        locPage [label=<
+            <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="5" BGCOLOR="white" COLOR="#6B46C1">
+                <TR><TD BGCOLOR="#6B46C1"><FONT COLOR="white" POINT-SIZE="10"><B>  /pages/locations/[slug].vue  </B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="9">Детали локации + логи</FONT></TD></TR>
+            </TABLE>
+        >]
+    }
+
+    // ===== VUE COMPONENTS =====
+    subgraph cluster_components {
+        label=<<FONT FACE="Arial" POINT-SIZE="12" COLOR="#444"><B>Vue-компоненты</B></FONT>>
+        style="rounded,dashed" color="#AAAAAA" bgcolor="#F0F4FF"
+
+        mapClient [label=<
+            <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="5" BGCOLOR="white" COLOR="#2B6CB0">
+                <TR><TD BGCOLOR="#2B6CB0"><FONT COLOR="white" POINT-SIZE="10"><B>  map.client.vue  </B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="9">Карта Dashboard (MapLibre)</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8" COLOR="#888">Маркеры локаций, popup</FONT></TD></TR>
+            </TABLE>
+        >]
+
+        mapView [label=<
+            <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="5" BGCOLOR="white" COLOR="#2B6CB0">
+                <TR><TD BGCOLOR="#2B6CB0"><FONT COLOR="white" POINT-SIZE="10"><B>  MapView.client.vue  </B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="9">Карта Explore (Mapbox GL)</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8" COLOR="#888">Globe-проекция, маршруты,</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8" COLOR="#888">анимированные маркеры</FONT></TD></TR>
+            </TABLE>
+        >]
+
+        yndxMap [label=<
+            <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="5" BGCOLOR="white" COLOR="#2B6CB0">
+                <TR><TD BGCOLOR="#2B6CB0"><FONT COLOR="white" POINT-SIZE="10"><B>  yndx-map.client.vue  </B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="9">Карта Dashboard (Yandex Maps)</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8" COLOR="#888">Альтернативный провайдер</FONT></TD></TR>
+            </TABLE>
+        >]
+
+        searchLoc [label=<
+            <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="5" BGCOLOR="white" COLOR="#2B6CB0">
+                <TR><TD BGCOLOR="#2B6CB0"><FONT COLOR="white" POINT-SIZE="10"><B>  search-locations.vue  </B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="9">Поиск мест (Nominatim)</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8" COLOR="#888">Геокодинг, результаты на карте</FONT></TD></TR>
+            </TABLE>
+        >]
+
+        routePanel [label=<
+            <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="5" BGCOLOR="white" COLOR="#2B6CB0">
+                <TR><TD BGCOLOR="#2B6CB0"><FONT COLOR="white" POINT-SIZE="10"><B>  RoutePanel.vue  </B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="9">Панель маршрутов</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8" COLOR="#888">Фильтр по дням, точки</FONT></TD></TR>
+            </TABLE>
+        >]
+
+        routeMarker [label=<
+            <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="5" BGCOLOR="white" COLOR="#2B6CB0">
+                <TR><TD BGCOLOR="#2B6CB0"><FONT COLOR="white" POINT-SIZE="10"><B>  RouteMarker.ts  </B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="9">Фабрика маркеров</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8" COLOR="#888">Анимация drop-in, popup-карточки,</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8" COLOR="#888">цвет по категории (culture,</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8" COLOR="#888">food, nature...)</FONT></TD></TR>
+            </TABLE>
+        >]
+    }
+
+    // ===== COMPOSABLES =====
+    subgraph cluster_composables {
+        label=<<FONT FACE="Arial" POINT-SIZE="12" COLOR="#444"><B>Composables</B></FONT>>
+        style="rounded,dashed" color="#AAAAAA" bgcolor="#FFF8F0"
+
+        useMapbox [label=<
+            <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="5" BGCOLOR="white" COLOR="#C05621">
+                <TR><TD BGCOLOR="#C05621"><FONT COLOR="white" POINT-SIZE="10"><B>  useMapbox()  </B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="9">Инициализация Mapbox GL</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8" COLOR="#888">addMarkers(), drawRouteLine(),</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8" COLOR="#888">fitToRoute(), globe projection</FONT></TD></TR>
+            </TABLE>
+        >]
+
+        useRouteGen [label=<
+            <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="5" BGCOLOR="white" COLOR="#C05621">
+                <TR><TD BGCOLOR="#C05621"><FONT COLOR="white" POINT-SIZE="10"><B>  useRouteGenerator()  </B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="9">Генерация маршрутов</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8" COLOR="#888">selectedDays, точки по дням,</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8" COLOR="#888">бейджи категорий</FONT></TD></TR>
+            </TABLE>
+        >]
+    }
+
+    // ===== PINIA STORES =====
+    subgraph cluster_stores {
+        label=<<FONT FACE="Arial" POINT-SIZE="12" COLOR="#444"><B>Pinia Stores</B></FONT>>
+        style="rounded,dashed" color="#AAAAAA" bgcolor="#F0FFF0"
+
+        mapStore [label=<
+            <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="5" BGCOLOR="white" COLOR="#276749">
+                <TR><TD BGCOLOR="#276749"><FONT COLOR="white" POINT-SIZE="10"><B>  stores/map.ts  </B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="9">Состояние карты</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8" COLOR="#888">mapPoints[], selectedPoint,</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8" COLOR="#888">addedPoint, flyToPoint,</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8" COLOR="#888">adapter (pluggable)</FONT></TD></TR>
+            </TABLE>
+        >]
+
+        locStore [label=<
+            <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="5" BGCOLOR="white" COLOR="#276749">
+                <TR><TD BGCOLOR="#276749"><FONT COLOR="white" POINT-SIZE="10"><B>  stores/location.ts  </B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="9">Управление локациями</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8" COLOR="#888">createMapPointFromLocation(),</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8" COLOR="#888">createMapPointFromLocationLog(),</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8" COLOR="#888">isPointSelected()</FONT></TD></TR>
+            </TABLE>
+        >]
+
+        sidebarStore [label=<
+            <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="5" BGCOLOR="white" COLOR="#276749">
+                <TR><TD BGCOLOR="#276749"><FONT COLOR="white" POINT-SIZE="10"><B>  stores/sidebar.ts  </B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="9">Состояние сайдбара</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8" COLOR="#888">collapsed, selectedItem</FONT></TD></TR>
+            </TABLE>
+        >]
+    }
+
+    // ===== MAP ADAPTER LAYER =====
+    subgraph cluster_adapters {
+        label=<<FONT FACE="Arial" POINT-SIZE="12" COLOR="#444"><B>Map Adapter (Strategy Pattern)</B></FONT>>
+        style="rounded,dashed" color="#AAAAAA" bgcolor="#FFF0F5"
+
+        adapterInterface [label=<
+            <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="5" BGCOLOR="white" COLOR="#B83280">
+                <TR><TD BGCOLOR="#B83280"><FONT COLOR="white" POINT-SIZE="10"><B>  map-adapter.types.ts  </B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="9">&lt;&lt;interface&gt;&gt; MapAdapter</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8" COLOR="#888">flyTo(), fitBounds(),</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8" COLOR="#888">createBounds(), isReady()</FONT></TD></TR>
+            </TABLE>
+        >]
+
+        maplibreAdapter [label=<
+            <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="5" BGCOLOR="white" COLOR="#B83280">
+                <TR><TD BGCOLOR="#B83280"><FONT COLOR="white" POINT-SIZE="10"><B>  maplibre-adapter.ts  </B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="9">MapLibre GL JS реализация</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8" COLOR="#888">vue-maplibre-gl контекст</FONT></TD></TR>
+            </TABLE>
+        >]
+
+        yndxAdapter [label=<
+            <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="5" BGCOLOR="white" COLOR="#B83280">
+                <TR><TD BGCOLOR="#B83280"><FONT COLOR="white" POINT-SIZE="10"><B>  yndxmap-adapter.ts  </B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="9">Yandex Maps реализация</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8" COLOR="#888">Двойная zoom-анимация</FONT></TD></TR>
+            </TABLE>
+        >]
+    }
+
+    // ===== SERVER API =====
+    subgraph cluster_api {
+        label=<<FONT FACE="Arial" POINT-SIZE="12" COLOR="#444"><B>Server API (Nitro)</B></FONT>>
+        style="rounded,dashed" color="#AAAAAA" bgcolor="#F0F0FF"
+
+        searchAPI [label=<
+            <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="5" BGCOLOR="white" COLOR="#1168BD">
+                <TR><TD BGCOLOR="#1168BD"><FONT COLOR="white" POINT-SIZE="10"><B>  /api/search-locations  </B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="9">GET — Nominatim геокодинг</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8" COLOR="#888">Кэш 24ч, SearchLocation[]</FONT></TD></TR>
+            </TABLE>
+        >]
+
+        locationsAPI [label=<
+            <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="5" BGCOLOR="white" COLOR="#1168BD">
+                <TR><TD BGCOLOR="#1168BD"><FONT COLOR="white" POINT-SIZE="10"><B>  /api/locations  </B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="9">CRUD — управление локациями</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8" COLOR="#888">GET, POST, PUT, DELETE</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8" COLOR="#888">Валидация Zod, slug генерация</FONT></TD></TR>
+            </TABLE>
+        >]
+
+        logsAPI [label=<
+            <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="5" BGCOLOR="white" COLOR="#1168BD">
+                <TR><TD BGCOLOR="#1168BD"><FONT COLOR="white" POINT-SIZE="10"><B>  /api/locations/[slug]/logs  </B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="9">CRUD — логи путешествий</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8" COLOR="#888">startedAt, endedAt, lat/long</FONT></TD></TR>
+            </TABLE>
+        >]
+
+        imagesAPI [label=<
+            <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="5" BGCOLOR="white" COLOR="#1168BD">
+                <TR><TD BGCOLOR="#1168BD"><FONT COLOR="white" POINT-SIZE="10"><B>  /api/.../sign-images  </B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="9">Загрузка изображений</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8" COLOR="#888">Pre-signed URL, S3, SHA-256</FONT></TD></TR>
+            </TABLE>
+        >]
+    }
+
+    // ===== EXTERNAL SERVICES =====
+    subgraph cluster_external {
+        label=<<FONT FACE="Arial" POINT-SIZE="12" COLOR="#444"><B>Внешние сервисы</B></FONT>>
+        style="rounded,dashed" color="#AAAAAA" bgcolor="#F5F5F5"
+
+        mapboxService [label=<
+            <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="5" BGCOLOR="white" COLOR="#888888">
+                <TR><TD BGCOLOR="#888888"><FONT COLOR="white" POINT-SIZE="10"><B>  Mapbox GL  </B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="9">Тайлы, стили, globe</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8" COLOR="#888">mapbox-gl@^3.19.1</FONT></TD></TR>
+            </TABLE>
+        >]
+
+        maplibreService [label=<
+            <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="5" BGCOLOR="white" COLOR="#888888">
+                <TR><TD BGCOLOR="#888888"><FONT COLOR="white" POINT-SIZE="10"><B>  MapLibre GL  </B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="9">Open-source тайлы</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8" COLOR="#888">maplibre-gl@^4.7.1</FONT></TD></TR>
+            </TABLE>
+        >]
+
+        nominatimService [label=<
+            <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="5" BGCOLOR="white" COLOR="#888888">
+                <TR><TD BGCOLOR="#888888"><FONT COLOR="white" POINT-SIZE="10"><B>  Nominatim API  </B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="9">OpenStreetMap геокодинг</FONT></TD></TR>
+            </TABLE>
+        >]
+
+        s3Service [label=<
+            <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="5" BGCOLOR="white" COLOR="#888888">
+                <TR><TD BGCOLOR="#888888"><FONT COLOR="white" POINT-SIZE="10"><B>  S3 / Yandex Cloud  </B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="9">Хранение изображений</FONT></TD></TR>
+            </TABLE>
+        >]
+
+        tursoService [label=<
+            <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="5" BGCOLOR="white" COLOR="#888888">
+                <TR><TD BGCOLOR="#888888"><FONT COLOR="white" POINT-SIZE="10"><B>  Turso (SQLite)  </B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="9">Drizzle ORM</FONT></TD></TR>
+            </TABLE>
+        >]
+    }
+
+    // ===== RELATIONSHIPS =====
+
+    // Pages -> Components
+    dashboard -> mapClient [label="рендерит" color="#6B46C1" fontcolor="#6B46C1"]
+    dashboard -> yndxMap [label="альтернатива" color="#6B46C1" fontcolor="#6B46C1" style=dashed]
+    dashboard -> searchLoc [label="рендерит" color="#6B46C1" fontcolor="#6B46C1"]
+    explore -> mapView [label="рендерит" color="#6B46C1" fontcolor="#6B46C1"]
+    explore -> routePanel [label="рендерит" color="#6B46C1" fontcolor="#6B46C1"]
+    locPage -> mapClient [label="рендерит" color="#6B46C1" fontcolor="#6B46C1"]
+
+    // Components -> Composables
+    mapView -> useMapbox [label="использует" color="#C05621" fontcolor="#C05621"]
+    mapView -> routeMarker [label="создаёт маркеры" color="#C05621" fontcolor="#C05621"]
+    routePanel -> useRouteGen [label="использует" color="#C05621" fontcolor="#C05621"]
+
+    // Components / Pages -> Stores
+    dashboard -> mapStore [label="читает/пишет" color="#276749" fontcolor="#276749"]
+    dashboard -> locStore [label="читает" color="#276749" fontcolor="#276749"]
+    mapClient -> mapStore [label="подписка" color="#276749" fontcolor="#276749"]
+    searchLoc -> locStore [label="обновляет" color="#276749" fontcolor="#276749"]
+    dashboard -> sidebarStore [label="состояние UI" color="#276749" fontcolor="#276749" style=dashed]
+
+    // Stores -> Adapters
+    mapStore -> adapterInterface [label="adapter.init()" color="#B83280" fontcolor="#B83280"]
+    adapterInterface -> maplibreAdapter [label="implements" color="#B83280" fontcolor="#B83280" style=dashed]
+    adapterInterface -> yndxAdapter [label="implements" color="#B83280" fontcolor="#B83280" style=dashed]
+
+    // Components -> API
+    searchLoc -> searchAPI [label="GET ?q=" color="#1168BD" fontcolor="#1168BD"]
+    dashboard -> locationsAPI [label="CRUD" color="#1168BD" fontcolor="#1168BD"]
+    locPage -> logsAPI [label="CRUD" color="#1168BD" fontcolor="#1168BD"]
+    locPage -> imagesAPI [label="upload" color="#1168BD" fontcolor="#1168BD"]
+
+    // API -> External
+    searchAPI -> nominatimService [label="HTTP" color="#888888" fontcolor="#888888"]
+    locationsAPI -> tursoService [label="Drizzle" color="#888888" fontcolor="#888888"]
+    logsAPI -> tursoService [label="Drizzle" color="#888888" fontcolor="#888888"]
+    imagesAPI -> s3Service [label="AWS SDK" color="#888888" fontcolor="#888888"]
+
+    // Components -> External (direct)
+    mapView -> mapboxService [label="tiles/style" color="#888888" fontcolor="#888888"]
+    mapClient -> maplibreService [label="tiles/style" color="#888888" fontcolor="#888888"]
+}

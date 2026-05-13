@@ -1,21 +1,31 @@
 import type { SearchLocation } from "~/lib/types";
 
 import { SearchLocationQuery } from "~/lib/db/schema/search-location";
+import { getExploreSearchCacheKey, normalizeExploreQuery } from "~/lib/explore/search";
 import defineAuthenticatedHandler from "~/utils/define-authenticated-handler";
 
 export default defineAuthenticatedHandler(defineCachedFunction(async (event) => {
   const { q } = await getValidatedQuery(event, SearchLocationQuery.parse);
+  const normalizedQuery = normalizeExploreQuery(q);
 
   try {
-    const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json`, {
-      headers: { "User-Agent": "test-project | misha.kirillov.0990@gmail.com" },
+    const url = new URL("https://nominatim.openstreetmap.org/search");
+    const params = new URLSearchParams({
+      addressdetails: "1",
+      format: "json",
+      limit: "8",
+      q: normalizedQuery,
+    });
+    url.search = params.toString();
+
+    const response = await fetch(url, {
+      headers: { "User-Agent": "WanderLog Explore Search" },
     });
 
-    console.log(response, "response@@");
     if (!response.ok) {
       return sendError(event, createError({
         statusCode: 504,
-        message: "Произошла ошибка в запросе API",
+        statusMessage: "Location search provider unavailable",
       }));
     }
 
@@ -25,16 +35,16 @@ export default defineAuthenticatedHandler(defineCachedFunction(async (event) => 
   }
   catch (e) {
     return sendError(event, createError({
-      data: e,
+      data: e instanceof Error ? { message: e.message } : undefined,
       statusCode: 504,
-      message: "Произошла ошибка в запросе API",
+      statusMessage: "Location search provider unavailable",
     }));
   }
 }, {
   maxAge: 60 * 60 * 24,
   getKey: (event) => {
     const query = getQuery(event);
-    return query.q?.toString() || "";
+    return getExploreSearchCacheKey(query.q?.toString() || "");
   },
   name: "search-locations",
 }));

@@ -15,6 +15,7 @@ import {
 type RouteMessageRole = "user" | "assistant" | "system";
 type VariantStatus = "generating" | "completed" | "failed";
 type EventValidationStatus = "valid" | "invalid" | "skipped";
+type RouteNotificationStatus = "pending" | "delivered" | "failed" | "dismissed";
 
 export async function createAiRouteSession(
   userId: number,
@@ -76,6 +77,9 @@ export async function createAiRouteVariant(
       title: input.title,
       summary: input.summary,
       status: "generating",
+      generationStartedAt: Date.now(),
+      generationHeartbeatAt: Date.now(),
+      notificationStatus: "pending",
     })
     .returning();
 
@@ -87,6 +91,58 @@ export async function createAiRouteVariant(
   }
 
   return createdVariant;
+}
+
+export async function claimAiRouteGenerationRun(
+  userId: number,
+  input: {
+    sessionId: number;
+    variantId: number;
+    runnerId: string;
+  },
+) {
+  const now = Date.now();
+  const [updatedVariant] = await db
+    .update(aiRouteVariant)
+    .set({
+      generationHeartbeatAt: now,
+      generationStartedAt: now,
+      runnerId: input.runnerId,
+      status: "generating" satisfies VariantStatus,
+    })
+    .where(and(
+      eq(aiRouteVariant.id, input.variantId),
+      eq(aiRouteVariant.sessionId, input.sessionId),
+      eq(aiRouteVariant.userId, userId),
+    ))
+    .returning();
+
+  await db
+    .update(aiRouteSession)
+    .set({ status: "generating" })
+    .where(and(eq(aiRouteSession.id, input.sessionId), eq(aiRouteSession.userId, userId)));
+
+  return updatedVariant;
+}
+
+export async function refreshAiRouteGenerationHeartbeat(
+  userId: number,
+  input: {
+    sessionId: number;
+    variantId: number;
+  },
+) {
+  const [updatedVariant] = await db
+    .update(aiRouteVariant)
+    .set({ generationHeartbeatAt: Date.now() })
+    .where(and(
+      eq(aiRouteVariant.id, input.variantId),
+      eq(aiRouteVariant.sessionId, input.sessionId),
+      eq(aiRouteVariant.userId, userId),
+    ))
+    .returning();
+
+  return updatedVariant;
 }
 
 export async function persistAiRoutePoint(
@@ -163,6 +219,8 @@ export async function markAiRouteVariantCompleted(
   const [updatedVariant] = await db
     .update(aiRouteVariant)
     .set({
+      generationCompletedAt: Date.now(),
+      notificationStatus: "pending" satisfies RouteNotificationStatus,
       status: "completed" satisfies VariantStatus,
       title: input.title,
       summary: input.summary,
@@ -196,6 +254,8 @@ export async function markAiRouteVariantFailed(
   const [updatedVariant] = await db
     .update(aiRouteVariant)
     .set({
+      generationCompletedAt: Date.now(),
+      notificationStatus: "pending" satisfies RouteNotificationStatus,
       status: "failed" satisfies VariantStatus,
       failureCode: input.failureCode.slice(0, 80),
     })
@@ -210,6 +270,27 @@ export async function markAiRouteVariantFailed(
     .update(aiRouteSession)
     .set({ status: "failed" })
     .where(and(eq(aiRouteSession.id, input.sessionId), eq(aiRouteSession.userId, userId)));
+
+  return updatedVariant;
+}
+
+export async function markAiRouteNotificationStatus(
+  userId: number,
+  input: {
+    sessionId: number;
+    variantId: number;
+    notificationStatus: RouteNotificationStatus;
+  },
+) {
+  const [updatedVariant] = await db
+    .update(aiRouteVariant)
+    .set({ notificationStatus: input.notificationStatus })
+    .where(and(
+      eq(aiRouteVariant.id, input.variantId),
+      eq(aiRouteVariant.sessionId, input.sessionId),
+      eq(aiRouteVariant.userId, userId),
+    ))
+    .returning();
 
   return updatedVariant;
 }
@@ -250,5 +331,68 @@ export async function findAiRouteSessionByIdForUser(userId: number, sessionId: n
         orderBy: [aiRouteEvent.sequence],
       },
     },
+  });
+}
+
+export async function findAiRouteSessionSummariesByUserId(
+  userId: number,
+  input: {
+    activeOnly?: boolean;
+  } = {},
+) {
+  const sessions = await db.query.aiRouteSession.findMany({
+    where: eq(aiRouteSession.userId, userId),
+    orderBy: [desc(aiRouteSession.updateAt)],
+    with: {
+      variants: {
+        orderBy: [desc(aiRouteVariant.updateAt)],
+        with: {
+          points: true,
+        },
+      },
+    },
+  });
+
+  return sessions
+    .map((session) => {
+      const activeVariant = session.variants.find(variant => variant.id === session.activeVariantId)
+        ?? session.variants[0]
+        ?? null;
+
+      return {
+        activeVariantId: session.activeVariantId,
+        cityName: session.cityName,
+        createdAt: session.createdAt,
+        failureCode: activeVariant?.failureCode ?? null,
+        generationCompletedAt: activeVariant?.generationCompletedAt ?? null,
+        generationHeartbeatAt: activeVariant?.generationHeartbeatAt ?? null,
+        generationStartedAt: activeVariant?.generationStartedAt ?? null,
+        notificationStatus: activeVariant?.notificationStatus ?? "pending",
+        pointCount: activeVariant?.points.length ?? 0,
+        retryCount: activeVariant?.retryCount ?? 0,
+        sessionId: session.id,
+        status: session.status,
+        summary: activeVariant?.summary ?? null,
+        title: activeVariant?.title ?? null,
+        updateAt: session.updateAt,
+        variantId: activeVariant?.id ?? null,
+      };
+    })
+    .filter(summary => !input.activeOnly || summary.status === "generating");
+}
+
+export async function findAiRoutePointForPlaceIntelligence(
+  userId: number,
+  input: {
+    variantId: number;
+    routePointId: string;
+  },
+) {
+  return db.query.aiRoutePoint.findFirst({
+    where: and(
+      eq(aiRoutePoint.userId, userId),
+      eq(aiRoutePoint.variantId, input.variantId),
+      eq(aiRoutePoint.routePointId, input.routePointId),
+    ),
   });
 }

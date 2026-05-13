@@ -1,0 +1,208 @@
+@startuml ER_Diagram
+!theme plain
+title ER-диаграмма базы данных платформы WanderLog\nDrizzle ORM / Turso SQLite
+
+skinparam linetype ortho
+skinparam class {
+    FontSize 11
+    AttributeFontSize 10
+}
+
+' ===== AUTH TABLES (Purple) =====
+package "Аутентификация" #E8DAEF {
+    entity "user" as user #BB8FCE {
+        * **id** : int <<PK>> <<AUTO_INCREMENT>>
+        --
+        * name : text NOT NULL
+        * email : text NOT NULL <<UNIQUE>>
+        emailVerified : int (boolean)
+        image : text
+        createdAt : int (timestamp)
+        updatedAt : int (timestamp)
+    }
+
+    entity "session" as session #BB8FCE {
+        * **id** : int <<PK>> <<AUTO_INCREMENT>>
+        --
+        * userId : int <<FK>> -> user.id
+        * token : text <<UNIQUE>>
+        expiresAt : int (timestamp)
+        ipAddress : text
+        userAgent : text
+    }
+
+    entity "account" as account #BB8FCE {
+        * **id** : int <<PK>> <<AUTO_INCREMENT>>
+        --
+        * userId : int <<FK>> -> user.id
+        * accountId : text NOT NULL
+        * providerId : text NOT NULL
+        accessToken : text
+        refreshToken : text
+    }
+
+    entity "verification" as verif #BB8FCE {
+        * **id** : int <<PK>> <<AUTO_INCREMENT>>
+        --
+        * identifier : text NOT NULL
+        * value : text NOT NULL
+        expiresAt : int (timestamp)
+    }
+}
+
+' ===== LOCATION TABLES (Blue) =====
+package "Геолокации и медиа" #D4E6F1 {
+    entity "location" as loc #5DADE2 {
+        * **id** : int <<PK>> <<AUTO_INCREMENT>>
+        --
+        * userId : int <<FK>> -> user.id
+        * name : text NOT NULL
+        slug : text <<UNIQUE>>
+        latitude : real
+        longitude : real
+        description : text
+        createdAt : int (timestamp)
+        updatedAt : int (timestamp)
+        ..
+        <<UQ>> (name, userId)
+    }
+
+    entity "locationLog" as locLog #5DADE2 {
+        * **id** : int <<PK>> <<AUTO_INCREMENT>>
+        --
+        * locationId : int <<FK>> -> location.id
+        * userId : int <<FK>> -> user.id
+        * name : text NOT NULL
+        * latitude : real NOT NULL
+        * longitude : real NOT NULL
+        description : text
+        * startedAt : int NOT NULL
+        * endedAt : int NOT NULL
+        createdAt : int (timestamp)
+    }
+
+    entity "locationLogImage" as locImg #5DADE2 {
+        * **id** : int <<PK>> <<AUTO_INCREMENT>>
+        --
+        * locationLogId : int <<FK>> -> locationLog.id
+        * userId : int <<FK>> -> user.id
+        * key : text NOT NULL
+        description : text
+        createdAt : int (timestamp)
+    }
+}
+
+' ===== SOCIAL TABLES (Green) =====
+package "Социальные функции" #D5F5E3 {
+    entity "post" as post #58D68D {
+        * **id** : int <<PK>> <<AUTO_INCREMENT>>
+        --
+        * locationLogImageId : int <<FK>> <<UNIQUE>> -> locationLogImage.id
+        * userId : int <<FK>> -> user.id
+        caption : text
+        createdAt : int (timestamp)
+        updatedAt : int (timestamp)
+    }
+
+    entity "postLike" as pLike #58D68D {
+        * **id** : int <<PK>> <<AUTO_INCREMENT>>
+        --
+        * postId : int <<FK>> -> post.id
+        * userId : int <<FK>> -> user.id
+        createdAt : int (timestamp)
+        ..
+        <<UQ>> (postId, userId)
+    }
+
+    entity "postComment" as pComment #58D68D {
+        * **id** : int <<PK>> <<AUTO_INCREMENT>>
+        --
+        * postId : int <<FK>> -> post.id
+        * userId : int <<FK>> -> user.id
+        parentId : int <<FK>> -> postComment.id
+        replyToUserId : int <<FK>> -> user.id
+        * content : text NOT NULL
+        createdAt : int (timestamp)
+    }
+}
+
+' ===== NEW: SUBSCRIPTIONS & NOTIFICATIONS (Orange) =====
+package "Подписки и уведомления (новые)" #FDEBD0 {
+    entity "userFollow" as follow #E59866 {
+        * **id** : int <<PK>> <<AUTO_INCREMENT>>
+        --
+        * followerId : int <<FK>> -> user.id
+        * followingId : int <<FK>> -> user.id
+        createdAt : int (timestamp)
+        ..
+        <<UQ>> (followerId, followingId)
+    }
+
+    entity "notification" as notif #E59866 {
+        * **id** : int <<PK>> <<AUTO_INCREMENT>>
+        --
+        * userId : int <<FK>> -> user.id
+        * fromUserId : int <<FK>> -> user.id
+        * type : text NOT NULL
+        entityId : int
+        isRead : int DEFAULT 0
+        createdAt : int (timestamp)
+    }
+}
+
+' ===== NEW: AI ASSISTANT (Teal) =====
+package "AI-ассистент (новые)" #D1F2EB {
+    entity "aiConversation" as aiConv #48C9B0 {
+        * **id** : int <<PK>> <<AUTO_INCREMENT>>
+        --
+        * userId : int <<FK>> -> user.id
+        title : text
+        createdAt : int (timestamp)
+        updatedAt : int (timestamp)
+    }
+
+    entity "aiMessage" as aiMsg #48C9B0 {
+        * **id** : int <<PK>> <<AUTO_INCREMENT>>
+        --
+        * conversationId : int <<FK>> -> aiConversation.id
+        * role : text NOT NULL
+        * content : text NOT NULL
+        createdAt : int (timestamp)
+    }
+
+    entity "savedRoute" as route #48C9B0 {
+        * **id** : int <<PK>> <<AUTO_INCREMENT>>
+        --
+        * userId : int <<FK>> -> user.id
+        conversationId : int <<FK>> -> aiConversation.id
+        * title : text NOT NULL
+        * routeData : text NOT NULL (JSON)
+        createdAt : int (timestamp)
+    }
+}
+
+' ===== RELATIONSHIPS =====
+user ||--o{ session : "1:N"
+user ||--o{ account : "1:N"
+
+user ||--o{ loc : "1:N"
+loc ||--o{ locLog : "1:N"
+locLog ||--o{ locImg : "1:N"
+
+locImg ||--|| post : "1:1"
+user ||--o{ post : "1:N"
+post ||--o{ pLike : "1:N"
+post ||--o{ pComment : "1:N"
+user ||--o{ pLike : "1:N"
+user ||--o{ pComment : "1:N"
+pComment ||--o{ pComment : "self-ref (parentId)"
+
+user ||--o{ follow : "1:N (follower)"
+user ||--o{ notif : "1:N"
+
+user ||--o{ aiConv : "1:N"
+aiConv ||--o{ aiMsg : "1:N"
+user ||--o{ route : "1:N"
+aiConv ||--o{ route : "1:N"
+
+@enduml

@@ -1,0 +1,56 @@
+@startuml C4_Container_Diagram
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title Диаграмма архитектуры платформы WanderLog (C4 Container)
+
+LAYOUT_WITH_LEGEND()
+LAYOUT_TOP_DOWN()
+
+Person(user, "Путешественник", "Пользователь платформы:\nведёт дневник, публикует\nфотоотчёты, планирует\nпоездки с AI")
+
+System_Boundary(wanderlog, "Платформа WanderLog") {
+
+    Container(spa, "SPA Клиент (PWA)", "Vue.js, Pinia, Tailwind CSS", "Адаптивный интерфейс:\nкарта, дневник, лента,\nчат с AI-ассистентом")
+
+    Container(sw, "Service Worker", "Workbox", "Кэширование ресурсов,\nофлайн-режим,\npush-уведомления")
+
+    Container(maplib, "Модуль карты", "MapLibre GL JS", "Интерактивная карта,\nмаркеры, маршруты,\n3D-глобус (Three.js)")
+
+    Container(api, "API Server", "Nuxt.js 3 / Nitro", "REST API, SSR,\nSSE-стриминг,\nаутентификация,\nвалидация Zod")
+
+    Container(auth, "Модуль Auth", "Better Auth", "OAuth 2.0 (GitHub, Google),\nсессии, CSRF-защита")
+
+    Container(ai_service, "AI Service Layer", "Node.js", "Формирование промптов,\nRAG-пайплайн,\nстриминг ответов LLM")
+
+    ContainerDb(db, "База данных", "Turso (SQLite)", "Локации, логи, посты,\nкомментарии, подписки,\nAI-диалоги")
+}
+
+System_Ext(s3, "Object Storage", "Yandex Cloud S3:\nхранение изображений\nи медиафайлов")
+
+System_Ext(nominatim, "Nominatim API", "OpenStreetMap:\nгеокодинг,\nпоиск мест")
+
+System_Ext(llm, "LLM API", "OpenAI-совместимый:\nгенерация маршрутов\nи рекомендаций")
+
+System_Ext(sentry, "Sentry", "Мониторинг ошибок,\nperformance tracing,\nSession Replay")
+
+System_Ext(vercel, "Vercel Edge Network", "Хостинг, CDN,\nEdge Functions,\nCI/CD")
+
+Rel(user, spa, "Использует", "HTTPS")
+Rel(spa, sw, "Регистрирует")
+Rel(spa, maplib, "Рендерит карту")
+Rel(spa, api, "REST API / SSE", "HTTPS")
+
+Rel(api, auth, "Аутентификация")
+Rel(api, db, "Запросы данных", "Drizzle ORM")
+Rel(api, s3, "Загрузка/получение\nизображений", "AWS SDK\npre-signed URL")
+Rel(api, nominatim, "Геокодинг", "HTTP")
+Rel(api, ai_service, "Запросы к AI")
+Rel(ai_service, llm, "Генерация ответов", "HTTP / SSE")
+Rel(ai_service, db, "Контекст RAG", "Drizzle ORM")
+
+Rel(api, sentry, "Логирование ошибок", "HTTPS")
+Rel(spa, sentry, "Client errors", "HTTPS")
+
+Rel(vercel, api, "Развёртывание", "Edge Functions")
+
+@enduml

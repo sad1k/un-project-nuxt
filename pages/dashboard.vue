@@ -226,9 +226,12 @@ function toggleSidebar() {
       </div>
     </div>
     <div class="flex-1 overflow-auto bg-gray-50 dark:bg-[#0a0a0a] transition-colors duration-300">
-      <div class=" flex size-full" :class="{ 'flex-col': !EDIT_PAGES.includes(route.name?.toString() || '') }">
+      <div class="flex size-full" :class="{ 'flex-col': !EDIT_PAGES.includes(route.name?.toString() || '') }">
         <NuxtPage />
-        <AppMap class="flex-1" />
+        <AppYndxMap
+          :key="EDIT_PAGES.includes(route.name?.toString() || '') ? 'edit' : 'view'"
+          class="flex-1 overflow-hidden"
+        />
       </div>
     </div>
   </div>

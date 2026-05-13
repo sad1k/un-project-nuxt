@@ -1,0 +1,242 @@
+digraph ER_Diagram {
+    graph [
+        rankdir=TB
+        fontname="Arial"
+        fontsize=12
+        bgcolor="white"
+        pad=0.4
+        nodesep=0.5
+        ranksep=0.7
+        label=<<TABLE BORDER="0" CELLBORDER="0"><TR><TD><FONT FACE="Arial" POINT-SIZE="20"><B>ER-диаграмма базы данных платформы WanderLog</B></FONT></TD></TR><TR><TD><FONT FACE="Arial" POINT-SIZE="12" COLOR="#666666">Drizzle ORM / Turso SQLite</FONT></TD></TR></TABLE>>
+        labelloc=t
+    ]
+
+    node [fontname="Arial" fontsize=9 shape=none margin=0]
+    edge [fontname="Arial" fontsize=8 color="#555555" arrowsize=0.7]
+
+    // ===== AUTH TABLES (Purple) =====
+    user [label=<
+        <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white" COLOR="#6B46C1">
+            <TR><TD COLSPAN="3" BGCOLOR="#6B46C1"><FONT COLOR="white" POINT-SIZE="11"><B>  user  </B></FONT></TD></TR>
+            <TR><TD ALIGN="LEFT"><FONT COLOR="#C53030"><B>PK</B></FONT></TD><TD ALIGN="LEFT"><B>id</B></TD><TD ALIGN="LEFT"><FONT COLOR="#888">int AUTO_INCREMENT</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">name</TD><TD ALIGN="LEFT"><FONT COLOR="#888">text NOT NULL</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">email</TD><TD ALIGN="LEFT"><FONT COLOR="#888">text NOT NULL UNIQUE</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">emailVerified</TD><TD ALIGN="LEFT"><FONT COLOR="#888">int (boolean)</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">image</TD><TD ALIGN="LEFT"><FONT COLOR="#888">text</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">createdAt</TD><TD ALIGN="LEFT"><FONT COLOR="#888">int (timestamp)</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">updatedAt</TD><TD ALIGN="LEFT"><FONT COLOR="#888">int (timestamp)</FONT></TD></TR>
+        </TABLE>
+    >]
+
+    session [label=<
+        <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white" COLOR="#6B46C1">
+            <TR><TD COLSPAN="3" BGCOLOR="#6B46C1"><FONT COLOR="white" POINT-SIZE="11"><B>  session  </B></FONT></TD></TR>
+            <TR><TD ALIGN="LEFT"><FONT COLOR="#C53030"><B>PK</B></FONT></TD><TD ALIGN="LEFT"><B>id</B></TD><TD ALIGN="LEFT"><FONT COLOR="#888">int AUTO_INCREMENT</FONT></TD></TR>
+            <TR><TD ALIGN="LEFT"><FONT COLOR="#2B6CB0"><B>FK</B></FONT></TD><TD ALIGN="LEFT">userId</TD><TD ALIGN="LEFT"><FONT COLOR="#888">int NOT NULL</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">token</TD><TD ALIGN="LEFT"><FONT COLOR="#888">text UNIQUE</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">expiresAt</TD><TD ALIGN="LEFT"><FONT COLOR="#888">int (timestamp)</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">ipAddress</TD><TD ALIGN="LEFT"><FONT COLOR="#888">text</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">userAgent</TD><TD ALIGN="LEFT"><FONT COLOR="#888">text</FONT></TD></TR>
+        </TABLE>
+    >]
+
+    account [label=<
+        <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white" COLOR="#6B46C1">
+            <TR><TD COLSPAN="3" BGCOLOR="#6B46C1"><FONT COLOR="white" POINT-SIZE="11"><B>  account  </B></FONT></TD></TR>
+            <TR><TD ALIGN="LEFT"><FONT COLOR="#C53030"><B>PK</B></FONT></TD><TD ALIGN="LEFT"><B>id</B></TD><TD ALIGN="LEFT"><FONT COLOR="#888">int AUTO_INCREMENT</FONT></TD></TR>
+            <TR><TD ALIGN="LEFT"><FONT COLOR="#2B6CB0"><B>FK</B></FONT></TD><TD ALIGN="LEFT">userId</TD><TD ALIGN="LEFT"><FONT COLOR="#888">int NOT NULL</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">accountId</TD><TD ALIGN="LEFT"><FONT COLOR="#888">text NOT NULL</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">providerId</TD><TD ALIGN="LEFT"><FONT COLOR="#888">text NOT NULL</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">accessToken</TD><TD ALIGN="LEFT"><FONT COLOR="#888">text</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">refreshToken</TD><TD ALIGN="LEFT"><FONT COLOR="#888">text</FONT></TD></TR>
+        </TABLE>
+    >]
+
+    verification [label=<
+        <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white" COLOR="#6B46C1">
+            <TR><TD COLSPAN="3" BGCOLOR="#6B46C1"><FONT COLOR="white" POINT-SIZE="11"><B>  verification  </B></FONT></TD></TR>
+            <TR><TD ALIGN="LEFT"><FONT COLOR="#C53030"><B>PK</B></FONT></TD><TD ALIGN="LEFT"><B>id</B></TD><TD ALIGN="LEFT"><FONT COLOR="#888">int AUTO_INCREMENT</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">identifier</TD><TD ALIGN="LEFT"><FONT COLOR="#888">text NOT NULL</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">value</TD><TD ALIGN="LEFT"><FONT COLOR="#888">text NOT NULL</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">expiresAt</TD><TD ALIGN="LEFT"><FONT COLOR="#888">int (timestamp)</FONT></TD></TR>
+        </TABLE>
+    >]
+
+    // ===== LOCATION TABLES (Blue) =====
+    location [label=<
+        <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white" COLOR="#2B6CB0">
+            <TR><TD COLSPAN="3" BGCOLOR="#2B6CB0"><FONT COLOR="white" POINT-SIZE="11"><B>  location  </B></FONT></TD></TR>
+            <TR><TD ALIGN="LEFT"><FONT COLOR="#C53030"><B>PK</B></FONT></TD><TD ALIGN="LEFT"><B>id</B></TD><TD ALIGN="LEFT"><FONT COLOR="#888">int AUTO_INCREMENT</FONT></TD></TR>
+            <TR><TD ALIGN="LEFT"><FONT COLOR="#2B6CB0"><B>FK</B></FONT></TD><TD ALIGN="LEFT">userId</TD><TD ALIGN="LEFT"><FONT COLOR="#888">int NOT NULL</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">name</TD><TD ALIGN="LEFT"><FONT COLOR="#888">text NOT NULL</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">slug</TD><TD ALIGN="LEFT"><FONT COLOR="#888">text UNIQUE</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">latitude</TD><TD ALIGN="LEFT"><FONT COLOR="#888">real</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">longitude</TD><TD ALIGN="LEFT"><FONT COLOR="#888">real</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">description</TD><TD ALIGN="LEFT"><FONT COLOR="#888">text</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">createdAt</TD><TD ALIGN="LEFT"><FONT COLOR="#888">int (timestamp)</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">updatedAt</TD><TD ALIGN="LEFT"><FONT COLOR="#888">int (timestamp)</FONT></TD></TR>
+        </TABLE>
+    >]
+
+    locationLog [label=<
+        <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white" COLOR="#2B6CB0">
+            <TR><TD COLSPAN="3" BGCOLOR="#2B6CB0"><FONT COLOR="white" POINT-SIZE="11"><B>  locationLog  </B></FONT></TD></TR>
+            <TR><TD ALIGN="LEFT"><FONT COLOR="#C53030"><B>PK</B></FONT></TD><TD ALIGN="LEFT"><B>id</B></TD><TD ALIGN="LEFT"><FONT COLOR="#888">int AUTO_INCREMENT</FONT></TD></TR>
+            <TR><TD ALIGN="LEFT"><FONT COLOR="#2B6CB0"><B>FK</B></FONT></TD><TD ALIGN="LEFT">locationId</TD><TD ALIGN="LEFT"><FONT COLOR="#888">int NOT NULL</FONT></TD></TR>
+            <TR><TD ALIGN="LEFT"><FONT COLOR="#2B6CB0"><B>FK</B></FONT></TD><TD ALIGN="LEFT">userId</TD><TD ALIGN="LEFT"><FONT COLOR="#888">int NOT NULL</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">name</TD><TD ALIGN="LEFT"><FONT COLOR="#888">text NOT NULL</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">latitude</TD><TD ALIGN="LEFT"><FONT COLOR="#888">real NOT NULL</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">longitude</TD><TD ALIGN="LEFT"><FONT COLOR="#888">real NOT NULL</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">description</TD><TD ALIGN="LEFT"><FONT COLOR="#888">text</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">startedAt</TD><TD ALIGN="LEFT"><FONT COLOR="#888">int NOT NULL</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">endedAt</TD><TD ALIGN="LEFT"><FONT COLOR="#888">int NOT NULL</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">createdAt</TD><TD ALIGN="LEFT"><FONT COLOR="#888">int (timestamp)</FONT></TD></TR>
+        </TABLE>
+    >]
+
+    locationLogImage [label=<
+        <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white" COLOR="#2B6CB0">
+            <TR><TD COLSPAN="3" BGCOLOR="#2B6CB0"><FONT COLOR="white" POINT-SIZE="11"><B>  locationLogImage  </B></FONT></TD></TR>
+            <TR><TD ALIGN="LEFT"><FONT COLOR="#C53030"><B>PK</B></FONT></TD><TD ALIGN="LEFT"><B>id</B></TD><TD ALIGN="LEFT"><FONT COLOR="#888">int AUTO_INCREMENT</FONT></TD></TR>
+            <TR><TD ALIGN="LEFT"><FONT COLOR="#2B6CB0"><B>FK</B></FONT></TD><TD ALIGN="LEFT">locationLogId</TD><TD ALIGN="LEFT"><FONT COLOR="#888">int NOT NULL</FONT></TD></TR>
+            <TR><TD ALIGN="LEFT"><FONT COLOR="#2B6CB0"><B>FK</B></FONT></TD><TD ALIGN="LEFT">userId</TD><TD ALIGN="LEFT"><FONT COLOR="#888">int NOT NULL</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">key</TD><TD ALIGN="LEFT"><FONT COLOR="#888">text NOT NULL</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">description</TD><TD ALIGN="LEFT"><FONT COLOR="#888">text</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">createdAt</TD><TD ALIGN="LEFT"><FONT COLOR="#888">int (timestamp)</FONT></TD></TR>
+        </TABLE>
+    >]
+
+    // ===== SOCIAL TABLES (Green) =====
+    post [label=<
+        <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white" COLOR="#276749">
+            <TR><TD COLSPAN="3" BGCOLOR="#276749"><FONT COLOR="white" POINT-SIZE="11"><B>  post  </B></FONT></TD></TR>
+            <TR><TD ALIGN="LEFT"><FONT COLOR="#C53030"><B>PK</B></FONT></TD><TD ALIGN="LEFT"><B>id</B></TD><TD ALIGN="LEFT"><FONT COLOR="#888">int AUTO_INCREMENT</FONT></TD></TR>
+            <TR><TD ALIGN="LEFT"><FONT COLOR="#2B6CB0"><B>FK</B></FONT></TD><TD ALIGN="LEFT">locationLogImageId</TD><TD ALIGN="LEFT"><FONT COLOR="#888">int NOT NULL UNIQUE</FONT></TD></TR>
+            <TR><TD ALIGN="LEFT"><FONT COLOR="#2B6CB0"><B>FK</B></FONT></TD><TD ALIGN="LEFT">userId</TD><TD ALIGN="LEFT"><FONT COLOR="#888">int NOT NULL</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">caption</TD><TD ALIGN="LEFT"><FONT COLOR="#888">text</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">createdAt</TD><TD ALIGN="LEFT"><FONT COLOR="#888">int (timestamp)</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">updatedAt</TD><TD ALIGN="LEFT"><FONT COLOR="#888">int (timestamp)</FONT></TD></TR>
+        </TABLE>
+    >]
+
+    postLike [label=<
+        <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white" COLOR="#276749">
+            <TR><TD COLSPAN="3" BGCOLOR="#276749"><FONT COLOR="white" POINT-SIZE="11"><B>  postLike  </B></FONT></TD></TR>
+            <TR><TD ALIGN="LEFT"><FONT COLOR="#C53030"><B>PK</B></FONT></TD><TD ALIGN="LEFT"><B>id</B></TD><TD ALIGN="LEFT"><FONT COLOR="#888">int AUTO_INCREMENT</FONT></TD></TR>
+            <TR><TD ALIGN="LEFT"><FONT COLOR="#2B6CB0"><B>FK</B></FONT></TD><TD ALIGN="LEFT">postId</TD><TD ALIGN="LEFT"><FONT COLOR="#888">int NOT NULL</FONT></TD></TR>
+            <TR><TD ALIGN="LEFT"><FONT COLOR="#2B6CB0"><B>FK</B></FONT></TD><TD ALIGN="LEFT">userId</TD><TD ALIGN="LEFT"><FONT COLOR="#888">int NOT NULL</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">createdAt</TD><TD ALIGN="LEFT"><FONT COLOR="#888">int (timestamp)</FONT></TD></TR>
+            <TR><TD COLSPAN="3" ALIGN="LEFT"><FONT COLOR="#C53030" POINT-SIZE="8">  UQ: (postId, userId)</FONT></TD></TR>
+        </TABLE>
+    >]
+
+    postComment [label=<
+        <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white" COLOR="#276749">
+            <TR><TD COLSPAN="3" BGCOLOR="#276749"><FONT COLOR="white" POINT-SIZE="11"><B>  postComment  </B></FONT></TD></TR>
+            <TR><TD ALIGN="LEFT"><FONT COLOR="#C53030"><B>PK</B></FONT></TD><TD ALIGN="LEFT"><B>id</B></TD><TD ALIGN="LEFT"><FONT COLOR="#888">int AUTO_INCREMENT</FONT></TD></TR>
+            <TR><TD ALIGN="LEFT"><FONT COLOR="#2B6CB0"><B>FK</B></FONT></TD><TD ALIGN="LEFT">postId</TD><TD ALIGN="LEFT"><FONT COLOR="#888">int NOT NULL</FONT></TD></TR>
+            <TR><TD ALIGN="LEFT"><FONT COLOR="#2B6CB0"><B>FK</B></FONT></TD><TD ALIGN="LEFT">userId</TD><TD ALIGN="LEFT"><FONT COLOR="#888">int NOT NULL</FONT></TD></TR>
+            <TR><TD ALIGN="LEFT"><FONT COLOR="#2B6CB0"><B>FK</B></FONT></TD><TD ALIGN="LEFT">parentId</TD><TD ALIGN="LEFT"><FONT COLOR="#888">int (self-ref)</FONT></TD></TR>
+            <TR><TD ALIGN="LEFT"><FONT COLOR="#2B6CB0"><B>FK</B></FONT></TD><TD ALIGN="LEFT">replyToUserId</TD><TD ALIGN="LEFT"><FONT COLOR="#888">int</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">content</TD><TD ALIGN="LEFT"><FONT COLOR="#888">text NOT NULL</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">createdAt</TD><TD ALIGN="LEFT"><FONT COLOR="#888">int (timestamp)</FONT></TD></TR>
+        </TABLE>
+    >]
+
+    // ===== NEW TABLES (Orange) - Subscriptions & Notifications =====
+    userFollow [label=<
+        <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white" COLOR="#C05621">
+            <TR><TD COLSPAN="3" BGCOLOR="#C05621"><FONT COLOR="white" POINT-SIZE="11"><B>  userFollow  </B></FONT></TD></TR>
+            <TR><TD ALIGN="LEFT"><FONT COLOR="#C53030"><B>PK</B></FONT></TD><TD ALIGN="LEFT"><B>id</B></TD><TD ALIGN="LEFT"><FONT COLOR="#888">int AUTO_INCREMENT</FONT></TD></TR>
+            <TR><TD ALIGN="LEFT"><FONT COLOR="#2B6CB0"><B>FK</B></FONT></TD><TD ALIGN="LEFT">followerId</TD><TD ALIGN="LEFT"><FONT COLOR="#888">int NOT NULL</FONT></TD></TR>
+            <TR><TD ALIGN="LEFT"><FONT COLOR="#2B6CB0"><B>FK</B></FONT></TD><TD ALIGN="LEFT">followingId</TD><TD ALIGN="LEFT"><FONT COLOR="#888">int NOT NULL</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">createdAt</TD><TD ALIGN="LEFT"><FONT COLOR="#888">int (timestamp)</FONT></TD></TR>
+            <TR><TD COLSPAN="3" ALIGN="LEFT"><FONT COLOR="#C53030" POINT-SIZE="8">  UQ: (followerId, followingId)</FONT></TD></TR>
+        </TABLE>
+    >]
+
+    notification [label=<
+        <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white" COLOR="#C05621">
+            <TR><TD COLSPAN="3" BGCOLOR="#C05621"><FONT COLOR="white" POINT-SIZE="11"><B>  notification  </B></FONT></TD></TR>
+            <TR><TD ALIGN="LEFT"><FONT COLOR="#C53030"><B>PK</B></FONT></TD><TD ALIGN="LEFT"><B>id</B></TD><TD ALIGN="LEFT"><FONT COLOR="#888">int AUTO_INCREMENT</FONT></TD></TR>
+            <TR><TD ALIGN="LEFT"><FONT COLOR="#2B6CB0"><B>FK</B></FONT></TD><TD ALIGN="LEFT">userId</TD><TD ALIGN="LEFT"><FONT COLOR="#888">int NOT NULL</FONT></TD></TR>
+            <TR><TD ALIGN="LEFT"><FONT COLOR="#2B6CB0"><B>FK</B></FONT></TD><TD ALIGN="LEFT">fromUserId</TD><TD ALIGN="LEFT"><FONT COLOR="#888">int NOT NULL</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">type</TD><TD ALIGN="LEFT"><FONT COLOR="#888">text NOT NULL</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">entityId</TD><TD ALIGN="LEFT"><FONT COLOR="#888">int</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">isRead</TD><TD ALIGN="LEFT"><FONT COLOR="#888">int DEFAULT 0</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">createdAt</TD><TD ALIGN="LEFT"><FONT COLOR="#888">int (timestamp)</FONT></TD></TR>
+        </TABLE>
+    >]
+
+    // ===== NEW TABLES (Teal) - AI Assistant =====
+    aiConversation [label=<
+        <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white" COLOR="#2C7A7B">
+            <TR><TD COLSPAN="3" BGCOLOR="#2C7A7B"><FONT COLOR="white" POINT-SIZE="11"><B>  aiConversation  </B></FONT></TD></TR>
+            <TR><TD ALIGN="LEFT"><FONT COLOR="#C53030"><B>PK</B></FONT></TD><TD ALIGN="LEFT"><B>id</B></TD><TD ALIGN="LEFT"><FONT COLOR="#888">int AUTO_INCREMENT</FONT></TD></TR>
+            <TR><TD ALIGN="LEFT"><FONT COLOR="#2B6CB0"><B>FK</B></FONT></TD><TD ALIGN="LEFT">userId</TD><TD ALIGN="LEFT"><FONT COLOR="#888">int NOT NULL</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">title</TD><TD ALIGN="LEFT"><FONT COLOR="#888">text</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">createdAt</TD><TD ALIGN="LEFT"><FONT COLOR="#888">int (timestamp)</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">updatedAt</TD><TD ALIGN="LEFT"><FONT COLOR="#888">int (timestamp)</FONT></TD></TR>
+        </TABLE>
+    >]
+
+    aiMessage [label=<
+        <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white" COLOR="#2C7A7B">
+            <TR><TD COLSPAN="3" BGCOLOR="#2C7A7B"><FONT COLOR="white" POINT-SIZE="11"><B>  aiMessage  </B></FONT></TD></TR>
+            <TR><TD ALIGN="LEFT"><FONT COLOR="#C53030"><B>PK</B></FONT></TD><TD ALIGN="LEFT"><B>id</B></TD><TD ALIGN="LEFT"><FONT COLOR="#888">int AUTO_INCREMENT</FONT></TD></TR>
+            <TR><TD ALIGN="LEFT"><FONT COLOR="#2B6CB0"><B>FK</B></FONT></TD><TD ALIGN="LEFT">conversationId</TD><TD ALIGN="LEFT"><FONT COLOR="#888">int NOT NULL</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">role</TD><TD ALIGN="LEFT"><FONT COLOR="#888">text NOT NULL</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">content</TD><TD ALIGN="LEFT"><FONT COLOR="#888">text NOT NULL</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">createdAt</TD><TD ALIGN="LEFT"><FONT COLOR="#888">int (timestamp)</FONT></TD></TR>
+        </TABLE>
+    >]
+
+    savedRoute [label=<
+        <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white" COLOR="#2C7A7B">
+            <TR><TD COLSPAN="3" BGCOLOR="#2C7A7B"><FONT COLOR="white" POINT-SIZE="11"><B>  savedRoute  </B></FONT></TD></TR>
+            <TR><TD ALIGN="LEFT"><FONT COLOR="#C53030"><B>PK</B></FONT></TD><TD ALIGN="LEFT"><B>id</B></TD><TD ALIGN="LEFT"><FONT COLOR="#888">int AUTO_INCREMENT</FONT></TD></TR>
+            <TR><TD ALIGN="LEFT"><FONT COLOR="#2B6CB0"><B>FK</B></FONT></TD><TD ALIGN="LEFT">userId</TD><TD ALIGN="LEFT"><FONT COLOR="#888">int NOT NULL</FONT></TD></TR>
+            <TR><TD ALIGN="LEFT"><FONT COLOR="#2B6CB0"><B>FK</B></FONT></TD><TD ALIGN="LEFT">conversationId</TD><TD ALIGN="LEFT"><FONT COLOR="#888">int</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">title</TD><TD ALIGN="LEFT"><FONT COLOR="#888">text NOT NULL</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">routeData</TD><TD ALIGN="LEFT"><FONT COLOR="#888">text NOT NULL (JSON)</FONT></TD></TR>
+            <TR><TD></TD><TD ALIGN="LEFT">createdAt</TD><TD ALIGN="LEFT"><FONT COLOR="#888">int (timestamp)</FONT></TD></TR>
+        </TABLE>
+    >]
+
+    // ===== LAYOUT HINTS =====
+    { rank=same; session; account; verification }
+    { rank=same; postLike; postComment }
+    { rank=same; userFollow; notification }
+    { rank=same; aiMessage; savedRoute }
+
+    // ===== RELATIONSHIPS =====
+
+    // Auth relations
+    user -> session [label="1:N" color="#6B46C1" fontcolor="#6B46C1" style=bold]
+    user -> account [label="1:N" color="#6B46C1" fontcolor="#6B46C1" style=bold]
+
+    // Location chain
+    user -> location [label="1:N" color="#2B6CB0" fontcolor="#2B6CB0" style=bold]
+    location -> locationLog [label="1:N" color="#2B6CB0" fontcolor="#2B6CB0" style=bold]
+    locationLog -> locationLogImage [label="1:N" color="#2B6CB0" fontcolor="#2B6CB0" style=bold]
+
+    // Post chain
+    locationLogImage -> post [label="1:1" color="#276749" fontcolor="#276749" style=bold]
+    user -> post [label="1:N" color="#276749" fontcolor="#276749" style=bold]
+    post -> postLike [label="1:N" color="#276749" fontcolor="#276749"]
+    post -> postComment [label="1:N" color="#276749" fontcolor="#276749"]
+    user -> postLike [label="1:N" color="#276749" fontcolor="#276749" style=dashed]
+    user -> postComment [label="1:N" color="#276749" fontcolor="#276749" style=dashed]
+    postComment -> postComment [label="self-ref\n(parentId)" color="#276749" fontcolor="#276749" style=dashed]
+
+    // Social relations (NEW)
+    user -> userFollow [label="1:N\n(follower)" color="#C05621" fontcolor="#C05621" style=bold]
+    user -> notification [label="1:N" color="#C05621" fontcolor="#C05621" style=dashed]
+
+    // AI relations (NEW)
+    user -> aiConversation [label="1:N" color="#2C7A7B" fontcolor="#2C7A7B" style=bold]
+    aiConversation -> aiMessage [label="1:N" color="#2C7A7B" fontcolor="#2C7A7B" style=bold]
+    user -> savedRoute [label="1:N" color="#2C7A7B" fontcolor="#2C7A7B" style=dashed]
+    aiConversation -> savedRoute [label="1:N" color="#2C7A7B" fontcolor="#2C7A7B" style=dashed]
+
+}

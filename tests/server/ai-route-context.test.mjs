@@ -29,8 +29,10 @@ test("route prompt locks map-first route event behavior", () => {
   assert.match(promptSource, /ROUTE_SYSTEM_INSTRUCTIONS/);
   assert.match(promptSource, /raw JSON is not user-facing UI/);
   assert.match(promptSource, /selected sidebar context/);
+  assert.match(promptSource, /single JSON object/);
+  assert.match(promptSource, /Do not wrap output in markdown/);
   assert.match(promptSource, /preserve route variants/);
-  assert.match(promptSource, /priceConfidence/);
+  assert.match(promptSource, /Never use numeric price levels/);
 });
 
 test("server env names include OpenAI route config without public runtime exposure", () => {

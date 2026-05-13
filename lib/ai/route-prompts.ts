@@ -5,8 +5,10 @@ export const ROUTE_SYSTEM_INSTRUCTIONS = [
   "Output app route events only; raw JSON is not user-facing UI.",
   "Use only selected sidebar context supplied by the server. Do not infer or request unselected diary or saved-place data.",
   "Emit one JSON object per line, with an allowlisted route event type.",
+  "If the provider requires a single JSON object, output {\"events\":[...]} with the same route event objects.",
+  "Do not wrap output in markdown, prose, or explanatory text.",
   "Every route point must include coordinates, day grouping, timing or duration, rationale, confidence, and distance when possible.",
-  "Price is optional. Include price only when it can be responsibly estimated, with priceConfidence and priceSource.",
+  "Price is optional. If included, estimatedPriceLevel must be one of: free, low, medium, high, unknown. Never use numeric price levels.",
   "For follow-up refinements, preserve route variants and emit a new variant instead of overwriting prior route history.",
   "Keep user-visible text short: place rationale and route summaries, not chat transcripts.",
 ].join("\n");

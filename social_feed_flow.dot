@@ -1,0 +1,298 @@
+digraph SocialFeedFlow {
+    graph [
+        rankdir=TB
+        fontname="Arial"
+        fontsize=12
+        bgcolor="white"
+        pad=0.5
+        nodesep=0.4
+        ranksep=0.6
+        label=<<TABLE BORDER="0" CELLBORDER="0"><TR><TD><FONT FACE="Arial" POINT-SIZE="18"><B>Диаграмма потока данных социальной ленты</B></FONT></TD></TR></TABLE>>
+        labelloc=t
+        compound=true
+    ]
+
+    node [fontname="Arial" fontsize=9 shape=none margin=0]
+    edge [fontname="Arial" fontsize=8 color="#555555" arrowsize=0.7]
+
+    // ===== ACTOR =====
+    user [label=<
+        <TABLE BORDER="0" CELLBORDER="0" CELLSPACING="0">
+            <TR><TD><FONT POINT-SIZE="30" COLOR="#08427B">👤</FONT></TD></TR>
+            <TR><TD><FONT FACE="Arial" POINT-SIZE="11"><B>Пользователь</B></FONT></TD></TR>
+        </TABLE>
+    >]
+
+    // ===== POST CREATION FLOW =====
+    subgraph cluster_publish {
+        label=<<FONT FACE="Arial" POINT-SIZE="11" COLOR="#444"><B>1. Создание публикации</B></FONT>>
+        style="rounded,dashed" color="#AAAAAA" bgcolor="#FFF8F0"
+
+        publishPage [label=<
+            <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white" COLOR="#C05621">
+                <TR><TD BGCOLOR="#C05621"><FONT COLOR="white" POINT-SIZE="10"><B>  /dashboard/publish  </B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">Страница публикации</FONT></TD></TR>
+            </TABLE>
+        >]
+
+        myImagesAPI [label=<
+            <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white" COLOR="#C05621">
+                <TR><TD BGCOLOR="#C05621"><FONT COLOR="white" POINT-SIZE="10"><B>  GET /api/posts/my-images  </B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">Неопубликованные изображения</FONT></TD></TR>
+            </TABLE>
+        >]
+
+        imageSelect [label=<
+            <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white" COLOR="#C05621">
+                <TR><TD BGCOLOR="#C05621"><FONT COLOR="white" POINT-SIZE="10"><B>  Выбор изображения  </B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">Грид с превью + бейдж "Posted"</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">Текст подписи (max 500 символов)</FONT></TD></TR>
+            </TABLE>
+        >]
+
+        createPostAPI [label=<
+            <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white" COLOR="#C05621">
+                <TR><TD BGCOLOR="#C05621"><FONT COLOR="white" POINT-SIZE="10"><B>  POST /api/posts  </B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">{ locationLogImageId, caption? }</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">UNIQUE: 1 пост на 1 изображение</FONT></TD></TR>
+            </TABLE>
+        >]
+    }
+
+    // ===== FEED DISPLAY FLOW =====
+    subgraph cluster_feed {
+        label=<<FONT FACE="Arial" POINT-SIZE="11" COLOR="#444"><B>2. Отображение ленты</B></FONT>>
+        style="rounded,dashed" color="#AAAAAA" bgcolor="#F0F4FF"
+
+        feedPage [label=<
+            <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white" COLOR="#2B6CB0">
+                <TR><TD BGCOLOR="#2B6CB0"><FONT COLOR="white" POINT-SIZE="10"><B>  /pages/feed.vue  </B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">Страница ленты</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">Вкладки: Latest / Popular</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">Сайдбар, поиск</FONT></TD></TR>
+            </TABLE>
+        >]
+
+        feedStore [label=<
+            <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white" COLOR="#276749">
+                <TR><TD BGCOLOR="#276749"><FONT COLOR="white" POINT-SIZE="10"><B>  stores/feed.ts (Pinia)  </B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8"><B>State:</B> posts[], nextCursor,</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">hasMore, loading, error</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8"><B>Actions:</B> fetchFeed(reset),</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">toggleLike(), increment/</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">decrementCommentsCount()</FONT></TD></TR>
+            </TABLE>
+        >]
+
+        feedAPI [label=<
+            <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white" COLOR="#1168BD">
+                <TR><TD BGCOLOR="#1168BD"><FONT COLOR="white" POINT-SIZE="10"><B>  GET /api/feed  </B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">?cursor={id}&amp;limit=20</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">→ { items[], nextCursor, hasMore }</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">getFeedWithUserLikes()</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">COUNT лайков/комментариев</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">EXISTS isLikedByUser</FONT></TD></TR>
+            </TABLE>
+        >]
+
+        infiniteScroll [label=<
+            <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white" COLOR="#2B6CB0">
+                <TR><TD BGCOLOR="#2B6CB0"><FONT COLOR="white" POINT-SIZE="10"><B>  Infinite Scroll  </B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">@scroll → handleScroll()</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">Порог: 200px до конца</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">if hasMore &amp;&amp; !loading</FONT></TD></TR>
+            </TABLE>
+        >]
+    }
+
+    // ===== POST CARD =====
+    subgraph cluster_postcard {
+        label=<<FONT FACE="Arial" POINT-SIZE="11" COLOR="#444"><B>3. Карточка публикации</B></FONT>>
+        style="rounded,dashed" color="#AAAAAA" bgcolor="#F0FFF0"
+
+        postCard [label=<
+            <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white" COLOR="#276749">
+                <TR><TD BGCOLOR="#276749"><FONT COLOR="white" POINT-SIZE="10"><B>  FeedPostCard  </B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">Аватар, имя, дата, локация</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">Изображение (S3) + lightbox</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">Подпись + подсветка #хештегов</FONT></TD></TR>
+            </TABLE>
+        >]
+
+        likeBtn [label=<
+            <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white" COLOR="#C53030">
+                <TR><TD BGCOLOR="#C53030"><FONT COLOR="white" POINT-SIZE="10"><B>  LikeButton  </B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">❤ Сердце + счётчик</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">Анимация при клике</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">emit('toggle')</FONT></TD></TR>
+            </TABLE>
+        >]
+
+        commentsSection [label=<
+            <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white" COLOR="#276749">
+                <TR><TD BGCOLOR="#276749"><FONT COLOR="white" POINT-SIZE="10"><B>  FeedPostComments  </B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">Список комментариев (320px scroll)</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">Форма ввода, reply-to</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">emit('commentAdded'/'Deleted')</FONT></TD></TR>
+            </TABLE>
+        >]
+
+        commentItem [label=<
+            <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white" COLOR="#276749">
+                <TR><TD BGCOLOR="#276749"><FONT COLOR="white" POINT-SIZE="10"><B>  CommentItem  </B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">Аватар, текст, дата</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">Ответить / Удалить</FONT></TD></TR>
+            </TABLE>
+        >]
+    }
+
+    // ===== LIKE FLOW =====
+    subgraph cluster_like {
+        label=<<FONT FACE="Arial" POINT-SIZE="11" COLOR="#444"><B>4. Поток лайков (Optimistic UI)</B></FONT>>
+        style="rounded,dashed" color="#AAAAAA" bgcolor="#FFF0F0"
+
+        optimisticLike [label=<
+            <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white" COLOR="#C53030">
+                <TR><TD BGCOLOR="#C53030"><FONT COLOR="white" POINT-SIZE="10"><B>  Optimistic Update  </B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">1. isLikedByUser = true</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">2. likesCount++</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">3. UI мгновенно обновлён</FONT></TD></TR>
+            </TABLE>
+        >]
+
+        likeAPI [label=<
+            <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white" COLOR="#1168BD">
+                <TR><TD BGCOLOR="#1168BD"><FONT COLOR="white" POINT-SIZE="10"><B>  POST/DELETE /api/posts/{id}/like  </B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">$csrfFetch (CSRF-защита)</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">→ { success, liked: true/false }</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">UQ(postId, userId) — нет дублей</FONT></TD></TR>
+            </TABLE>
+        >]
+
+        revertLike [label=<
+            <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white" COLOR="#C53030">
+                <TR><TD BGCOLOR="#C53030"><FONT COLOR="white" POINT-SIZE="10"><B>  Revert on Error  </B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">При ошибке: откат</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">isLikedByUser / likesCount</FONT></TD></TR>
+            </TABLE>
+        >]
+    }
+
+    // ===== COMMENT FLOW =====
+    subgraph cluster_comment {
+        label=<<FONT FACE="Arial" POINT-SIZE="11" COLOR="#444"><B>5. Поток комментариев</B></FONT>>
+        style="rounded,dashed" color="#AAAAAA" bgcolor="#F0F0FF"
+
+        getCommentsAPI [label=<
+            <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white" COLOR="#1168BD">
+                <TR><TD BGCOLOR="#1168BD"><FONT COLOR="white" POINT-SIZE="10"><B>  GET /api/posts/{id}/comments  </B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">→ FeedComment[]</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">user, replyToUser, parentId</FONT></TD></TR>
+            </TABLE>
+        >]
+
+        postCommentAPI [label=<
+            <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white" COLOR="#1168BD">
+                <TR><TD BGCOLOR="#1168BD"><FONT COLOR="white" POINT-SIZE="10"><B>  POST /api/posts/{id}/comments  </B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">{ content, parentId?, replyToUserId? }</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">Валидация: parentId ∈ post</FONT></TD></TR>
+            </TABLE>
+        >]
+
+        deleteCommentAPI [label=<
+            <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white" COLOR="#1168BD">
+                <TR><TD BGCOLOR="#1168BD"><FONT COLOR="white" POINT-SIZE="10"><B>  DELETE .../comments/{commentId}  </B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">Только автор комментария</FONT></TD></TR>
+            </TABLE>
+        >]
+    }
+
+    // ===== DATABASE =====
+    subgraph cluster_db {
+        label=<<FONT FACE="Arial" POINT-SIZE="11" COLOR="#444"><B>6. База данных (Turso / Drizzle ORM)</B></FONT>>
+        style="rounded,dashed" color="#AAAAAA" bgcolor="#F5F5F5"
+
+        postTable [label=<
+            <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white" COLOR="#08427B">
+                <TR><TD BGCOLOR="#08427B"><FONT COLOR="white" POINT-SIZE="10"><B>  post  </B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">id, locationLogImageId (UQ),</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">userId, caption, timestamps</FONT></TD></TR>
+            </TABLE>
+        >]
+
+        likeTable [label=<
+            <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white" COLOR="#08427B">
+                <TR><TD BGCOLOR="#08427B"><FONT COLOR="white" POINT-SIZE="10"><B>  postLike  </B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">id, postId, userId</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">UQ(postId, userId)</FONT></TD></TR>
+            </TABLE>
+        >]
+
+        commentTable [label=<
+            <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white" COLOR="#08427B">
+                <TR><TD BGCOLOR="#08427B"><FONT COLOR="white" POINT-SIZE="10"><B>  postComment  </B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">id, postId, userId, content,</FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">parentId (self-ref), replyToUserId</FONT></TD></TR>
+            </TABLE>
+        >]
+
+        imageTable [label=<
+            <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white" COLOR="#08427B">
+                <TR><TD BGCOLOR="#08427B"><FONT COLOR="white" POINT-SIZE="10"><B>  locationLogImage  </B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">id, key (S3), locationLogId</FONT></TD></TR>
+            </TABLE>
+        >]
+
+        s3 [label=<
+            <TABLE BORDER="1" CELLBORDER="0" CELLSPACING="0" CELLPADDING="4" BGCOLOR="white" COLOR="#888888">
+                <TR><TD BGCOLOR="#888888"><FONT COLOR="white" POINT-SIZE="10"><B>  Yandex Cloud S3  </B></FONT></TD></TR>
+                <TR><TD ALIGN="LEFT"><FONT POINT-SIZE="8">Изображения постов</FONT></TD></TR>
+            </TABLE>
+        >]
+    }
+
+    // ========== RELATIONSHIPS ==========
+
+    // 1. Post creation flow
+    user -> publishPage [label="Открывает\n/dashboard/publish" color="#C05621" fontcolor="#C05621" style=bold]
+    publishPage -> myImagesAPI [label="Загружает\nнеопубликованные" color="#C05621" fontcolor="#C05621"]
+    myImagesAPI -> imageTable [label="SELECT WHERE\nnot in post" color="#08427B" fontcolor="#08427B" style=dashed]
+    myImagesAPI -> publishPage [label="Image[]" color="#C05621" fontcolor="#C05621" style=dashed]
+    publishPage -> imageSelect [label="Превью + выбор" color="#C05621" fontcolor="#C05621"]
+    imageSelect -> createPostAPI [label="Публикация" color="#C05621" fontcolor="#C05621" style=bold]
+    createPostAPI -> postTable [label="INSERT post" color="#08427B" fontcolor="#08427B"]
+
+    // 2. Feed display flow
+    user -> feedPage [label="Открывает /feed" color="#2B6CB0" fontcolor="#2B6CB0" style=bold]
+    feedPage -> feedStore [label="onMounted:\nfetchFeed(true)" color="#276749" fontcolor="#276749"]
+    feedStore -> feedAPI [label="GET /api/feed\n?limit=20" color="#1168BD" fontcolor="#1168BD"]
+    feedAPI -> postTable [label="SELECT + JOIN\n+ COUNT subqueries" color="#08427B" fontcolor="#08427B"]
+    feedAPI -> feedStore [label="{ items[],\nnextCursor, hasMore }" color="#1168BD" fontcolor="#1168BD" style=dashed]
+    feedStore -> feedPage [label="Reactivity:\nposts[] → render" color="#276749" fontcolor="#276749" style=dashed]
+    feedPage -> infiniteScroll [label="@scroll" color="#2B6CB0" fontcolor="#2B6CB0"]
+    infiniteScroll -> feedStore [label="fetchFeed()\nс cursor" color="#276749" fontcolor="#276749"]
+
+    // 3. Post card
+    feedPage -> postCard [label="v-for post\nin posts" color="#276749" fontcolor="#276749"]
+    postCard -> likeBtn [label="Рендерит" color="#276749" fontcolor="#276749"]
+    postCard -> commentsSection [label="toggleComments()" color="#276749" fontcolor="#276749"]
+    commentsSection -> commentItem [label="v-for comment" color="#276749" fontcolor="#276749"]
+
+    // 4. Like flow
+    likeBtn -> optimisticLike [label="click → toggleLike()" color="#C53030" fontcolor="#C53030" style=bold]
+    optimisticLike -> likeAPI [label="$csrfFetch" color="#1168BD" fontcolor="#1168BD"]
+    likeAPI -> likeTable [label="INSERT /\nDELETE" color="#08427B" fontcolor="#08427B"]
+    likeAPI -> revertLike [label="catch error" color="#C53030" fontcolor="#C53030" style=dashed]
+
+    // 5. Comment flow
+    commentsSection -> getCommentsAPI [label="onMounted" color="#1168BD" fontcolor="#1168BD"]
+    getCommentsAPI -> commentTable [label="SELECT" color="#08427B" fontcolor="#08427B"]
+    commentsSection -> postCommentAPI [label="submit()" color="#1168BD" fontcolor="#1168BD" style=bold]
+    postCommentAPI -> commentTable [label="INSERT" color="#08427B" fontcolor="#08427B"]
+    commentItem -> deleteCommentAPI [label="Удалить\n(только автор)" color="#1168BD" fontcolor="#1168BD" style=dashed]
+    deleteCommentAPI -> commentTable [label="DELETE" color="#08427B" fontcolor="#08427B"]
+
+    // S3 link
+    imageTable -> s3 [label="key → URL" color="#888888" fontcolor="#888888" style=dashed]
+    postCard -> s3 [label="Загрузка\nизображения" color="#888888" fontcolor="#888888" style=dashed]
+}

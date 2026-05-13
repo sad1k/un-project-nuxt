@@ -29,5 +29,6 @@ Before claiming implementation complete, run the smallest meaningful verificatio
 
 ## Current Next Step
 
-Phase 1 is **Verification Foundation**. Use `$gsd-discuss-phase 1` or `$gsd-plan-phase 1` before implementation.
+Phase 1 is **Explore Scope and Verification Foundation**. Use `$gsd-plan-phase 1` before implementation.
 
+Explore scope is locked in `.planning/phases/01-explore-scope-and-verification-foundation/01-CONTEXT.md`: city autocomplete, days/interests, AI streaming route generation, animated map route, rich place popups, weather tips, and save-to-diary flow.

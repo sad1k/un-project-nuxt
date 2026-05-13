@@ -31,6 +31,15 @@ Requirements for the fully working Explore page and AI route planning MVP. Exist
 - [x] **AIROUTE-05**: Server persists route conversations/messages and scopes them to the authenticated user.
 - [x] **AIROUTE-06**: AI response includes structured route data suitable for map rendering.
 
+### Route Generation Continuity
+
+- [ ] **GENLIFE-01**: Route generation continues server-side after the user leaves Explore, refreshes, or temporarily disconnects.
+- [ ] **GENLIFE-02**: User can see active route-generation progress from a global app surface, not only inside the Explore panel.
+- [ ] **GENLIFE-03**: Completed or failed background generations are persisted to user-owned route history and recoverable from the interface.
+- [ ] **GENLIFE-04**: User receives an in-app completion notification when a background route generation finishes while the app is open.
+- [ ] **GENLIFE-05**: Browser push completion notification is sent only when permission, service worker support, and a saved user subscription are available.
+- [ ] **GENLIFE-06**: Background generation status, notification delivery, and route-history recovery remain scoped to the authenticated user and observable without exposing secrets or raw private context.
+
 ### Map Route Experience
 
 - [ ] **MAP-01**: User sees generated route markers on the map.
@@ -78,8 +87,8 @@ Deferred to future release. Tracked but not in current roadmap unless explicitly
 
 ### Notifications
 
-- **NOTF-01**: User receives push notifications for relevant travel/feed/events.
-- **NOTF-02**: User can configure notification preferences.
+- **NOTF-01**: User receives general push notifications for relevant travel/feed/events beyond route-generation completion.
+- **NOTF-02**: User can configure general notification preferences.
 
 ### Advanced AI
 
@@ -99,7 +108,7 @@ Explicitly excluded. Documented to prevent scope creep.
 | Feature | Reason |
 |---------|--------|
 | Native mobile app | Web-first Nuxt/PWA project |
-| Push notifications in v1 | Requires service worker subscriptions and delivery design beyond Explore MVP |
+| General push notifications in v1 | Route-generation completion notification is pulled into GENLIFE-04/GENLIFE-05; broader feed/travel/event push behavior remains deferred |
 | Full offline editing | Sync/conflict complexity is not required for first working Explore route flow |
 | Guaranteed live crowd presence | The app can show app-data-based signals, not guaranteed real-world live occupancy |
 | Full narrated audio history in v1 | Valuable but depends on content/audio pipeline after place popups work |
@@ -126,6 +135,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AIROUTE-04 | Phase 3 | Complete |
 | AIROUTE-05 | Phase 3 | Complete |
 | AIROUTE-06 | Phase 3 | Complete |
+| GENLIFE-01 | Phase 5.1 | Pending |
+| GENLIFE-02 | Phase 5.1 | Pending |
+| GENLIFE-03 | Phase 5.1 | Pending |
+| GENLIFE-04 | Phase 5.1 | Pending |
+| GENLIFE-05 | Phase 5.1 | Pending |
+| GENLIFE-06 | Phase 5.1 | Pending |
 | MAP-01 | Phase 4 | Pending |
 | MAP-02 | Phase 4 | Pending |
 | MAP-03 | Phase 4 | Pending |
@@ -148,8 +163,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | OBS-03 | Phase 6 | Pending |
 
 **Coverage:**
-- v1 requirements: 35 total
-- Mapped to phases: 35
+- v1 requirements: 41 total
+- Mapped to phases: 41
 - Unmapped: 0
 
 ---
