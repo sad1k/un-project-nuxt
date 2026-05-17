@@ -157,6 +157,25 @@ Plans:
 
 **Requirements:** DIARY-01, DIARY-02, DIARY-03, OBS-01, OBS-02, OBS-03
 
+**Plans:** 3 plans
+
+Plans:
+
+**Wave 1**
+- [ ] 06-01-PLAN.md - Build idempotent automatic route-to-diary persistence.
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 06-02-PLAN.md - Surface automatic saved-to-diary status in Explore.
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 06-03-PLAN.md - Harden provider observability, ownership, credential exposure, and release verification.
+
+Cross-cutting constraints:
+- Completed generated routes automatically save to diary; there is no primary explicit "save route" step for successful completed routes.
+- Each generated route point becomes one authenticated user's `locationLog`, with a created or reused matching authenticated user's `location`.
+- Automatic diary save must be idempotent across retries, reloads, and route-history restore.
+- Provider failure observability must not log raw prompts, raw model responses, provider headers, secrets, private route context, or sensitive location history.
+
 **Success Criteria:**
 1. User can save a generated route to the diary.
 2. User can save selected places into existing location/location-log structures where appropriate.

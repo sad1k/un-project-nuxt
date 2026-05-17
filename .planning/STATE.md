@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 current_phase: 6
-status: ready
+status: ready_to_execute
 last_updated: "2026-05-13T00:00:00.000Z"
 progress:
   total_phases: 6
   completed_phases: 5
-  total_plans: 18
+  total_plans: 21
   completed_plans: 18
-  percent: 100
+  percent: 86
 ---
 
 # GSD State: WanderLog
@@ -18,7 +18,7 @@ progress:
 **Initialized:** 2026-05-08
 **Updated:** 2026-05-08
 **Current phase:** 6
-**Status:** Ready to plan / execute
+**Status:** Ready to execute
 
 ## Project Reference
 
@@ -58,7 +58,7 @@ See: `.planning/PROJECT.md` (updated 2026-05-08)
 
 ## Next Step
 
-Run `$gsd-plan-phase 6` to research and plan Save to Diary and Release Hardening.
+Run `$gsd-execute-phase 6` to execute the three Phase 6 plans.
 
 ## Accumulated Context
 
@@ -69,7 +69,8 @@ Run `$gsd-plan-phase 6` to research and plan Save to Diary and Release Hardening
 - Phase 5.1 executed: durable route runner, global progress/history indicator, in-app notification fallback, push subscription groundwork, stale status, local DB schema push, and verification artifacts completed.
 - Phase 5.1 verification: `pnpm test:server` passed 75/75 and `pnpm lint:source` passed with existing warnings; `pnpm typecheck` remains blocked by unrelated existing project typing issues listed in `05.1-VERIFICATION.md`.
 - Phase 6 context gathered: generated routes should automatically save whole completed routes into diary history, with one diary log per generated route point, sanitized Sentry/logging, build, and typecheck treated as release-blocking concerns.
+- Phase 6 planned: 3 plans covering idempotent automatic route-to-diary persistence, saved-to-diary Explore state, and sanitized release hardening/verification.
 
 ---
 
-*State updated: 2026-05-18 after Phase 6 context discussion*
+*State updated: 2026-05-18 after Phase 6 planning*
