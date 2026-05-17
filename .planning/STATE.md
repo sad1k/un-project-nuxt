@@ -25,7 +25,7 @@ progress:
 See: `.planning/PROJECT.md` (updated 2026-05-08)
 
 **Core value:** Users can turn their own travel context and preferences into an animated, explainable AI route that they can inspect on the map and save into their travel diary.
-**Current focus:** Phase 6 — save generated routes into diary flow
+**Current focus:** Phase 6 - save generated routes into diary flow
 
 ## Workflow Preferences
 
@@ -40,11 +40,9 @@ See: `.planning/PROJECT.md` (updated 2026-05-08)
 
 ## Latest Session
 
-- Stopped at: Phase 1 executed and verified.
-- Verification file: `.planning/phases/01-explore-scope-and-verification-foundation/01-VERIFICATION.md`
-- Completed plans:
-  - `.planning/phases/01-explore-scope-and-verification-foundation/01-01-SUMMARY.md`
-  - `.planning/phases/01-explore-scope-and-verification-foundation/01-02-SUMMARY.md`
+- Stopped at: Phase 6 context gathered.
+- Resume file: `.planning/phases/06-save-to-diary-and-release-hardening/06-CONTEXT.md`
+- Discussion log: `.planning/phases/06-save-to-diary-and-release-hardening/06-DISCUSSION-LOG.md`
 
 ## Artifact Index
 
@@ -55,11 +53,12 @@ See: `.planning/PROJECT.md` (updated 2026-05-08)
 - Requirements: `.planning/REQUIREMENTS.md`
 - Roadmap: `.planning/ROADMAP.md`
 - Phase 1 context: `.planning/phases/01-explore-scope-and-verification-foundation/01-CONTEXT.md`
+- Phase 6 context: `.planning/phases/06-save-to-diary-and-release-hardening/06-CONTEXT.md`
 - Project guide: `AGENTS.md`
 
 ## Next Step
 
-Run `$gsd-discuss-phase 2` to gather context for Explore inputs, or `$gsd-plan-phase 2` to plan directly from the roadmap.
+Run `$gsd-plan-phase 6` to research and plan Save to Diary and Release Hardening.
 
 ## Accumulated Context
 
@@ -69,7 +68,8 @@ Run `$gsd-discuss-phase 2` to gather context for Explore inputs, or `$gsd-plan-p
 - Phase 5.1 planned: 4 plans covering durable generation, global status/history, notifications, and hardening/verification.
 - Phase 5.1 executed: durable route runner, global progress/history indicator, in-app notification fallback, push subscription groundwork, stale status, local DB schema push, and verification artifacts completed.
 - Phase 5.1 verification: `pnpm test:server` passed 75/75 and `pnpm lint:source` passed with existing warnings; `pnpm typecheck` remains blocked by unrelated existing project typing issues listed in `05.1-VERIFICATION.md`.
+- Phase 6 context gathered: generated routes should automatically save whole completed routes into diary history, with one diary log per generated route point, sanitized Sentry/logging, build, and typecheck treated as release-blocking concerns.
 
 ---
 
-*State updated: 2026-05-08 after Phase 1 execution*
+*State updated: 2026-05-18 after Phase 6 context discussion*
