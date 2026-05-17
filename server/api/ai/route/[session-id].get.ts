@@ -6,6 +6,7 @@ import {
   RoutePointSchema,
 } from "~/lib/ai/route-contract";
 import { findAiRouteSessionByIdForUser } from "~/lib/db/queries/ai-route";
+import { findRouteDiarySaveSummariesByVariantIds } from "~/lib/db/queries/route-diary-save";
 import defineAuthenticatedHandler from "~/utils/define-authenticated-handler";
 
 type RouteSessionStatus = "generating" | "completed" | "failed";
@@ -20,6 +21,14 @@ export default defineAuthenticatedHandler(async (event) => {
       statusMessage: "Route session not found",
     });
   }
+
+  const diarySaveSummaries = await findRouteDiarySaveSummariesByVariantIds(
+    event.context.user.id,
+    session.variants.map(variant => variant.id),
+    {
+      expectedPointCounts: new Map(session.variants.map(variant => [variant.id, variant.points.length])),
+    },
+  );
 
   return {
     sessionId: session.id,
@@ -36,6 +45,7 @@ export default defineAuthenticatedHandler(async (event) => {
       generationStartedAt: variant.generationStartedAt ?? undefined,
       generationHeartbeatAt: variant.generationHeartbeatAt ?? undefined,
       generationCompletedAt: variant.generationCompletedAt ?? undefined,
+      diarySave: diarySaveSummaries.get(variant.id) ?? undefined,
       notificationStatus: variant.notificationStatus,
       pointCount: variant.points.length,
     })),

@@ -17,6 +17,28 @@ const routeDayGroups = computed(() => getRouteDayGroups(routeMapPoints.value));
 const selectedRoutePoints = computed(() => filterRoutePointsByDay(routeMapPoints.value, selectedDay.value));
 const selectedRouteLegs = computed(() => buildRouteLegs(selectedRoutePoints.value));
 const readyToGenerate = computed(() => Boolean(selectedCity.value));
+const activeVariant = computed(() => aiRouteSession.variants.value.find(
+  variant => variant.id === aiRouteSession.activeVariantId.value,
+) ?? null);
+const activeVariantDiarySave = computed(() => activeVariant.value?.diarySave ?? null);
+const diarySaveLabel = computed(() => {
+  if (!activeVariant.value || activeVariant.value.status !== "completed")
+    return "Diary will save after generation";
+
+  if (!activeVariantDiarySave.value)
+    return "Saving to diary";
+
+  if (activeVariantDiarySave.value.status === "saved")
+    return `Saved to diary ${activeVariantDiarySave.value.savedCount}/${activeVariantDiarySave.value.expectedPointCount}`;
+
+  if (activeVariantDiarySave.value.status === "failed")
+    return "Diary save failed";
+
+  if (activeVariantDiarySave.value.status === "partial")
+    return `Diary partially saved ${activeVariantDiarySave.value.savedCount}/${activeVariantDiarySave.value.expectedPointCount}`;
+
+  return "Saving to diary";
+});
 const showRouteSession = computed(() => Boolean(
   aiRouteSession.sessionId.value
   || aiRouteSession.isGenerating.value
@@ -150,6 +172,18 @@ async function generateRoute() {
             v-if="selectedRouteLegs.length"
             :legs="selectedRouteLegs"
           />
+
+          <div
+            v-if="showRouteSession"
+            class="flex items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800"
+          >
+            <Icon
+              :class="{ 'animate-spin': activeVariant?.status === 'completed' && (!activeVariantDiarySave || activeVariantDiarySave.status === 'pending') }"
+              :name="activeVariantDiarySave?.status === 'failed' ? 'tabler:alert-triangle' : activeVariantDiarySave?.status === 'saved' ? 'tabler:bookmarks' : 'tabler:loader-2'"
+              size="16"
+            />
+            <span>{{ diarySaveLabel }}</span>
+          </div>
 
           <ExploreRouteWeatherTips
             v-if="showRouteSession"

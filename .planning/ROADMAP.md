@@ -1,7 +1,7 @@
 # Roadmap: WanderLog
 
 **Created:** 2026-05-08
-**Updated:** 2026-05-08 after Explore scope discussion
+**Updated:** 2026-05-18 after adding Phase 7 advanced place storytelling
 **Mode:** standard
 **Granularity:** coarse
 **Execution:** parallel where dependencies allow
@@ -25,6 +25,7 @@ The user selected a Horizontal Layers structure, so phases build the supporting 
 | 5 | Place Intelligence and Weather Tips | Add rich place popups with photos/reviews/ratings/cost/community signals and weather-aware route tips | PLACE-01, PLACE-02, PLACE-03, PLACE-04, PLACE-05, PLACE-06, TIPS-01, TIPS-02 |
 | 5.1 | Route Generation Continuity and Completion Notifications | Keep route generation durable when users leave Explore, show global progress, restore completed output, and notify on completion | GENLIFE-01, GENLIFE-02, GENLIFE-03, GENLIFE-04, GENLIFE-05, GENLIFE-06 |
 | 6 | Save to Diary and Release Hardening | Save generated routes/places into the diary and verify security, ownership, observability, and release readiness | DIARY-01, DIARY-02, DIARY-03, OBS-01, OBS-02, OBS-03 |
+| 7 | Advanced Place Storytelling and Audio Narration | Add interactive place history/storytelling with audio narration, voice/language choices, and offline-ready playback caching | ADVPLACE-01, ADVPLACE-02, ADVPLACE-03 |
 
 ## Phase Details
 
@@ -162,13 +163,13 @@ Plans:
 Plans:
 
 **Wave 1**
-- [ ] 06-01-PLAN.md - Build idempotent automatic route-to-diary persistence.
+- [x] 06-01-PLAN.md - Build idempotent automatic route-to-diary persistence.
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 06-02-PLAN.md - Surface automatic saved-to-diary status in Explore.
+- [x] 06-02-PLAN.md - Surface automatic saved-to-diary status in Explore.
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 06-03-PLAN.md - Harden provider observability, ownership, credential exposure, and release verification.
+- [x] 06-03-PLAN.md - Harden provider observability, ownership, credential exposure, and release verification.
 
 Cross-cutting constraints:
 - Completed generated routes automatically save to diary; there is no primary explicit "save route" step for successful completed routes.
@@ -185,6 +186,21 @@ Cross-cutting constraints:
 6. Cross-user data access is covered by tests or explicit verification.
 7. Release checklist covers lint, typecheck, tests, build, and manual Explore map/browser verification.
 
+### Phase 7: Advanced Place Storytelling and Audio Narration
+
+**Goal:** Add interactive place history/storytelling with audio narration, voice/language choices, and offline-ready playback caching.
+
+**Requirements:** ADVPLACE-01, ADVPLACE-02, ADVPLACE-03
+
+**Success Criteria:**
+1. User can listen to interactive audio history/storytelling for a selected place.
+2. User can choose between supported narration voices or languages.
+3. Place storytelling content can be cached for offline playback.
+
+**Notes:**
+- This phase pulls the advanced place experience from v2 into the roadmap after the v1 Explore loop.
+- Planning should clarify provider choices, generated-content safeguards, caching boundaries, and how narration appears inside existing place popup or route surfaces.
+
 ## Requirement Coverage
 
 | Phase | Requirement Count |
@@ -196,10 +212,12 @@ Cross-cutting constraints:
 | Phase 5 | 8 |
 | Phase 5.1 | 6 |
 | Phase 6 | 6 |
+| Phase 7 | 3 |
 
 All 41 v1 requirements are mapped to exactly one phase.
+Phase 7 tracks 3 pulled-forward v2 advanced place requirements.
 
 ---
 
 *Roadmap created: 2026-05-08*
-*Last updated: 2026-05-08 after Explore scope update*
+*Last updated: 2026-05-18 after adding Phase 7 advanced place storytelling*

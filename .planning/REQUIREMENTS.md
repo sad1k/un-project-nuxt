@@ -65,15 +65,15 @@ Requirements for the fully working Explore page and AI route planning MVP. Exist
 
 ### Save to Diary
 
-- [ ] **DIARY-01**: User can save a generated route to the diary.
-- [ ] **DIARY-02**: User can save selected generated places into existing diary/location structures where appropriate.
-- [ ] **DIARY-03**: Saved route/places remain associated with the authenticated user.
+- [x] **DIARY-01**: User can save a generated route to the diary.
+- [x] **DIARY-02**: User can save selected generated places into existing diary/location structures where appropriate.
+- [x] **DIARY-03**: Saved route/places remain associated with the authenticated user.
 
 ### Observability and Security
 
-- [ ] **OBS-01**: AI and Explore provider failures are observable through Sentry or sanitized server logging.
-- [ ] **OBS-02**: AI, weather, reviews, and place-data credentials remain server-only unless explicitly safe for browser exposure.
-- [ ] **OBS-03**: Conversation, route, saved-place, and community visit data cannot be read or modified across users.
+- [x] **OBS-01**: AI and Explore provider failures are observable through Sentry or sanitized server logging.
+- [x] **OBS-02**: AI, weather, reviews, and place-data credentials remain server-only unless explicitly safe for browser exposure.
+- [x] **OBS-03**: Conversation, route, saved-place, and community visit data cannot be read or modified across users.
 
 ## v2 Requirements
 
@@ -155,12 +155,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PLACE-06 | Phase 5 | Pending |
 | TIPS-01 | Phase 5 | Pending |
 | TIPS-02 | Phase 5 | Pending |
-| DIARY-01 | Phase 6 | Pending |
-| DIARY-02 | Phase 6 | Pending |
-| DIARY-03 | Phase 6 | Pending |
-| OBS-01 | Phase 6 | Pending |
-| OBS-02 | Phase 6 | Pending |
-| OBS-03 | Phase 6 | Pending |
+| DIARY-01 | Phase 6 | Complete |
+| DIARY-02 | Phase 6 | Complete |
+| DIARY-03 | Phase 6 | Complete |
+| OBS-01 | Phase 6 | Complete |
+| OBS-02 | Phase 6 | Complete |
+| OBS-03 | Phase 6 | Complete |
 
 **Coverage:**
 - v1 requirements: 41 total

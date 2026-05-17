@@ -6,4 +6,5 @@ export * from "./location-log-image";
 export * from "./post";
 export * from "./post-comment";
 export * from "./post-like";
+export * from "./route-diary-save";
 export * from "./route-notification";

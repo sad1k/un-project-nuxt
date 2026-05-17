@@ -12,7 +12,9 @@ import {
   persistAiRoutePoint,
   refreshAiRouteGenerationHeartbeat,
 } from "~/lib/db/queries/ai-route";
+import { saveCompletedRouteToDiary } from "~/lib/db/queries/route-diary-save";
 import env from "~/lib/env";
+import { logSafeServerEvent } from "~/utils/safe-observability";
 
 type RouteGenerationRunnerInput = {
   userId: number;
@@ -32,7 +34,7 @@ export async function runRouteGeneration(input: RouteGenerationRunnerInput) {
     sessionId: input.sessionId,
     variantId: input.variantId,
   });
-  console.warn("[ai/route-generation-runner] Route generation started", {
+  logSafeServerEvent("warn", "ai.route_generation.started", {
     mockEnabled: env.AI_ROUTE_MOCK_ENABLED,
     provider: env.AI_ROUTE_PROVIDER,
     runnerId,
@@ -51,12 +53,9 @@ export async function runRouteGeneration(input: RouteGenerationRunnerInput) {
     const validated = RouteEventEnvelopeSchema.safeParse(rawEvent);
     if (!validated.success) {
       invalidProviderEventCount += 1;
-      console.error("[ai/route-generation-runner] Provider route event failed validation", {
-        issues: validated.error.issues.map(issue => ({
-          path: issue.path.join("."),
-          message: issue.message,
-        })),
-        preview: previewValue(rawEvent),
+      logSafeServerEvent("error", "ai.route_generation.invalid_provider_event", {
+        validationIssueCount: validated.error.issues.length,
+        validationIssuePaths: validated.error.issues.map(issue => issue.path.join(".")).filter(Boolean),
         sessionId: input.sessionId,
         variantId: input.variantId,
       });
@@ -109,6 +108,19 @@ export async function runRouteGeneration(input: RouteGenerationRunnerInput) {
         title: routeEvent.title,
         variantId: input.variantId,
       });
+      try {
+        await saveCompletedRouteToDiary(input.userId, {
+          sessionId: input.sessionId,
+          variantId: input.variantId,
+        });
+      }
+      catch {
+        logSafeServerEvent("error", "ai.route_generation.diary_save_failed", {
+          code: "route_diary_save_failed",
+          sessionId: input.sessionId,
+          variantId: input.variantId,
+        });
+      }
     }
 
     await refreshAiRouteGenerationHeartbeat(input.userId, {
@@ -182,8 +194,7 @@ export async function runRouteGeneration(input: RouteGenerationRunnerInput) {
       }
 
       if (!providerCandidateCount) {
-        console.error("[ai/route-generation-runner] Provider completed without parseable route events", {
-          bufferedTextPreview: textBuffer.slice(0, 1000),
+        logSafeServerEvent("error", "ai.route_generation.no_parseable_events", {
           mockEnabled: env.AI_ROUTE_MOCK_ENABLED,
           sessionId: input.sessionId,
           variantId: input.variantId,
@@ -192,8 +203,7 @@ export async function runRouteGeneration(input: RouteGenerationRunnerInput) {
     }
 
     if (!routePointCount) {
-      console.error("[ai/route-generation-runner] Provider returned no valid route points", {
-        bufferedTextPreview: textBuffer.slice(0, 1000),
+      logSafeServerEvent("error", "ai.route_generation.no_valid_route_points", {
         invalidProviderEventCount,
         mockEnabled: env.AI_ROUTE_MOCK_ENABLED,
         providerCandidateCount,
@@ -213,7 +223,7 @@ export async function runRouteGeneration(input: RouteGenerationRunnerInput) {
       });
     }
 
-    console.warn("[ai/route-generation-runner] Route generation completed", {
+    logSafeServerEvent("warn", "ai.route_generation.completed", {
       invalidProviderEventCount,
       providerCandidateCount,
       routePointCount,
@@ -224,9 +234,8 @@ export async function runRouteGeneration(input: RouteGenerationRunnerInput) {
   }
   catch (error) {
     const code = sanitizeProviderError(error instanceof Error ? error.message : "provider_request_failed");
-    console.error("[ai/route-generation-runner] Route generation failed", {
+    logSafeServerEvent("error", "ai.route_generation.failed", {
       code,
-      message: error instanceof Error ? error.message : String(error),
       mockEnabled: env.AI_ROUTE_MOCK_ENABLED,
       provider: env.AI_ROUTE_PROVIDER,
       ...getRouteProviderDiagnostics(),
@@ -433,15 +442,6 @@ function isProviderRouteEventLike(input: Record<string, unknown>) {
 
 function isRecord(input: unknown): input is Record<string, unknown> {
   return typeof input === "object" && input !== null && !Array.isArray(input);
-}
-
-function previewValue(input: unknown) {
-  try {
-    return JSON.stringify(input).slice(0, 1000);
-  }
-  catch {
-    return String(input).slice(0, 1000);
-  }
 }
 
 function getRouteFailureMessage(code: string) {

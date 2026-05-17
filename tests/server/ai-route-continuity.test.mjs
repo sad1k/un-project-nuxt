@@ -29,9 +29,11 @@ test("route generation runner owns provider parsing, persistence, and completion
   assert.match(runnerSource, /markAiRouteVariantFailed/);
   assert.match(runnerSource, /refreshAiRouteGenerationHeartbeat/);
   assert.match(runnerSource, /claimAiRouteGenerationRun/);
-  assert.match(runnerSource, /Provider returned no valid route points/);
-  assert.match(runnerSource, /Route generation started/);
-  assert.match(runnerSource, /Route generation completed/);
+  assert.match(runnerSource, /ai\.route_generation\.no_valid_route_points/);
+  assert.match(runnerSource, /ai\.route_generation\.started/);
+  assert.match(runnerSource, /ai\.route_generation\.completed/);
+  assert.match(runnerSource, /logSafeServerEvent/);
+  assert.doesNotMatch(runnerSource, /bufferedTextPreview/);
   assert.doesNotMatch(runnerSource, /requestContextJson/);
   assert.doesNotMatch(runnerSource, /payloadJson/);
   assert.doesNotMatch(runnerSource, /providerBodyPreview/);

@@ -124,7 +124,7 @@ test("stream endpoint authenticates, validates, persists, and emits app route ev
   assert.match(runnerSource, /persistAiRoutePoint/);
   assert.match(runnerSource, /getRouteFailureMessage/);
   assert.match(runnerSource, /invalidProviderEventCount/);
-  assert.match(runnerSource, /Provider returned no valid route points/);
+  assert.match(runnerSource, /ai\.route_generation\.no_valid_route_points/);
   assert.match(runnerSource, /The route AI is busy right now/);
   assert.match(endpointSource, /text\/event-stream/);
 });
@@ -147,7 +147,7 @@ test("OpenAI provider config stays server-only and diagnostic logs stay sanitize
   assert.doesNotMatch(endpointSource, /OPENAI_API_KEY/);
   assert.doesNotMatch(endpointSource, /CEREBRAS_API_KEY/);
   assert.doesNotMatch(endpointSource, /OPENAI_ROUTE_MODEL/);
-  assert.match(runnerSource, /Route generation failed/);
+  assert.match(runnerSource, /ai\.route_generation\.failed/);
   assert.match(runnerSource, /getRouteProviderDiagnostics/);
   assert.doesNotMatch(runnerSource, /providerBodyPreview/);
   assert.doesNotMatch(runnerSource, /Authorization/);

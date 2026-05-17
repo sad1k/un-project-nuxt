@@ -1,6 +1,15 @@
 import type { RouteEventEnvelope, RoutePoint } from "~/lib/ai/route-contract";
 import type { ExploreRequestContext } from "~/lib/explore/context";
 
+type RouteDiarySaveSummary = {
+  expectedPointCount: number;
+  failedCount: number;
+  locationLogIds: number[];
+  pendingCount: number;
+  savedCount: number;
+  status: "pending" | "saved" | "partial" | "failed";
+};
+
 type RouteVariantState = {
   id: number;
   parentVariantId?: number;
@@ -8,6 +17,7 @@ type RouteVariantState = {
   title?: string;
   summary?: string;
   failureCode?: string;
+  diarySave?: RouteDiarySaveSummary;
   generationStartedAt?: number;
   generationHeartbeatAt?: number;
   generationCompletedAt?: number;
@@ -105,6 +115,21 @@ async function loadRouteSessionSnapshot(nextSessionId: number) {
   return $fetch<RouteSessionSnapshot>(`/api/ai/route/${nextSessionId}`);
 }
 
+async function refreshCurrentRouteSessionSnapshot() {
+  if (!sessionId.value)
+    return;
+
+  try {
+    applyRouteSessionSnapshot(await loadRouteSessionSnapshot(sessionId.value));
+  }
+  catch (caughtError) {
+    console.error("[useAiRouteSession] Route session refresh failed", {
+      error: serializeError(caughtError),
+      ...getClientDiagnosticContext(),
+    });
+  }
+}
+
 async function streamRouteEvents(payload: {
   context: ExploreRequestContext;
   sessionId?: number;
@@ -114,6 +139,7 @@ async function streamRouteEvents(payload: {
   isGenerating.value = true;
   error.value = null;
   lastWarning.value = null;
+  let streamCompleted = false;
 
   try {
     const { csrf } = useCsrf();
@@ -162,6 +188,8 @@ async function streamRouteEvents(payload: {
 
     if (buffer)
       appendSseBlock(buffer);
+
+    streamCompleted = true;
   }
   catch (caughtError) {
     console.error("[useAiRouteSession] Route stream failed", {
@@ -172,6 +200,9 @@ async function streamRouteEvents(payload: {
   }
   finally {
     isGenerating.value = false;
+
+    if (streamCompleted)
+      await refreshCurrentRouteSessionSnapshot();
   }
 }
 

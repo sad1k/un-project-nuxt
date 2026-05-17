@@ -1,3 +1,12 @@
+type RouteDiarySaveSummary = {
+  expectedPointCount: number;
+  failedCount: number;
+  locationLogIds: number[];
+  pendingCount: number;
+  savedCount: number;
+  status: "pending" | "saved" | "partial" | "failed";
+};
+
 type RouteGenerationSessionSummary = {
   sessionId: number;
   activeVariantId: number | null;
@@ -13,6 +22,7 @@ type RouteGenerationSessionSummary = {
   generationHeartbeatAt: number | null;
   generationCompletedAt: number | null;
   notificationStatus: "pending" | "delivered" | "failed" | "dismissed";
+  diarySave: RouteDiarySaveSummary | null;
   retryCount: number;
   createdAt: number;
   updateAt: number;

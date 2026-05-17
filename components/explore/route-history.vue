@@ -11,6 +11,32 @@ const otherSessions = computed(() => sessions.value
   .filter(session => session.sessionId !== sessionId.value)
   .slice(0, 5));
 
+function getDiarySaveLabel(input?: { savedCount: number; expectedPointCount: number; status: string } | null) {
+  if (!input)
+    return "Saving to diary";
+
+  if (input.status === "saved")
+    return `Diary saved ${input.savedCount}/${input.expectedPointCount}`;
+
+  if (input.status === "failed")
+    return "Diary save failed";
+
+  if (input.status === "partial")
+    return `Diary partial ${input.savedCount}/${input.expectedPointCount}`;
+
+  return "Saving to diary";
+}
+
+function getDiarySaveIcon(input?: { status: string } | null) {
+  if (input?.status === "saved")
+    return "tabler:bookmarks";
+
+  if (input?.status === "failed")
+    return "tabler:alert-triangle";
+
+  return "tabler:loader-2";
+}
+
 onMounted(() => {
   startRouteGenerationStatusPolling();
 });
@@ -47,6 +73,17 @@ onBeforeUnmount(() => {
           </span>
           <span class="block text-xs opacity-70">
             {{ pointsByVariantId[variant.id]?.length || variant.pointCount }} points - {{ variant.status }}
+          </span>
+          <span
+            v-if="variant.status === 'completed'"
+            class="mt-1 flex items-center gap-1 text-xs opacity-80"
+          >
+            <Icon
+              :class="{ 'animate-spin': !variant.diarySave || variant.diarySave.status === 'pending' }"
+              :name="getDiarySaveIcon(variant.diarySave)"
+              size="13"
+            />
+            {{ getDiarySaveLabel(variant.diarySave) }}
           </span>
         </span>
         <Icon
@@ -87,6 +124,17 @@ onBeforeUnmount(() => {
           </span>
           <span class="block text-xs text-gray-500">
             {{ routeSession.pointCount }} points - {{ routeSession.displayStatus }}
+          </span>
+          <span
+            v-if="routeSession.status === 'completed'"
+            class="mt-1 flex items-center gap-1 text-xs text-gray-500"
+          >
+            <Icon
+              :class="{ 'animate-spin': !routeSession.diarySave || routeSession.diarySave.status === 'pending' }"
+              :name="getDiarySaveIcon(routeSession.diarySave)"
+              size="13"
+            />
+            {{ getDiarySaveLabel(routeSession.diarySave) }}
           </span>
         </span>
         <Icon

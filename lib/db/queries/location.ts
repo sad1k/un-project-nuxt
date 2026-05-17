@@ -1,12 +1,14 @@
 import { and, desc, eq } from "drizzle-orm";
+import { customAlphabet } from "nanoid";
+import slugify from "slug";
 
-import type { InsertLocationLog, InsertLocationSchema } from "../schema";
+import type { InsertLocation, InsertLocationLog } from "../schema";
 
 import db from "..";
 import { location, locationLog, locationLogImage } from "../schema";
 
 export async function findLocationByName(
-  existing: InsertLocationSchema,
+  existing: InsertLocation,
   userId: number,
 ) {
   return db.query.location.findFirst({
@@ -40,7 +42,7 @@ export async function findLocationLogById(id: number, userId: number) {
 }
 
 export async function insertLocation(
-  data: InsertLocationSchema,
+  data: InsertLocation,
   slug: string,
   userId: number,
 ) {
@@ -55,6 +57,46 @@ export async function insertLocation(
   return createdLocation;
 }
 
+export async function findOrCreateLocationForRoutePoint(
+  userId: number,
+  input: {
+    name: string;
+    description?: string | null;
+    lat: number;
+    long: number;
+  },
+) {
+  const locationData: InsertLocation = {
+    description: input.description?.slice(0, 1000) ?? null,
+    lat: input.lat,
+    long: input.long,
+    name: input.name.slice(0, 100),
+  };
+  const existingLocation = await findLocationByName(locationData, userId);
+
+  if (existingLocation)
+    return existingLocation;
+
+  return insertLocation(locationData, await createUniqueLocationSlug(userId, locationData.name), userId);
+}
+
+async function createUniqueLocationSlug(userId: number, name: string) {
+  const originalSlug = slugify(name) || "route-stop";
+  let slug = originalSlug;
+  let existingSlug = !!(await findLocationBySlug(userId, originalSlug));
+  const nanoid = customAlphabet("1234567890abcdefghkl", 5);
+
+  while (existingSlug) {
+    const idSlug = `${originalSlug}-${nanoid()}`;
+    existingSlug = !!(await findLocationBySlug(userId, idSlug));
+
+    if (!existingSlug)
+      slug = idSlug;
+  }
+
+  return slug;
+}
+
 export async function findLocations(userId: number) {
   return db.query.location.findMany({
     where: eq(location.userId, userId),
@@ -62,7 +104,7 @@ export async function findLocations(userId: number) {
 }
 
 export async function updateLocationBySlug(
-  data: InsertLocationSchema,
+  data: InsertLocation,
   slug: string,
   userId: number,
 ) {
