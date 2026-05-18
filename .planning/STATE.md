@@ -9,7 +9,7 @@ progress:
   total_phases: 7
   completed_phases: 6
   total_plans: 24
-  completed_plans: 21
+  completed_plans: 22
   percent: 86
 ---
 
@@ -40,8 +40,8 @@ See: `.planning/PROJECT.md` (updated 2026-05-08)
 
 ## Latest Session
 
-- Stopped at: Phase 7 planned.
-- Resume file: `.planning/phases/07-add-advanced-place-storytelling-and-audio-narration/07-01-PLAN.md`
+- Stopped at: Phase 7 Wave 1 complete.
+- Resume file: `.planning/phases/07-add-advanced-place-storytelling-and-audio-narration/07-02-PLAN.md`
 - Discussion log: `.planning/phases/07-add-advanced-place-storytelling-and-audio-narration/07-DISCUSSION-LOG.md`
 - Research: `.planning/phases/07-add-advanced-place-storytelling-and-audio-narration/07-RESEARCH.md`
 
@@ -78,6 +78,7 @@ Run `$gsd-execute-phase 7` to implement advanced place storytelling and audio na
 - Phase 7 context gathered: storytelling lives as an explicit-tap route-sidebar story card, grounded in provider facts plus route context, with basic default-voice playback and explicit saved-audio offline support.
 - Phase 7 researched: native-fetch TTS adapter, route-scoped story persistence, route-sidebar story player, and explicit Cache API offline save are the recommended architecture.
 - Phase 7 planned: 3 dependent plans covering grounded story/server endpoints, route-sidebar player UI, and explicit saved-audio offline playback with final verification. `ADVPLACE-02` remains partial/deferred by discussion decision.
+- Phase 7 Wave 1 executed: route-scoped story contract, persistence, authenticated status/generate/audio endpoints, support gating, and server-only TTS/audio storage path completed.
 
 ---
 

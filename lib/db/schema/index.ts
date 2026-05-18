@@ -8,3 +8,4 @@ export * from "./post-comment";
 export * from "./post-like";
 export * from "./route-diary-save";
 export * from "./route-notification";
+export * from "./route-place-story";

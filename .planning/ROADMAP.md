@@ -197,7 +197,7 @@ Cross-cutting constraints:
 Plans:
 
 **Wave 1**
-- [ ] 07-01-PLAN.md - Build the grounded place story contract, persistence, and server audio generation endpoints.
+- [x] 07-01-PLAN.md - Build the grounded place story contract, persistence, and server audio generation endpoints.
 
 **Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 07-02-PLAN.md - Render the route-sidebar story card, popup CTA, and explicit-tap player controls.

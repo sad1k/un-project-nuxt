@@ -39,6 +39,8 @@ const EnvSchema = z.object({
   OPENAI_BASE_URL: z.string().url().optional(),
   OPENAI_ROUTE_API: z.enum(["responses", "chat_completions"]).default("responses"),
   OPENAI_ROUTE_MODEL: z.string().default("gpt-5.1"),
+  OPENAI_TTS_MODEL: z.string().default("gpt-4o-mini-tts"),
+  OPENAI_TTS_VOICE: z.string().default("coral"),
   CEREBRAS_API_KEY: z.string().optional(),
   MISTRAL_API_KEY: z.string().optional(),
   MISTRAL_ROUTE_MODEL: z.string().optional(),
