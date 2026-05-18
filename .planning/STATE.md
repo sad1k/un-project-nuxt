@@ -40,9 +40,9 @@ See: `.planning/PROJECT.md` (updated 2026-05-08)
 
 ## Latest Session
 
-- Stopped at: Phase 6 executed.
-- Resume file: `.planning/phases/06-save-to-diary-and-release-hardening/06-VERIFICATION.md`
-- Discussion log: `.planning/phases/06-save-to-diary-and-release-hardening/06-DISCUSSION-LOG.md`
+- Stopped at: Phase 7 context gathered.
+- Resume file: `.planning/phases/07-add-advanced-place-storytelling-and-audio-narration/07-CONTEXT.md`
+- Discussion log: `.planning/phases/07-add-advanced-place-storytelling-and-audio-narration/07-DISCUSSION-LOG.md`
 
 ## Artifact Index
 
@@ -54,6 +54,7 @@ See: `.planning/PROJECT.md` (updated 2026-05-08)
 - Roadmap: `.planning/ROADMAP.md`
 - Phase 1 context: `.planning/phases/01-explore-scope-and-verification-foundation/01-CONTEXT.md`
 - Phase 6 context: `.planning/phases/06-save-to-diary-and-release-hardening/06-CONTEXT.md`
+- Phase 7 context: `.planning/phases/07-add-advanced-place-storytelling-and-audio-narration/07-CONTEXT.md`
 - Project guide: `AGENTS.md`
 
 ## Next Step
@@ -73,7 +74,8 @@ Run `$gsd-plan-phase 7` to plan advanced place storytelling and audio narration.
 - Phase 6 executed: completed routes now automatically create one diary log per generated route point, save status appears in Explore history/sidebar, sanitized route-generation observability is covered by tests, local schema push completed, server tests and lint pass.
 - Phase 6 release blockers: `pnpm typecheck` still fails on existing project typing issues and `pnpm build` timed out twice; see `06-VERIFICATION.md`.
 - Phase 7 added: Add advanced place storytelling and audio narration.
+- Phase 7 context gathered: storytelling lives as an explicit-tap route-sidebar story card, grounded in provider facts plus route context, with basic default-voice playback and explicit saved-audio offline support.
 
 ---
 
-*State updated: 2026-05-18 after executing Phase 6 save-to-diary and release hardening*
+*State updated: 2026-05-18 after Phase 7 context discussion*
