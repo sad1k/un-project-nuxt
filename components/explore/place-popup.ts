@@ -1,6 +1,10 @@
 import type { PlaceIntelligence, PlaceMissingDataSlot } from "~/lib/explore/place-intelligence";
 
-export function createPlacePopupHTML(place: PlaceIntelligence): string {
+type PlacePopupOptions = {
+  includeStoryCta?: boolean;
+};
+
+export function createPlacePopupHTML(place: PlaceIntelligence, options: PlacePopupOptions = {}): string {
   return `
     <article class="place-popup" style="width:280px;overflow:hidden;border-radius:12px;background:#fff;font-family:system-ui,sans-serif;color:#111827">
       ${renderPhotoSection(place)}
@@ -18,6 +22,7 @@ export function createPlacePopupHTML(place: PlaceIntelligence): string {
         ${renderCommunity(place)}
         ${renderMissingSlots(place.missingSlots)}
         <div style="margin-top:10px;display:flex;gap:6px">
+          ${options.includeStoryCta ? renderStoryAction(place) : ""}
           <button type="button" style="border:0;border-radius:8px;background:#111827;color:white;padding:7px 9px;font-size:12px;font-weight:700">Save</button>
           <button type="button" style="border:1px solid #e5e7eb;border-radius:8px;background:white;color:#374151;padding:7px 9px;font-size:12px;font-weight:700">Directions</button>
         </div>
@@ -148,6 +153,10 @@ function renderMissingSlots(slots: PlaceMissingDataSlot[]): string {
       `).join("")}
     </section>
   `;
+}
+
+function renderStoryAction(place: PlaceIntelligence): string {
+  return `<button type="button" data-place-story-cta="${escapeHtml(place.id)}" style="border:1px solid #fde68a;border-radius:8px;background:#fffbeb;color:#92400e;padding:7px 9px;font-size:12px;font-weight:700">Listen to story</button>`;
 }
 
 function renderSource(label: string, confidence: string): string {

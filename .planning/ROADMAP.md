@@ -1,7 +1,7 @@
 # Roadmap: WanderLog
 
 **Created:** 2026-05-08
-**Updated:** 2026-05-18 after adding Phase 7 advanced place storytelling
+**Updated:** 2026-05-18 after adding Phase 8 mobile PWA foundation
 **Mode:** standard
 **Granularity:** coarse
 **Execution:** parallel where dependencies allow
@@ -26,6 +26,7 @@ The user selected a Horizontal Layers structure, so phases build the supporting 
 | 5.1 | Route Generation Continuity and Completion Notifications | Keep route generation durable when users leave Explore, show global progress, restore completed output, and notify on completion | GENLIFE-01, GENLIFE-02, GENLIFE-03, GENLIFE-04, GENLIFE-05, GENLIFE-06 |
 | 6 | Save to Diary and Release Hardening | Save generated routes/places into the diary and verify security, ownership, observability, and release readiness | DIARY-01, DIARY-02, DIARY-03, OBS-01, OBS-02, OBS-03 |
 | 7 | Advanced Place Storytelling and Audio Narration | Add interactive place history/storytelling with audio narration, voice/language choices, and offline-ready playback caching | ADVPLACE-01, ADVPLACE-02, ADVPLACE-03 |
+| 8 | Mobile PWA Foundation | Establish the mobile web app foundation for installability, service-worker boundaries, offline-ready shell behavior, and mobile verification | TBD during phase discussion |
 
 ## Phase Details
 
@@ -200,7 +201,7 @@ Plans:
 - [x] 07-01-PLAN.md - Build the grounded place story contract, persistence, and server audio generation endpoints.
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 07-02-PLAN.md - Render the route-sidebar story card, popup CTA, and explicit-tap player controls.
+- [x] 07-02-PLAN.md - Render the route-sidebar story card, popup CTA, and explicit-tap player controls.
 
 **Wave 3** *(blocked on Wave 2 completion)*
 - [ ] 07-03-PLAN.md - Add explicit saved-audio offline playback states and Phase 7 verification.
@@ -221,6 +222,26 @@ Cross-cutting constraints:
 - Storytelling appears primarily in the route sidebar; Mapbox popups expose only a compact "Listen to story" CTA.
 - Planning clarified provider safeguards, caching boundaries, and the requirement split in `.planning/phases/07-add-advanced-place-storytelling-and-audio-narration/07-CONTEXT.md` and `07-RESEARCH.md`.
 
+### Phase 8: Mobile PWA Foundation
+
+**Goal:** Establish the mobile web app foundation for installability, service-worker boundaries, offline-ready shell behavior, and mobile verification.
+
+**Depends on:** Phase 7
+
+**Requirements:** TBD during phase discussion
+
+**Plans:** Not planned yet
+
+**Success Criteria:**
+1. Mobile PWA installability requirements are explicit and verifiable.
+2. Manifest, icons, service worker, and cache boundaries are defined without expanding into full offline editing/sync.
+3. Mobile route, diary, and Explore shell behavior is covered by focused verification.
+4. PWA credentials, notification permissions, and storage behavior remain server-safe and privacy-aware.
+
+**Notes:**
+- This phase is newly added and needs `$gsd-discuss-phase 8` or `$gsd-plan-phase 8` before implementation.
+- Native mobile app work remains out of scope; this phase is web/PWA foundation only.
+
 ## Requirement Coverage
 
 | Phase | Requirement Count |
@@ -233,11 +254,13 @@ Cross-cutting constraints:
 | Phase 5.1 | 6 |
 | Phase 6 | 6 |
 | Phase 7 | 3 |
+| Phase 8 | 0 |
 
 All 41 v1 requirements are mapped to exactly one phase.
 Phase 7 tracks 3 pulled-forward v2 advanced place requirements.
+Phase 8 is newly added and has no mapped requirement IDs until discussion/planning clarifies the mobile PWA foundation scope.
 
 ---
 
 *Roadmap created: 2026-05-08*
-*Last updated: 2026-05-18 after adding Phase 7 advanced place storytelling*
+*Last updated: 2026-05-18 after adding Phase 8 mobile PWA foundation*

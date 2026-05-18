@@ -15,6 +15,7 @@ const route = useRoute();
 
 const mapLoaded = ref(false);
 const selectedDay = useState<number | null>("explore-selected-route-day", () => null);
+const selectedStoryRoutePointId = useState<string | null>("explore-selected-story-route-point-id", () => null);
 const lastFittedScope = ref("");
 const lastCompletedFitKey = ref("");
 const routeMapPoints = computed(() => toRouteMapPoints(activePoints.value));
@@ -60,7 +61,11 @@ watch(
           return "";
 
         const intelligence = await placeIntelligence.loadForRoutePoint(point, activeVariantId.value);
-        return createPlacePopupHTML(intelligence);
+        return createPlacePopupHTML(intelligence, { includeStoryCta: true });
+      },
+      onStoryRequest(point) {
+        selectedDay.value = point.day;
+        selectedStoryRoutePointId.value = point.sourceId;
       },
     });
     mapbox.renderRoute(pts, legs);

@@ -6,11 +6,11 @@ current_phase: 7
 status: phase_7_planned_ready_to_execute
 last_updated: "2026-05-18T00:00:00.000Z"
 progress:
-  total_phases: 7
+  total_phases: 8
   completed_phases: 6
   total_plans: 24
-  completed_plans: 22
-  percent: 86
+  completed_plans: 23
+  percent: 75
 ---
 
 # GSD State: WanderLog
@@ -40,8 +40,8 @@ See: `.planning/PROJECT.md` (updated 2026-05-08)
 
 ## Latest Session
 
-- Stopped at: Phase 7 Wave 1 complete.
-- Resume file: `.planning/phases/07-add-advanced-place-storytelling-and-audio-narration/07-02-PLAN.md`
+- Stopped at: Phase 7 Wave 2 complete.
+- Resume file: `.planning/phases/07-add-advanced-place-storytelling-and-audio-narration/07-03-PLAN.md`
 - Discussion log: `.planning/phases/07-add-advanced-place-storytelling-and-audio-narration/07-DISCUSSION-LOG.md`
 - Research: `.planning/phases/07-add-advanced-place-storytelling-and-audio-narration/07-RESEARCH.md`
 
@@ -79,7 +79,9 @@ Run `$gsd-execute-phase 7` to implement advanced place storytelling and audio na
 - Phase 7 researched: native-fetch TTS adapter, route-scoped story persistence, route-sidebar story player, and explicit Cache API offline save are the recommended architecture.
 - Phase 7 planned: 3 dependent plans covering grounded story/server endpoints, route-sidebar player UI, and explicit saved-audio offline playback with final verification. `ADVPLACE-02` remains partial/deferred by discussion decision.
 - Phase 7 Wave 1 executed: route-scoped story contract, persistence, authenticated status/generate/audio endpoints, support gating, and server-only TTS/audio storage path completed.
+- Phase 7 Wave 2 executed: route-sidebar story card, popup "Listen to story" CTA, selected route-point focus, and explicit-tap player controls completed.
+- Phase 8 added: Mobile PWA foundation.
 
 ---
 
-*State updated: 2026-05-18 after Phase 7 planning*
+*State updated: 2026-05-18 after adding Phase 8 mobile PWA foundation*

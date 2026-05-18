@@ -12,9 +12,13 @@ const routeWeatherTips = useRouteWeatherTips();
 
 const collapsed = ref(false);
 const selectedDay = useState<number | null>("explore-selected-route-day", () => null);
+const selectedStoryRoutePointId = useState<string | null>("explore-selected-story-route-point-id", () => null);
 const routeMapPoints = computed(() => toRouteMapPoints(aiRouteSession.activePoints.value));
 const routeDayGroups = computed(() => getRouteDayGroups(routeMapPoints.value));
 const selectedRoutePoints = computed(() => filterRoutePointsByDay(routeMapPoints.value, selectedDay.value));
+const selectedStoryPoint = computed(() => selectedRoutePoints.value.find(
+  point => point.sourceId === selectedStoryRoutePointId.value,
+) ?? selectedRoutePoints.value[0] ?? null);
 const selectedRouteLegs = computed(() => buildRouteLegs(selectedRoutePoints.value));
 const readyToGenerate = computed(() => Boolean(selectedCity.value));
 const activeVariant = computed(() => aiRouteSession.variants.value.find(
@@ -64,6 +68,16 @@ watch(
   },
   { immediate: true },
 );
+
+watch(selectedRoutePoints, (points) => {
+  if (!points.length) {
+    selectedStoryRoutePointId.value = null;
+    return;
+  }
+
+  if (!points.some(point => point.sourceId === selectedStoryRoutePointId.value))
+    selectedStoryRoutePointId.value = points[0]?.sourceId ?? null;
+}, { immediate: true });
 
 async function generateRoute() {
   if (!selectedCity.value)
@@ -192,6 +206,13 @@ async function generateRoute() {
             :tips="routeWeatherTips.tips.value"
           />
 
+          <ExplorePlaceStoryCard
+            v-if="showRouteSession"
+            :point="selectedStoryPoint"
+            :session-id="aiRouteSession.sessionId.value"
+            :variant-id="aiRouteSession.activeVariantId.value"
+          />
+
           <div
             v-if="aiRouteSession.lastWarning.value"
             class="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-800"
@@ -217,15 +238,22 @@ async function generateRoute() {
               <li
                 v-for="point in selectedRoutePoints"
                 :key="point.id"
-                class="rounded-lg border border-gray-100 bg-white px-3 py-2"
+                class="rounded-lg border bg-white px-3 py-2 transition"
+                :class="point.sourceId === selectedStoryRoutePointId ? 'border-amber-300 ring-1 ring-amber-200' : 'border-gray-100'"
               >
-                <div class="flex items-center justify-between gap-2">
-                  <span class="truncate text-sm font-semibold text-gray-900">{{ point.name }}</span>
-                  <span class="shrink-0 text-xs text-gray-500">Day {{ point.day }}</span>
-                </div>
-                <p class="mt-1 line-clamp-2 text-xs text-gray-500">
-                  {{ point.rationale }}
-                </p>
+                <button
+                  class="block w-full text-left"
+                  type="button"
+                  @click="selectedStoryRoutePointId = point.sourceId"
+                >
+                  <div class="flex items-center justify-between gap-2">
+                    <span class="truncate text-sm font-semibold text-gray-900">{{ point.name }}</span>
+                    <span class="shrink-0 text-xs text-gray-500">Day {{ point.day }}</span>
+                  </div>
+                  <p class="mt-1 line-clamp-2 text-xs text-gray-500">
+                    {{ point.rationale }}
+                  </p>
+                </button>
               </li>
             </ol>
           </div>

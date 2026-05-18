@@ -29,6 +29,7 @@ type GeoJsonFeatureCollection = {
 
 type RoutePopupOptions = {
   getPopupHTML?: (point: RouteMapPoint) => Promise<string> | string;
+  onStoryRequest?: (point: RouteMapPoint) => void;
 };
 
 async function getMapboxGL() {
@@ -212,6 +213,7 @@ export function useMapbox() {
           ? createPlacePopupLoadingHTML({ name: point.name, day: point.day })
           : createPopupHTML(point));
         popup.setLngLat([point.lng, point.lat]).addTo(map);
+        bindStoryPopupAction(point, popup, options);
         if (point.markerKind === "generated")
           void refreshPopupHTML(point, popup, options);
       };
@@ -232,10 +234,27 @@ export function useMapbox() {
 
     try {
       popup.setHTML(await options.getPopupHTML(point));
+      bindStoryPopupAction(point, popup, options);
     }
     catch {
       popup.setHTML(createPopupHTML(point));
+      bindStoryPopupAction(point, popup, options);
     }
+  }
+
+  function bindStoryPopupAction(point: RouteMapPoint, popup: any, options: RoutePopupOptions) {
+    if (!options.onStoryRequest)
+      return;
+
+    const button = popup.getElement?.().querySelector?.("[data-place-story-cta]");
+    if (!(button instanceof HTMLButtonElement))
+      return;
+
+    button.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      options.onStoryRequest?.(point);
+    }, { once: true });
   }
 
   function renderRoute(points: RouteMapPoint[], legs: RouteLeg[]) {
