@@ -192,14 +192,34 @@ Cross-cutting constraints:
 
 **Requirements:** ADVPLACE-01, ADVPLACE-02, ADVPLACE-03
 
+**Plans:** 3 plans
+
+Plans:
+
+**Wave 1**
+- [ ] 07-01-PLAN.md - Build the grounded place story contract, persistence, and server audio generation endpoints.
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 07-02-PLAN.md - Render the route-sidebar story card, popup CTA, and explicit-tap player controls.
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 07-03-PLAN.md - Add explicit saved-audio offline playback states and Phase 7 verification.
+
+Cross-cutting constraints:
+- Story generation and playback require an explicit user tap.
+- Stories require grounded provider facts plus route context; weak support returns unavailable instead of invented narration.
+- TTS credentials stay server-only, and Phase 7 exposes no transcript/story text beyond title/status/source cues.
+- `ADVPLACE-02` remains partial/deferred unless voice/language choice is deliberately reintroduced.
+
 **Success Criteria:**
 1. User can listen to interactive audio history/storytelling for a selected place.
-2. User can choose between supported narration voices or languages.
+2. User can choose between supported narration voices or languages. *(Deferred/partial in Phase 7 by discussion decision.)*
 3. Place storytelling content can be cached for offline playback.
 
 **Notes:**
 - This phase pulls the advanced place experience from v2 into the roadmap after the v1 Explore loop.
-- Planning should clarify provider choices, generated-content safeguards, caching boundaries, and how narration appears inside existing place popup or route surfaces.
+- Storytelling appears primarily in the route sidebar; Mapbox popups expose only a compact "Listen to story" CTA.
+- Planning clarified provider safeguards, caching boundaries, and the requirement split in `.planning/phases/07-add-advanced-place-storytelling-and-audio-narration/07-CONTEXT.md` and `07-RESEARCH.md`.
 
 ## Requirement Coverage
 
