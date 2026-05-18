@@ -52,6 +52,24 @@ const primaryIcon = computed(() => {
   return "tabler:player-play";
 });
 const canUseStory = computed(() => Boolean(request.value && props.point));
+const offlineLabel = computed(() => {
+  if (state.value.offlineStatus === "saved")
+    return "Available offline";
+
+  if (state.value.offlineStatus === "saving")
+    return "Saving";
+
+  if (state.value.offlineStatus === "removing")
+    return "Removing";
+
+  if (state.value.offlineStatus === "unavailable_offline")
+    return "Story not saved offline";
+
+  if (state.value.offlineStatus === "unsupported")
+    return "Offline save unavailable";
+
+  return "Not saved offline";
+});
 
 watch(
   request,
@@ -79,6 +97,18 @@ async function handlePrimaryAction() {
   }
 
   await placeStory.togglePlayback(request.value);
+}
+
+async function handleOfflineAction() {
+  if (!request.value)
+    return;
+
+  if (state.value.offlineStatus === "saved") {
+    await placeStory.removeOffline(request.value);
+    return;
+  }
+
+  await placeStory.saveOffline(request.value);
 }
 </script>
 
@@ -109,10 +139,10 @@ async function handlePrimaryAction() {
     </p>
 
     <div
-      v-if="state.status === 'unavailable'"
+      v-if="state.status === 'unavailable' || state.offlineStatus === 'unavailable_offline'"
       class="mt-3 rounded-md bg-white px-3 py-2 text-xs text-gray-600"
     >
-      Story unavailable until more sourced place facts are available.
+      {{ state.offlineStatus === "unavailable_offline" ? "Story not saved offline." : "Story unavailable until more sourced place facts are available." }}
     </div>
 
     <div
@@ -159,6 +189,26 @@ async function handlePrimaryAction() {
             name="tabler:rotate-clockwise"
             size="16"
           />
+        </button>
+      </div>
+
+      <div
+        v-if="story?.audio"
+        class="flex items-center justify-between gap-2 rounded-md bg-white px-2 py-2"
+      >
+        <span class="min-w-0 truncate text-[11px] font-medium text-gray-600">{{ offlineLabel }}</span>
+        <button
+          class="inline-flex h-8 shrink-0 items-center gap-1 rounded-md border border-amber-200 px-2 text-[11px] font-bold text-amber-800 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
+          :disabled="state.offlineStatus === 'saving' || state.offlineStatus === 'removing' || state.offlineStatus === 'unsupported'"
+          type="button"
+          @click="handleOfflineAction"
+        >
+          <Icon
+            :class="{ 'animate-spin': state.offlineStatus === 'saving' || state.offlineStatus === 'removing' }"
+            :name="state.offlineStatus === 'saved' ? 'tabler:trash' : 'tabler:download'"
+            size="14"
+          />
+          <span>{{ state.offlineStatus === "saved" ? "Remove" : "Save" }}</span>
         </button>
       </div>
     </div>

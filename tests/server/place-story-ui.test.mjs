@@ -54,7 +54,8 @@ test("story composable uses app endpoints and HTMLAudioElement only after user a
   assert.match(composableSource, /\/api\/explore\/place-story\/generate/);
   assert.match(composableSource, /async function togglePlayback/);
   assert.match(composableSource, /async function generateAndPlay/);
-  assert.match(composableSource, /new Audio\(story\.audio\?\.url\)/);
+  assert.match(composableSource, /new Audio\(sourceUrl\)/);
+  assert.match(composableSource, /resolvePlaybackUrl/);
   assert.doesNotMatch(composableSource, /OPENAI_API_KEY|S3_SECRET_KEY|audio\/speech/);
 
   const firstAudioIndex = composableSource.indexOf("new Audio");

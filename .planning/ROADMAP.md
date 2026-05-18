@@ -204,7 +204,7 @@ Plans:
 - [x] 07-02-PLAN.md - Render the route-sidebar story card, popup CTA, and explicit-tap player controls.
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 07-03-PLAN.md - Add explicit saved-audio offline playback states and Phase 7 verification.
+- [x] 07-03-PLAN.md - Add explicit saved-audio offline playback states and Phase 7 verification.
 
 Cross-cutting constraints:
 - Story generation and playback require an explicit user tap.
@@ -221,6 +221,7 @@ Cross-cutting constraints:
 - This phase pulls the advanced place experience from v2 into the roadmap after the v1 Explore loop.
 - Storytelling appears primarily in the route sidebar; Mapbox popups expose only a compact "Listen to story" CTA.
 - Planning clarified provider safeguards, caching boundaries, and the requirement split in `.planning/phases/07-add-advanced-place-storytelling-and-audio-narration/07-CONTEXT.md` and `07-RESEARCH.md`.
+- Phase 7 implementation is complete with `ADVPLACE-02` partial/deferred and release blockers recorded in `07-VERIFICATION.md`.
 
 ### Phase 8: Mobile PWA Foundation
 

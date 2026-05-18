@@ -23,7 +23,7 @@ export default defineAuthenticatedHandler(async (event) => {
 
   const audio = await readPlaceStoryAudioObject(story.audioObjectKey);
 
-  return new Response(audio.audioBytes, {
+  return new Response(new Uint8Array(audio.audioBytes), {
     headers: {
       "cache-control": "private, max-age=3600",
       "content-length": String(audio.audioBytes.byteLength),

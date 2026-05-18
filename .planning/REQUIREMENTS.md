@@ -81,9 +81,9 @@ Deferred to future release. Tracked but not in current roadmap unless explicitly
 
 ### Advanced Place Experience
 
-- **ADVPLACE-01**: User can listen to interactive audio history/storytelling for a place.
-- **ADVPLACE-02**: User can choose between multiple narration voices or languages.
-- **ADVPLACE-03**: Place history content can be cached for offline playback.
+- [x] **ADVPLACE-01**: User can listen to interactive audio history/storytelling for a place.
+- [ ] **ADVPLACE-02**: User can choose between multiple narration voices or languages. *(Partial/deferred in Phase 7: one default voice only.)*
+- [x] **ADVPLACE-03**: Place history content can be cached for offline playback.
 
 ### Notifications
 
@@ -161,6 +161,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | OBS-01 | Phase 6 | Complete |
 | OBS-02 | Phase 6 | Complete |
 | OBS-03 | Phase 6 | Complete |
+| ADVPLACE-01 | Phase 7 | Complete |
+| ADVPLACE-02 | Phase 7 | Partial/Deferred |
+| ADVPLACE-03 | Phase 7 | Complete |
 
 **Coverage:**
 - v1 requirements: 41 total
@@ -170,4 +173,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 ---
 
 *Requirements defined: 2026-05-08*
-*Last updated: 2026-05-08 after Explore scope update*
+*Last updated: 2026-05-18 after Phase 7 execution*
