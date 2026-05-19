@@ -3,17 +3,34 @@ const authStore = useAuthStore();
 
 const isSigningIn = ref(false);
 const activeProvider = ref<"github" | "google" | null>(null);
+const authError = ref("");
 
 async function handleGithubSignIn() {
-  isSigningIn.value = true;
-  activeProvider.value = "github";
-  await authStore.signInWithGithub();
+  await handleProviderSignIn("github");
 }
 
 async function handleGoogleSignIn() {
+  await handleProviderSignIn("google");
+}
+
+async function handleProviderSignIn(provider: "github" | "google") {
   isSigningIn.value = true;
-  activeProvider.value = "google";
-  await authStore.signInWithGoogle();
+  activeProvider.value = provider;
+  authError.value = "";
+
+  try {
+    if (provider === "github")
+      await authStore.signInWithGithub();
+    else
+      await authStore.signInWithGoogle();
+  }
+  catch {
+    authError.value = "Не удалось войти. Проверьте подключение и попробуйте ещё раз.";
+  }
+  finally {
+    isSigningIn.value = false;
+    activeProvider.value = null;
+  }
 }
 
 watchEffect(() => {
@@ -25,6 +42,17 @@ watchEffect(() => {
 
 <template>
   <div class="min-h-screen bg-[#000000] text-white font-body selection:bg-brand-gold selection:text-brand-dark overflow-hidden">
+    <div v-if="authError" class="toast toast-top toast-center z-50">
+      <div
+        role="alert"
+        aria-live="assertive"
+        class="alert alert-error shadow-lg text-white"
+      >
+        <Icon name="tabler:alert-circle" class="text-xl" />
+        <span>{{ authError }}</span>
+      </div>
+    </div>
+
     <div class="absolute inset-0 bg-gradient-to-br from-[#0d1117] via-[#0e0f0f] to-[#000000] z-0" />
 
     <div
