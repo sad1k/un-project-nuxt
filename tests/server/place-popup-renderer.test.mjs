@@ -90,6 +90,8 @@ test("Mapbox route markers can resolve rich async popup HTML and keep a fallback
   assert.match(mapboxSource, /setHTML/);
   assert.match(mapboxSource, /mouseenter/);
   assert.match(mapboxSource, /click/);
+  assert.match(mapboxSource, /activeRoutePopup/);
+  assert.doesNotMatch(mapboxSource, /addEventListener\("mouseleave"/);
   assert.match(pageSource, /usePlaceIntelligence/);
   assert.match(pageSource, /createPlacePopupHTML/);
 });

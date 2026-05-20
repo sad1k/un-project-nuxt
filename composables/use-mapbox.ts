@@ -15,6 +15,7 @@ const MAPBOX_DIRECTIONS_PROFILE = "walking";
 const mapInstance = shallowRef<any>(null);
 const mapLoaded = ref(false);
 const activeMarkers: any[] = [];
+let activeRoutePopup: any = null;
 let mapboxModule: any = null;
 let mapboxAccessToken = "";
 let animationFrameId: number | null = null;
@@ -184,6 +185,8 @@ export function useMapbox() {
   }
 
   function clearMarkers() {
+    activeRoutePopup?.remove();
+    activeRoutePopup = null;
     activeMarkers.forEach(marker => marker.remove());
     activeMarkers.length = 0;
   }
@@ -211,6 +214,10 @@ export function useMapbox() {
         .addTo(map);
 
       const showPopup = () => {
+        if (activeRoutePopup && activeRoutePopup !== popup)
+          activeRoutePopup.remove();
+
+        activeRoutePopup = popup;
         popup.setHTML(point.markerKind === "generated"
           ? createPlacePopupLoadingHTML({ name: point.name, day: point.day })
           : createPopupHTML(point));
@@ -222,9 +229,6 @@ export function useMapbox() {
 
       el.addEventListener("mouseenter", showPopup);
       el.addEventListener("click", showPopup);
-      el.addEventListener("mouseleave", () => {
-        popup.remove();
-      });
 
       activeMarkers.push(marker);
     });
