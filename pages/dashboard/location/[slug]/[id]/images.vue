@@ -69,9 +69,6 @@ async function uploadImage() {
       await $fetch(url, {
         method: "POST",
         body: formData,
-        headers: {
-          "x-amz-checksum-algorithm": "SHA256",
-        },
       });
 
       const insertedImage = await $csrfFetch(`/api/locations/${route.params.slug}/${route.params.id}/image`, {

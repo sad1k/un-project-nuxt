@@ -59,10 +59,12 @@ export default defineAuthenticatedHandler(async (event) => {
     Expires: 180,
     Conditions: [
       ["content-length-range", 1, MAX_IMAGE_SIZE],
+      ["eq", "$x-amz-checksum-algorithm", "SHA256"],
       ["eq", "$x-amz-meta-user-id", event.context.user.id.toString()],
       ["eq", "$x-amz-meta-location-log-id", parsedId.data.toString()],
     ],
     Fields: {
+      "x-amz-checksum-algorithm": "SHA256",
       "x-amz-checksum-sha256": body.data.checksum,
     },
   });
