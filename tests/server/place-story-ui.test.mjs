@@ -20,11 +20,13 @@ test("place popup exposes a compact story CTA without becoming an audio player",
 
 test("map popup CTA focuses the route sidebar story card through selected route point state", () => {
   assert.match(mapboxSource, /onStoryRequest/);
-  assert.match(mapboxSource, /bindStoryPopupAction/);
-  assert.match(mapboxSource, /querySelector\?\.\("\[data-place-story-cta\]"\)/);
+  assert.match(mapboxSource, /bindPopupActions/);
+  assert.match(mapboxSource, /\[data-place-story-cta\]/);
   assert.match(pageSource, /explore-selected-story-route-point-id/);
   assert.match(pageSource, /selectedStoryRoutePointId\.value = point\.sourceId/);
   assert.match(pageSource, /createPlacePopupHTML\(intelligence,\s*\{ includeStoryCta: true \}\)/);
+  assert.match(pageSource, /saveRoutePointFromPopup/);
+  assert.match(pageSource, /openDirectionsToNextStop/);
 });
 
 test("route panel owns the selected story card and route point selection", () => {

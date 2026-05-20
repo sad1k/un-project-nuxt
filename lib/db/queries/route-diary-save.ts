@@ -18,6 +18,40 @@ export type RouteDiarySaveSummary = {
   status: DiarySaveStatus;
 };
 
+export async function saveRoutePointToDiary(
+  userId: number,
+  input: {
+    sessionId: number;
+    variantId: number;
+    routePointId: string;
+  },
+) {
+  const variant = await db.query.aiRouteVariant.findFirst({
+    where: and(
+      eq(aiRouteVariant.id, input.variantId),
+      eq(aiRouteVariant.sessionId, input.sessionId),
+      eq(aiRouteVariant.userId, userId),
+    ),
+    with: {
+      points: {
+        orderBy: [aiRoutePoint.day, aiRoutePoint.sequence],
+      },
+    },
+  });
+
+  const point = variant?.points.find(entry => entry.routePointId === input.routePointId);
+  if (!variant || !point)
+    return createEmptyDiarySaveSummary(variant?.points.length ?? 0);
+
+  await saveRoutePointRecordToDiary(userId, variant, point);
+
+  const summaries = await findRouteDiarySaveSummariesByVariantIds(userId, [input.variantId], {
+    expectedPointCounts: new Map([[input.variantId, variant.points.length]]),
+  });
+
+  return summaries.get(input.variantId) ?? createEmptyDiarySaveSummary(variant.points.length);
+}
+
 export async function saveCompletedRouteToDiary(
   userId: number,
   input: {
@@ -43,7 +77,7 @@ export async function saveCompletedRouteToDiary(
   }
 
   for (const point of variant.points) {
-    await saveRoutePointToDiary(userId, variant, point);
+    await saveRoutePointRecordToDiary(userId, variant, point);
   }
 
   const summaries = await findRouteDiarySaveSummariesByVariantIds(userId, [input.variantId], {
@@ -93,7 +127,7 @@ export async function findRouteDiarySaveSummariesByVariantIds(
   return summaries;
 }
 
-async function saveRoutePointToDiary(
+async function saveRoutePointRecordToDiary(
   userId: number,
   variant: SelectAiRouteVariant & { points: SelectAiRoutePoint[] },
   point: SelectAiRoutePoint,

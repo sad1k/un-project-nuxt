@@ -27,10 +27,10 @@ const activeVariant = computed(() => aiRouteSession.variants.value.find(
 const activeVariantDiarySave = computed(() => activeVariant.value?.diarySave ?? null);
 const diarySaveLabel = computed(() => {
   if (!activeVariant.value || activeVariant.value.status !== "completed")
-    return "Diary will save after generation";
+    return "Save route stops from the map";
 
   if (!activeVariantDiarySave.value)
-    return "Saving to diary";
+    return "No route stops saved";
 
   if (activeVariantDiarySave.value.status === "saved")
     return `Saved to diary ${activeVariantDiarySave.value.savedCount}/${activeVariantDiarySave.value.expectedPointCount}`;
@@ -41,7 +41,7 @@ const diarySaveLabel = computed(() => {
   if (activeVariantDiarySave.value.status === "partial")
     return `Diary partially saved ${activeVariantDiarySave.value.savedCount}/${activeVariantDiarySave.value.expectedPointCount}`;
 
-  return "Saving to diary";
+  return "No route stops saved";
 });
 const showRouteSession = computed(() => Boolean(
   aiRouteSession.sessionId.value
@@ -192,8 +192,7 @@ async function generateRoute() {
             class="flex items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800"
           >
             <Icon
-              :class="{ 'animate-spin': activeVariant?.status === 'completed' && (!activeVariantDiarySave || activeVariantDiarySave.status === 'pending') }"
-              :name="activeVariantDiarySave?.status === 'failed' ? 'tabler:alert-triangle' : activeVariantDiarySave?.status === 'saved' ? 'tabler:bookmarks' : 'tabler:loader-2'"
+              :name="activeVariantDiarySave?.status === 'failed' ? 'tabler:alert-triangle' : activeVariantDiarySave?.status === 'saved' || activeVariantDiarySave?.status === 'partial' ? 'tabler:bookmarks' : 'tabler:bookmark-plus'"
               size="16"
             />
             <span>{{ diarySaveLabel }}</span>

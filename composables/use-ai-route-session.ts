@@ -130,6 +130,22 @@ async function refreshCurrentRouteSessionSnapshot() {
   }
 }
 
+async function saveRoutePointToDiary(routePointId: string) {
+  if (!sessionId.value || !activeVariantId.value)
+    return;
+
+  const { csrf } = useCsrf();
+  await $fetch(`/api/ai/route/${sessionId.value}/diary`, {
+    method: "POST",
+    headers: csrf ? { "csrf-token": csrf } : undefined,
+    body: {
+      routePointId,
+      variantId: activeVariantId.value,
+    },
+  });
+  await refreshCurrentRouteSessionSnapshot();
+}
+
 async function streamRouteEvents(payload: {
   context: ExploreRequestContext;
   sessionId?: number;
@@ -494,6 +510,7 @@ export function useAiRouteSession() {
     lastWarning,
     generateRoute,
     submitFollowUp,
+    saveRoutePointToDiary,
     setActiveVariant,
     restoreRouteSession,
     resetRouteSession,

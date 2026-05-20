@@ -13,7 +13,7 @@ const otherSessions = computed(() => sessions.value
 
 function getDiarySaveLabel(input?: { savedCount: number; expectedPointCount: number; status: string } | null) {
   if (!input)
-    return "Saving to diary";
+    return "No route stops saved";
 
   if (input.status === "saved")
     return `Diary saved ${input.savedCount}/${input.expectedPointCount}`;
@@ -24,7 +24,7 @@ function getDiarySaveLabel(input?: { savedCount: number; expectedPointCount: num
   if (input.status === "partial")
     return `Diary partial ${input.savedCount}/${input.expectedPointCount}`;
 
-  return "Saving to diary";
+  return "No route stops saved";
 }
 
 function getDiarySaveIcon(input?: { status: string } | null) {
@@ -34,7 +34,7 @@ function getDiarySaveIcon(input?: { status: string } | null) {
   if (input?.status === "failed")
     return "tabler:alert-triangle";
 
-  return "tabler:loader-2";
+  return "tabler:bookmark-plus";
 }
 
 onMounted(() => {
@@ -79,7 +79,6 @@ onBeforeUnmount(() => {
             class="mt-1 flex items-center gap-1 text-xs opacity-80"
           >
             <Icon
-              :class="{ 'animate-spin': !variant.diarySave || variant.diarySave.status === 'pending' }"
               :name="getDiarySaveIcon(variant.diarySave)"
               size="13"
             />
@@ -130,7 +129,6 @@ onBeforeUnmount(() => {
             class="mt-1 flex items-center gap-1 text-xs text-gray-500"
           >
             <Icon
-              :class="{ 'animate-spin': !routeSession.diarySave || routeSession.diarySave.status === 'pending' }"
               :name="getDiarySaveIcon(routeSession.diarySave)"
               size="13"
             />

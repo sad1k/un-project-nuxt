@@ -16,6 +16,8 @@ const mapInstance = shallowRef<any>(null);
 const mapLoaded = ref(false);
 const activeMarkers: any[] = [];
 let activeRoutePopup: any = null;
+let activeRoutePopupCloseTimeout: ReturnType<typeof setTimeout> | null = null;
+const popupHoverCloseElements = new WeakSet<HTMLElement>();
 let mapboxModule: any = null;
 let mapboxAccessToken = "";
 let animationFrameId: number | null = null;
@@ -30,6 +32,8 @@ type GeoJsonFeatureCollection = {
 
 type RoutePopupOptions = {
   getPopupHTML?: (point: RouteMapPoint) => Promise<string> | string;
+  onDirectionsRequest?: (point: RouteMapPoint, nextPoint: RouteMapPoint | null) => void;
+  onSaveRequest?: (point: RouteMapPoint) => Promise<void> | void;
   onStoryRequest?: (point: RouteMapPoint) => void;
 };
 
@@ -185,6 +189,7 @@ export function useMapbox() {
   }
 
   function clearMarkers() {
+    cancelRoutePopupClose();
     activeRoutePopup?.remove();
     activeRoutePopup = null;
     activeMarkers.forEach(marker => marker.remove());
@@ -198,7 +203,8 @@ export function useMapbox() {
     if (!map)
       return;
 
-    points.filter(isValidRouteMapPoint).forEach((point, index) => {
+    const validPoints = points.filter(isValidRouteMapPoint);
+    validPoints.forEach((point, index) => {
       const el = createMarkerElement(point, index, index * 150);
 
       const popup = new mb.Popup({
@@ -213,7 +219,9 @@ export function useMapbox() {
         .setLngLat([point.lng, point.lat])
         .addTo(map);
 
+      const nextPoint = validPoints[index + 1] ?? null;
       const showPopup = () => {
+        cancelRoutePopupClose();
         if (activeRoutePopup && activeRoutePopup !== popup)
           activeRoutePopup.remove();
 
@@ -222,45 +230,133 @@ export function useMapbox() {
           ? createPlacePopupLoadingHTML({ name: point.name, day: point.day })
           : createPopupHTML(point));
         popup.setLngLat([point.lng, point.lat]).addTo(map);
-        bindStoryPopupAction(point, popup, options);
+        bindPopupActions(point, nextPoint, popup, options);
+        bindPopupHoverClose(popup);
         if (point.markerKind === "generated")
-          void refreshPopupHTML(point, popup, options);
+          void refreshPopupHTML(point, nextPoint, popup, options);
       };
 
       el.addEventListener("mouseenter", showPopup);
+      el.addEventListener("mouseleave", () => scheduleRoutePopupClose(popup));
       el.addEventListener("click", showPopup);
 
       activeMarkers.push(marker);
     });
   }
 
-  async function refreshPopupHTML(point: RouteMapPoint, popup: any, options: RoutePopupOptions) {
+  async function refreshPopupHTML(
+    point: RouteMapPoint,
+    nextPoint: RouteMapPoint | null,
+    popup: any,
+    options: RoutePopupOptions,
+  ) {
     if (!options.getPopupHTML)
       return;
 
     try {
       popup.setHTML(await options.getPopupHTML(point));
-      bindStoryPopupAction(point, popup, options);
+      bindPopupActions(point, nextPoint, popup, options);
+      bindPopupHoverClose(popup);
     }
     catch {
       popup.setHTML(createPopupHTML(point));
-      bindStoryPopupAction(point, popup, options);
+      bindPopupActions(point, nextPoint, popup, options);
+      bindPopupHoverClose(popup);
     }
   }
 
-  function bindStoryPopupAction(point: RouteMapPoint, popup: any, options: RoutePopupOptions) {
-    if (!options.onStoryRequest)
+  function bindPopupHoverClose(popup: any) {
+    const popupElement = popup.getElement?.();
+    if (!(popupElement instanceof HTMLElement))
+      return;
+    if (popupHoverCloseElements.has(popupElement))
       return;
 
-    const button = popup.getElement?.().querySelector?.("[data-place-story-cta]");
-    if (!(button instanceof HTMLButtonElement))
+    popupHoverCloseElements.add(popupElement);
+    popupElement.addEventListener("mouseenter", cancelRoutePopupClose);
+    popupElement.addEventListener("mouseleave", () => scheduleRoutePopupClose(popup));
+  }
+
+  function scheduleRoutePopupClose(popup: any) {
+    cancelRoutePopupClose();
+    activeRoutePopupCloseTimeout = setTimeout(() => {
+      if (activeRoutePopup !== popup)
+        return;
+
+      popup.remove();
+      activeRoutePopup = null;
+      activeRoutePopupCloseTimeout = null;
+    }, 1000);
+  }
+
+  function cancelRoutePopupClose() {
+    if (!activeRoutePopupCloseTimeout)
       return;
 
-    button.addEventListener("click", (event) => {
-      event.preventDefault();
-      event.stopPropagation();
-      options.onStoryRequest?.(point);
-    }, { once: true });
+    clearTimeout(activeRoutePopupCloseTimeout);
+    activeRoutePopupCloseTimeout = null;
+  }
+
+  function bindPopupActions(
+    point: RouteMapPoint,
+    nextPoint: RouteMapPoint | null,
+    popup: any,
+    options: RoutePopupOptions,
+  ) {
+    bindPopupButton(popup, "[data-place-story-cta]", (button) => {
+      if (!options.onStoryRequest)
+        return;
+
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        options.onStoryRequest?.(point);
+      }, { once: true });
+    });
+
+    bindPopupButton(popup, "[data-place-save-cta]", (button) => {
+      if (!options.onSaveRequest)
+        return;
+
+      button.addEventListener("click", async (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        button.disabled = true;
+        button.textContent = "Saving...";
+        try {
+          await options.onSaveRequest?.(point);
+          button.textContent = "Saved";
+        }
+        catch {
+          button.disabled = false;
+          button.textContent = "Save";
+        }
+      }, { once: true });
+    });
+
+    bindPopupButton(popup, "[data-place-directions-cta]", (button) => {
+      if (!options.onDirectionsRequest || !nextPoint) {
+        button.disabled = true;
+        button.textContent = "No next stop";
+        return;
+      }
+
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        options.onDirectionsRequest?.(point, nextPoint);
+      }, { once: true });
+    });
+  }
+
+  function bindPopupButton(
+    popup: any,
+    selector: string,
+    bind: (button: HTMLButtonElement) => void,
+  ) {
+    const button = popup.getElement?.().querySelector?.(selector);
+    if (button instanceof HTMLButtonElement)
+      bind(button);
   }
 
   function renderRoute(points: RouteMapPoint[], legs: RouteLeg[]) {

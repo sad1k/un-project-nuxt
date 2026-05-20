@@ -62,6 +62,8 @@ test("route popup constrains tall and narrow content inside the viewport", () =>
   assert.match(popupSource, /overscroll-behavior:contain/);
   assert.match(popupSource, /flex-wrap:wrap/);
   assert.match(popupSource, /position:sticky;bottom:0/);
+  assert.match(popupSource, /data-place-save-cta/);
+  assert.match(popupSource, /data-place-directions-cta/);
   assert.match(mapboxSource, /className:\s*"explore-route-popup"/);
   assert.match(mapboxSource, /maxWidth:\s*"min\(300px, calc\(100vw - 32px\)\)"/);
   assert.match(cssSource, /\.explore-route-popup/);
@@ -91,7 +93,8 @@ test("Mapbox route markers can resolve rich async popup HTML and keep a fallback
   assert.match(mapboxSource, /mouseenter/);
   assert.match(mapboxSource, /click/);
   assert.match(mapboxSource, /activeRoutePopup/);
-  assert.doesNotMatch(mapboxSource, /addEventListener\("mouseleave"/);
+  assert.match(mapboxSource, /scheduleRoutePopupClose/);
+  assert.match(mapboxSource, /1000/);
   assert.match(pageSource, /usePlaceIntelligence/);
   assert.match(pageSource, /createPlacePopupHTML/);
 });

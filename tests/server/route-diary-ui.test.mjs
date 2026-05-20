@@ -25,17 +25,20 @@ test("route session APIs expose user-scoped diary save summaries", () => {
 test("client route state carries diary save summaries after restore and status polling", () => {
   assert.match(aiRouteSessionSource, /type RouteDiarySaveSummary/);
   assert.match(aiRouteSessionSource, /diarySave\?: RouteDiarySaveSummary/);
+  assert.match(aiRouteSessionSource, /saveRoutePointToDiary/);
+  assert.match(aiRouteSessionSource, /\/api\/ai\/route\/\$\{sessionId\.value\}\/diary/);
   assert.match(aiRouteSessionSource, /refreshCurrentRouteSessionSnapshot/);
   assert.match(statusSource, /diarySave: RouteDiarySaveSummary \| null/);
 });
 
-test("Explore history and route panel display automatic diary save status", () => {
+test("Explore history and route panel display explicit diary save status", () => {
   assert.match(historySource, /getDiarySaveLabel/);
   assert.match(historySource, /Diary saved/);
-  assert.match(historySource, /Saving to diary/);
+  assert.match(historySource, /No route stops saved/);
   assert.match(historySource, /routeSession\.diarySave/);
 
   assert.match(panelSource, /activeVariantDiarySave/);
   assert.match(panelSource, /diarySaveLabel/);
   assert.match(panelSource, /Saved to diary/);
+  assert.match(panelSource, /Save route stops from the map/);
 });

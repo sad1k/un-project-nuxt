@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import type { RouteMapPoint } from "~/lib/explore/route-map";
+
 import { createPlacePopupHTML } from "~/components/explore/place-popup";
 import {
   buildRouteLegs,
@@ -9,7 +11,7 @@ import {
 definePageMeta({ layout: false });
 
 const mapbox = useMapbox();
-const { activePoints, activeVariantId, isGenerating, restoreRouteSession } = useAiRouteSession();
+const { activePoints, activeVariantId, isGenerating, restoreRouteSession, saveRoutePointToDiary } = useAiRouteSession();
 const placeIntelligence = usePlaceIntelligence();
 const route = useRoute();
 
@@ -63,6 +65,12 @@ watch(
         const intelligence = await placeIntelligence.loadForRoutePoint(point, activeVariantId.value);
         return createPlacePopupHTML(intelligence, { includeStoryCta: true });
       },
+      async onSaveRequest(point) {
+        await saveRoutePointFromPopup(point);
+      },
+      onDirectionsRequest(point, nextPoint) {
+        openDirectionsToNextStop(point, nextPoint);
+      },
       onStoryRequest(point) {
         selectedDay.value = point.day;
         selectedStoryRoutePointId.value = point.sourceId;
@@ -98,6 +106,31 @@ function readRouteSessionIdQuery(input: unknown) {
   const value = Array.isArray(input) ? input[0] : input;
   const parsed = Number(value);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
+}
+
+async function saveRoutePointFromPopup(point: RouteMapPoint) {
+  if (point.markerKind !== "generated")
+    return;
+
+  await saveRoutePointToDiary(point.sourceId);
+}
+
+function openDirectionsToNextStop(point: RouteMapPoint, nextPoint: RouteMapPoint | null) {
+  if (!nextPoint)
+    return;
+
+  window.open(createDirectionsUrl(point, nextPoint), "_blank", "noopener,noreferrer");
+}
+
+function createDirectionsUrl(point: RouteMapPoint, nextPoint: RouteMapPoint) {
+  const params = new URLSearchParams({
+    api: "1",
+    destination: `${nextPoint.lat},${nextPoint.lng}`,
+    origin: `${point.lat},${point.lng}`,
+    travelmode: "walking",
+  });
+
+  return `https://www.google.com/maps/dir/?${params}`;
 }
 </script>
 

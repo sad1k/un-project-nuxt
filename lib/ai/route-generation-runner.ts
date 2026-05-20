@@ -12,7 +12,6 @@ import {
   persistAiRoutePoint,
   refreshAiRouteGenerationHeartbeat,
 } from "~/lib/db/queries/ai-route";
-import { saveCompletedRouteToDiary } from "~/lib/db/queries/route-diary-save";
 import env from "~/lib/env";
 import { logSafeServerEvent } from "~/utils/safe-observability";
 
@@ -108,19 +107,6 @@ export async function runRouteGeneration(input: RouteGenerationRunnerInput) {
         title: routeEvent.title,
         variantId: input.variantId,
       });
-      try {
-        await saveCompletedRouteToDiary(input.userId, {
-          sessionId: input.sessionId,
-          variantId: input.variantId,
-        });
-      }
-      catch {
-        logSafeServerEvent("error", "ai.route_generation.diary_save_failed", {
-          code: "route_diary_save_failed",
-          sessionId: input.sessionId,
-          variantId: input.variantId,
-        });
-      }
     }
 
     await refreshAiRouteGenerationHeartbeat(input.userId, {

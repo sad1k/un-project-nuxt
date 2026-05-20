@@ -23,8 +23,8 @@ export function createPlacePopupHTML(place: PlaceIntelligence, options: PlacePop
         ${renderMissingSlots(place.missingSlots)}
         <div style="position:sticky;bottom:0;z-index:1;margin:10px -12px -12px;display:flex;flex-wrap:wrap;gap:6px;padding:10px 12px 12px;background:linear-gradient(rgba(255,255,255,.88),#fff 42%)">
           ${options.includeStoryCta ? renderStoryAction(place) : ""}
-          <button type="button" style="flex:1 1 54px;min-width:0;max-width:100%;border:0;border-radius:8px;background:#111827;color:white;padding:7px 9px;font-size:12px;font-weight:700;line-height:1.2;text-align:center">Save</button>
-          <button type="button" style="flex:1 1 82px;min-width:0;max-width:100%;border:1px solid #e5e7eb;border-radius:8px;background:white;color:#374151;padding:7px 9px;font-size:12px;font-weight:700;line-height:1.2;text-align:center">Directions</button>
+          <button type="button" data-place-save-cta="${escapeHtml(place.id)}" style="flex:1 1 54px;min-width:0;max-width:100%;border:0;border-radius:8px;background:#111827;color:white;padding:7px 9px;font-size:12px;font-weight:700;line-height:1.2;text-align:center">Save</button>
+          <button type="button" data-place-directions-cta="${escapeHtml(place.id)}" style="flex:1 1 82px;min-width:0;max-width:100%;border:1px solid #e5e7eb;border-radius:8px;background:white;color:#374151;padding:7px 9px;font-size:12px;font-weight:700;line-height:1.2;text-align:center">Directions</button>
         </div>
       </div>
     </article>

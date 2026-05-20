@@ -8,6 +8,7 @@ const schemaIndexSource = await readFile("lib/db/schema/index.ts", "utf8");
 const querySource = await readFile("lib/db/queries/route-diary-save.ts", "utf8");
 const locationQuerySource = await readFile("lib/db/queries/location.ts", "utf8");
 const runnerSource = await readFile("lib/ai/route-generation-runner.ts", "utf8");
+const saveEndpointSource = await readFile("server/api/ai/route/[session-id]/diary.post.ts", "utf8");
 
 test("route diary save schema links AI route points to diary logs idempotently", () => {
   assert.match(schemaSource, /export const routeDiarySave/);
@@ -33,6 +34,7 @@ test("route diary save schema links AI route points to diary logs idempotently",
 });
 
 test("route diary save query is user-scoped, creates diary logs, and reports summary state", () => {
+  assert.match(querySource, /export async function saveRoutePointToDiary/);
   assert.match(querySource, /export async function saveCompletedRouteToDiary/);
   assert.match(querySource, /export async function findRouteDiarySaveSummariesByVariantIds/);
   assert.match(querySource, /insertLocationLog/);
@@ -44,6 +46,14 @@ test("route diary save query is user-scoped, creates diary logs, and reports sum
   assert.match(querySource, /status:\s*"failed"/);
 });
 
+test("route diary save endpoint persists one explicit route point", () => {
+  assert.match(saveEndpointSource, /SaveRoutePointToDiaryBodySchema/);
+  assert.match(saveEndpointSource, /routePointId/);
+  assert.match(saveEndpointSource, /variantId/);
+  assert.match(saveEndpointSource, /event\.context\.user\.id/);
+  assert.match(saveEndpointSource, /saveRoutePointToDiary/);
+});
+
 test("location helper reuses the user-owned place before creating a generated route point place", () => {
   assert.match(locationQuerySource, /export async function findOrCreateLocationForRoutePoint/);
   assert.match(locationQuerySource, /findLocationByName/);
@@ -52,14 +62,12 @@ test("location helper reuses the user-owned place before creating a generated ro
   assert.match(locationQuerySource, /insertLocation/);
 });
 
-test("route generation completion automatically saves the completed variant to diary", () => {
-  assert.match(runnerSource, /saveCompletedRouteToDiary/);
+test("route generation completion waits for explicit diary saves", () => {
+  assert.doesNotMatch(runnerSource, /saveCompletedRouteToDiary/);
 
   const completionIndex = runnerSource.indexOf("await markAiRouteVariantCompleted");
-  const saveIndex = runnerSource.indexOf("await saveCompletedRouteToDiary");
 
   assert.ok(completionIndex >= 0, "runner should mark the route variant completed");
-  assert.ok(saveIndex > completionIndex, "runner should save the route after completion is marked");
   assert.doesNotMatch(runnerSource, /requestContextJson/);
   assert.doesNotMatch(runnerSource, /payloadJson/);
   assert.doesNotMatch(runnerSource, /providerBodyPreview/);
