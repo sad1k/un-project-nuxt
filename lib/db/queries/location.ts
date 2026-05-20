@@ -41,6 +41,26 @@ export async function findLocationLogById(id: number, userId: number) {
   });
 }
 
+export async function findLocationLogForImageSigning(input: {
+  id: number;
+  slug: string;
+  userId: number;
+}) {
+  const [foundLocationLog] = await db
+    .select({ id: locationLog.id })
+    .from(locationLog)
+    .innerJoin(location, eq(locationLog.locationId, location.id))
+    .where(and(
+      eq(locationLog.id, input.id),
+      eq(locationLog.userId, input.userId),
+      eq(location.slug, input.slug),
+      eq(location.userId, input.userId),
+    ))
+    .limit(1);
+
+  return foundLocationLog;
+}
+
 export async function insertLocation(
   data: InsertLocation,
   slug: string,
