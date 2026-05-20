@@ -57,10 +57,11 @@ test("popup renderer labels sourced rating reviews cost and community uncertaint
 
 test("route popup constrains tall and narrow content inside the viewport", () => {
   assert.match(popupSource, /width:min\(280px,calc\(100vw - 48px\)\)/);
-  assert.match(popupSource, /max-height:min\(520px,calc\(100dvh - 96px\)\)/);
+  assert.match(popupSource, /max-height:max\(300px,min\(440px,calc\(100svh - 176px\)\)\)/);
   assert.match(popupSource, /overflow-y:auto/);
   assert.match(popupSource, /overscroll-behavior:contain/);
   assert.match(popupSource, /flex-wrap:wrap/);
+  assert.match(popupSource, /position:sticky;bottom:0/);
   assert.match(mapboxSource, /className:\s*"explore-route-popup"/);
   assert.match(mapboxSource, /maxWidth:\s*"min\(300px, calc\(100vw - 32px\)\)"/);
   assert.match(cssSource, /\.explore-route-popup/);
