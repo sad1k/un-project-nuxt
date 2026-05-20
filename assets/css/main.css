@@ -44,6 +44,18 @@ html[data-theme="dark"] {
   @apply px-2;
 }
 
+.explore-route-popup {
+  max-width: calc(100vw - 32px) !important;
+}
+
+.explore-route-popup .mapboxgl-popup-content,
+.explore-route-popup .maplibregl-popup-content {
+  max-width: min(300px, calc(100vw - 32px));
+  padding: 0;
+  overflow: hidden;
+  border-radius: 12px;
+}
+
 .location-list {
   @apply flex flex-nowrap mt-4 gap-2 overflow-auto;
 }

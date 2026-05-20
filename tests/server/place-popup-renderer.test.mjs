@@ -7,6 +7,7 @@ const popupSource = await readFile("components/explore/place-popup.ts", "utf8").
 const markerSource = await readFile("components/explore/route-marker.ts", "utf8");
 const mapboxSource = await readFile("composables/use-mapbox.ts", "utf8");
 const pageSource = await readFile("pages/explore.vue", "utf8");
+const cssSource = await readFile("assets/css/main.css", "utf8");
 const composableSource = await readFile("composables/use-place-intelligence.ts", "utf8").catch(() => "");
 const createPopupSource = popupSource.slice(
   popupSource.indexOf("export function createPlacePopupHTML"),
@@ -52,6 +53,19 @@ test("popup renderer labels sourced rating reviews cost and community uncertaint
   assert.match(popupSource, /confidence/);
   assert.match(popupSource, /source\.label/);
   assert.doesNotMatch(popupSource, /JSON\.stringify/);
+});
+
+test("route popup constrains tall and narrow content inside the viewport", () => {
+  assert.match(popupSource, /width:min\(280px,calc\(100vw - 48px\)\)/);
+  assert.match(popupSource, /max-height:min\(520px,calc\(100dvh - 96px\)\)/);
+  assert.match(popupSource, /overflow-y:auto/);
+  assert.match(popupSource, /overscroll-behavior:contain/);
+  assert.match(popupSource, /flex-wrap:wrap/);
+  assert.match(mapboxSource, /className:\s*"explore-route-popup"/);
+  assert.match(mapboxSource, /maxWidth:\s*"min\(300px, calc\(100vw - 32px\)\)"/);
+  assert.match(cssSource, /\.explore-route-popup/);
+  assert.match(cssSource, /max-width:\s*calc\(100vw - 32px\)\s*!important/);
+  assert.match(cssSource, /padding:\s*0/);
 });
 
 test("client composable fetches and caches generated route point intelligence without provider secrets", () => {

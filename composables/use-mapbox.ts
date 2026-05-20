@@ -200,6 +200,8 @@ export function useMapbox() {
 
       const popup = new mb.Popup({
         offset: 20,
+        className: "explore-route-popup",
+        maxWidth: "min(300px, calc(100vw - 32px))",
         closeButton: false,
         closeOnClick: false,
       }).setHTML(createPopupHTML(point));
