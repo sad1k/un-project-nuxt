@@ -124,35 +124,22 @@ onBeforeRouteLeave(() => {
     </svg>
     <span>{{ submitErrors.submit }}</span>
   </div>
-  <form class="flex flex-col" @submit.prevent="onSubmit">
+  <form class="flex flex-col gap-4 rounded-2xl border border-gray-200 bg-white/80 p-4 shadow-2xl shadow-black/10 backdrop-blur-sm sm:p-6 dark:border-white/10 dark:bg-white/5" @submit.prevent="onSubmit">
     <slot :errors="errors" :loading="loading" />
-    <div>
-      Вы можете добавить место этими способами:
-      <ul class="list-disc list-inside ml-4">
-        <li>
-          Перенесите
-          <Icon name="tabler:map-pin-filled" class="text-warning" /> маркер на
-          необходимое место и добавьте его.
-        </li>
-        <li>
-          Или двойным нажатием на карту.
-        </li>
-        <li>
-          Или выберите место из списка.
-        </li>
-      </ul>
-    </div>
-    <p class="text-xs text-gray-400 mb-4">
+    <p class="text-xs leading-relaxed text-gray-500 dark:text-white/50">
+      Перенесите маркер на карте, дважды коснитесь карты, или выберите место из списка ниже.
+    </p>
+    <p class="text-xs text-gray-500 dark:text-white/40">
       Текущее положение:
       {{ formatNumber(controlledValues.lat) }}
 
       {{ formatNumber(controlledValues.long) }}
     </p>
-    <div class="flex justify-end gap-4">
+    <div class="hidden md:flex justify-end gap-4">
       <button
         :disabled="loading"
         type="submit"
-        class="btn btn-primary"
+        class="btn border-none bg-brand-gold text-brand-dark hover:bg-white"
       >
         <span v-if="loading" class="loading loading-spinner loading-md" />
         <Icon
@@ -162,7 +149,7 @@ onBeforeRouteLeave(() => {
         />
         {{ props.submitButtonText || "Добавить" }}
       </button>
-      <button :disabled="loading" class="btn btn-outline">
+      <button :disabled="loading" class="btn border-gray-300 bg-transparent text-gray-800 hover:border-gray-400 hover:bg-gray-100 dark:border-white/20 dark:text-white dark:hover:border-white/30 dark:hover:bg-white/10">
         <Icon
           name="tabler:arrow-left"
           size="24"
@@ -174,4 +161,21 @@ onBeforeRouteLeave(() => {
   </form>
   <div class="divider" />
   <AppSearchLocations @result-selected="onResultSelected" />
+  <Teleport to="body">
+    <div class="app-chrome-strong fixed inset-x-0 bottom-16 z-40 border-t px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 md:hidden">
+      <button
+        :disabled="loading"
+        type="button"
+        class="btn w-full border-none bg-brand-emerald text-white shadow-lg shadow-brand-emerald/30 active:scale-[0.98]"
+        @click="onSubmit"
+      >
+        <span v-if="loading" class="loading loading-spinner loading-md" />
+        <Icon v-else :name="props.submitButtonIcon || 'tabler:circle-plus-filled'" size="22" />
+        {{ props.submitButtonText || "Добавить" }}
+      </button>
+      <button type="button" class="mt-2 block w-full text-center text-sm text-gray-500 active:text-gray-700 dark:text-white/60" @click="router.back()">
+        Отмена
+      </button>
+    </div>
+  </Teleport>
 </template>
