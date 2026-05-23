@@ -21,6 +21,7 @@ export type MapPoint = {
   description?: string | null;
   to?: RouteLocationRaw;
   toLabel?: string;
+  imageUrl?: string;
 } & LatLongItem;
 
 export type SearchLocation = {
