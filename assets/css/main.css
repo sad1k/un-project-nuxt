@@ -533,10 +533,6 @@ html:not([data-theme="dark"]) .admin-theme-page [class~="bg-[#101010]"] {
   border-radius: 12px;
 }
 
-.location-list {
-  @apply flex flex-nowrap mt-4 gap-2 overflow-auto;
-}
-
 .page-content-top {
   @apply p-4 min-h-80;
 }

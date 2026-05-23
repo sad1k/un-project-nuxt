@@ -105,29 +105,41 @@ async function deleteLocation() {
         </div>
         <form method="dialog" class="modal-backdrop"><button type="button">Отмена</button></form>
       </dialog>
-      <div v-if="location && location.locationLogs && !location.locationLogs.length" class="mt-4">
-        <p>Нет логов посещения. Добавьте первое место посещения</p>
-        <NuxtLink
-          :to="{ name: 'dashboard-location-slug-add', params: { slug: route.params.slug } }"
-          class="btn btn-primary mt-4"
+      <section class="mt-6">
+        <h2 class="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-500">
+          Посещения
+        </h2>
+        <div
+          v-if="location && location.locationLogs && location.locationLogs.length"
+          class="flex flex-col gap-2 md:grid md:grid-cols-2 md:gap-4"
         >
-          Добавить место посещения
-        </NuxtLink>
-      </div>
-      <div v-else-if="location && !loading && location.locationLogs && location.locationLogs.length" class="location-list">
-        <LocationCard
-          v-for="log in location.locationLogs"
-          :key="log.id"
-          :map-point="createMapPointFromLocationLog(log, route.params.slug as string)"
-        >
-          <template #top>
-            <span v-if="log.startedAt !== log.endedAt" class="text-sm italic text-gray-500"> {{
-              formatDate(log.startedAt) }} - {{ formatDate(log.endedAt) }}
-            </span>
-            <span v-else class="text-sm italic text-gray-500"> {{ formatDate(log.startedAt) }} </span>
-          </template>
-        </LocationCard>
-      </div>
+          <LocationCard
+            v-for="log in location.locationLogs"
+            :key="log.id"
+            :map-point="createMapPointFromLocationLog(log, route.params.slug as string)"
+          >
+            <template #top>
+              <span v-if="log.startedAt !== log.endedAt" class="text-xs italic text-gray-500">
+                {{ formatDate(log.startedAt) }} – {{ formatDate(log.endedAt) }}
+              </span>
+              <span v-else class="text-xs italic text-gray-500">
+                {{ formatDate(log.startedAt) }}
+              </span>
+            </template>
+          </LocationCard>
+        </div>
+        <div v-else class="flex flex-col gap-3">
+          <p class="text-gray-600 dark:text-white/60">
+            Нет посещений. Добавьте первое.
+          </p>
+          <NuxtLink
+            :to="{ name: 'dashboard-location-slug-add', params: { slug: route.params.slug } }"
+            class="btn w-full border-none bg-brand-emerald text-white active:scale-[0.98] sm:w-auto"
+          >
+            + Добавить посещение
+          </NuxtLink>
+        </div>
+      </section>
     </div>
     <div>
       <NuxtPage />
