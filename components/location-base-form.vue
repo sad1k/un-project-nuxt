@@ -55,6 +55,29 @@ function onResultSelected(location: SearchLocation) {
   }
 }
 
+const leaveDialog = ref<HTMLDialogElement | null>(null);
+let pendingLeave: ((proceed: boolean) => void) | null = null;
+
+function confirmLeave() {
+  pendingLeave?.(true);
+  pendingLeave = null;
+  leaveDialog.value?.close();
+  mapStore.addedPoint = null;
+}
+function cancelLeave() {
+  pendingLeave?.(false);
+  pendingLeave = null;
+  leaveDialog.value?.close();
+}
+
+function focusFirstInvalid() {
+  nextTick(() => {
+    const root = document.activeElement?.ownerDocument ?? document;
+    const firstInvalid = root.querySelector<HTMLElement>("[aria-invalid='true'], .input-error, [data-invalid='true']");
+    firstInvalid?.focus();
+  });
+}
+
 const onSubmit = handleSubmit(async (values) => {
   try {
     loading.value = true;
@@ -68,7 +91,10 @@ const onSubmit = handleSubmit(async (values) => {
     setErrors(errorMessage.data?.data || {});
     submitErrors.value = { submit: errorMessage.data?.statusMessage || errorMessage.statusMessage || "Неизвестная ошибка" };
     loading.value = false;
+    focusFirstInvalid();
   }
+}, () => {
+  focusFirstInvalid();
 });
 
 effect(() => {
@@ -89,16 +115,12 @@ onMounted(() => {
 
 onBeforeRouteLeave(() => {
   if (meta.value.dirty && !submitted.value) {
-    // eslint-disable-next-line no-alert
-    const confirm = window.confirm(
-      "Все не сохраненные изменения исчезнут. Вы уверены, что хотите покинуть страницу?",
-    );
-    if (!confirm) {
-      return false;
-    }
+    return new Promise<boolean>((resolve) => {
+      pendingLeave = resolve;
+      leaveDialog.value?.showModal();
+    });
   }
   mapStore.addedPoint = null;
-
   return true;
 });
 </script>
@@ -161,6 +183,19 @@ onBeforeRouteLeave(() => {
   </form>
   <div class="divider" />
   <AppSearchLocations @result-selected="onResultSelected" />
+  <dialog ref="leaveDialog" class="modal">
+    <div class="modal-box">
+      <h3 class="text-lg font-bold">Покинуть форму?</h3>
+      <p class="py-2 text-sm text-gray-600 dark:text-white/70">
+        Все несохранённые изменения будут потеряны.
+      </p>
+      <div class="modal-action">
+        <button type="button" class="btn btn-error" @click="confirmLeave">Покинуть</button>
+        <button type="button" class="btn" @click="cancelLeave">Остаться</button>
+      </div>
+    </div>
+    <form method="dialog" class="modal-backdrop"><button type="button" @click="cancelLeave">Закрыть</button></form>
+  </dialog>
   <Teleport to="body">
     <div class="app-chrome-strong fixed inset-x-0 bottom-16 z-40 border-t px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 md:hidden">
       <button
