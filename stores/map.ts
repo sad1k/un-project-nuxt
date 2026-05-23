@@ -12,8 +12,24 @@ export const useMapStore = defineStore("useMapStore", () => {
 
   const flyToPoint = ref<MapPoint | null>(null);
 
-  // Store the adapter instance
+  const suppressAddedPointFly = ref(false);
+
   const adapter = ref<MapAdapter | null>(null);
+
+  const mobileSheetState = ref<"collapsed" | "peek" | "expanded">("collapsed");
+
+  function showMapPeek() {
+    if (mobileSheetState.value === "collapsed")
+      mobileSheetState.value = "peek";
+  }
+
+  function collapseMap() {
+    mobileSheetState.value = "collapsed";
+  }
+
+  function toggleMobileSheet() {
+    mobileSheetState.value = mobileSheetState.value === "collapsed" ? "peek" : "collapsed";
+  }
 
   async function init(customAdapterFactory = defaultMapAdapterFactory) {
     adapter.value = await customAdapterFactory();
@@ -34,26 +50,25 @@ export const useMapStore = defineStore("useMapStore", () => {
     });
 
     watch(addedPoint, (newValue, oldValue) => {
-      if (newValue && !oldValue && adapter.value) {
-        adapter.value.flyTo({
+      if (newValue && !oldValue && adapter.value && !suppressAddedPointFly.value) {
+        void adapter.value.flyTo({
           center: [newValue.long, newValue.lat],
           zoom: 6,
-          speed: 40,
+          duration: 1500,
         });
       }
     });
 
-    watch(flyToPoint, (newValue, oldValue) => {
+    watch(flyToPoint, async (newValue, oldValue) => {
       if (newValue && adapter.value) {
-        console.log("flying to point", newValue);
-        adapter.value.flyTo({
+        await adapter.value.flyTo({
           center: [newValue.long, newValue.lat],
-          zoom: 13,
-          speed: 2,
+          zoom: 14,
+          duration: 1500,
         });
       }
       else if (!newValue && oldValue && bounds && adapter.value) {
-        adapter.value.fitBounds(bounds, { padding: 60 });
+        await adapter.value.fitBounds(bounds, { padding: 60 });
       }
     });
   }
@@ -64,6 +79,11 @@ export const useMapStore = defineStore("useMapStore", () => {
     selectedPoint,
     addedPoint,
     flyToPoint,
+    suppressAddedPointFly,
     adapter,
+    mobileSheetState,
+    showMapPeek,
+    collapseMap,
+    toggleMobileSheet,
   };
 });
