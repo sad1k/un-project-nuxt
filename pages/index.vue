@@ -56,11 +56,11 @@ const rippleCircleProps = computed(() => ({
 </script>
 
 <template>
-  <div class="min-h-screen bg-white dark:bg-[#000000] text-gray-900 dark:text-white font-body selection:bg-brand-gold selection:text-brand-dark overflow-hidden transition-colors duration-300">
+  <div class="min-h-screen bg-gray-50 text-gray-950 font-body selection:bg-brand-gold selection:text-brand-dark overflow-hidden transition-colors duration-300 dark:bg-[#050505] dark:text-white">
     <!-- Hero Section - GitHub Style -->
     <section class="relative w-full min-h-screen">
       <!-- Background gradient overlay -->
-      <div class="absolute inset-0 bg-gradient-to-br from-blue-50/50 via-white to-gray-50 dark:from-[#0d1117] dark:via-[#0e0f0f] dark:to-[#000000] z-0 transition-colors duration-300" />
+      <div class="absolute inset-0 bg-gradient-to-br from-sky-50 via-white to-amber-50 z-0 transition-colors duration-300 dark:from-[#0d1117] dark:via-[#0e0f0f] dark:to-[#000000]" />
 
       <!-- Subtle grid pattern -->
       <div
@@ -74,7 +74,7 @@ const rippleCircleProps = computed(() => ({
         <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
           <!-- Glow effect behind globe -->
 
-          <div class="absolute w-[800px] h-[800px] bg-blue-500/10 rounded-full blur-[150px]" />
+          <div class="absolute h-[800px] w-[800px] rounded-full bg-brand-emerald/10 blur-[150px]" />
           <div
             class="absolute z-0 flex h-[1000px] w-full flex-col items-center justify-center overflow-hidden lg:w-full md:w-full"
           >
@@ -94,7 +94,7 @@ const rippleCircleProps = computed(() => ({
 
         <!-- Text content - Overlaid -->
         <div class="relative z-20 w-full text-center">
-          <h1 class="font-headline text-5xl md:text-6xl lg:text-8xl leading-tight tracking-tight text-gray-900 dark:text-white mb-6">
+          <h1 class="font-headline text-5xl md:text-6xl lg:text-8xl leading-tight tracking-tight text-gray-950 mb-6 dark:text-white">
             Где мир
             <br>
             <span class="bg-gradient-to-r from-amber-400 via-orange-500 to-pink-500 bg-clip-text text-transparent">
@@ -104,7 +104,7 @@ const rippleCircleProps = computed(() => ({
             путешествиями
           </h1>
 
-          <p class="text-lg md:text-xl text-gray-600 dark:text-gray-300 max-w-2xl mx-auto mb-10 leading-relaxed">
+          <p class="text-lg md:text-xl text-gray-700 max-w-2xl mx-auto mb-10 leading-relaxed dark:text-white/65">
             Миллионы путешественников по всему миру делятся своими приключениями,
             открывают новые места и вдохновляют друг друга на WanderLog —
             крупнейшей платформе для логирования путешествий.
@@ -130,7 +130,7 @@ const rippleCircleProps = computed(() => ({
 
             <a
               href="#features"
-              class="inline-flex items-center justify-center px-8 py-4 text-lg font-semibold text-gray-700 dark:text-white border border-gray-300 dark:border-gray-600 rounded-xl hover:border-gray-400 dark:hover:border-gray-400 hover:bg-gray-100 dark:hover:bg-white/5 transition-all duration-300"
+              class="inline-flex items-center justify-center rounded-xl border border-gray-300 px-8 py-4 text-lg font-semibold text-gray-900 transition-all duration-300 hover:border-gray-400 hover:bg-black/5 dark:border-white/20 dark:text-white dark:hover:border-white/35 dark:hover:bg-white/5"
             >
               Узнать больше
             </a>
@@ -140,53 +140,53 @@ const rippleCircleProps = computed(() => ({
     </section>
 
     <!-- Features Section -->
-    <section id="features" class="relative py-24 bg-gray-50 dark:bg-[#0d1117] transition-colors duration-300">
+    <section id="features" class="relative py-24 bg-white transition-colors duration-300 dark:bg-[#0d1117]">
       <div class="container mx-auto px-6 lg:px-12">
         <div class="text-center mb-16">
-          <h2 class="font-headline text-4xl md:text-5xl text-gray-900 dark:text-white mb-4">
+          <h2 class="font-bold tracking-tight text-4xl md:text-5xl text-gray-950 mb-4 dark:text-white">
             Всё для ваших путешествий
           </h2>
-          <p class="text-gray-600 dark:text-gray-400 text-lg max-w-2xl mx-auto">
+          <p class="text-gray-600 text-lg max-w-2xl mx-auto dark:text-white/55">
             Делитесь моментами, отмечайте места и находите единомышленников со всего мира
           </p>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
           <!-- Feature 1 -->
-          <div class="group relative p-8 rounded-2xl bg-gradient-to-b from-white to-transparent dark:from-gray-800/50 dark:to-transparent border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 transition-all duration-300 shadow-sm dark:shadow-none">
+          <div class="group relative rounded-2xl border border-gray-200 bg-white p-8 shadow-2xl shadow-black/10 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-brand-gold/40 hover:bg-amber-50/70 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10">
             <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
               <Icon name="tabler:photo" class="text-3xl text-amber-500 dark:text-amber-400" />
             </div>
-            <h3 class="font-headline text-xl text-gray-900 dark:text-white mb-3">
+            <h3 class="font-semibold tracking-tight text-xl text-gray-950 mb-3 dark:text-white">
               Публикуйте фото
             </h3>
-            <p class="text-gray-600 dark:text-gray-400 leading-relaxed">
+            <p class="text-gray-600 leading-relaxed dark:text-white/55">
               Создавайте потрясающие галереи ваших приключений и делитесь ими с сообществом.
             </p>
           </div>
 
           <!-- Feature 2 -->
-          <div class="group relative p-8 rounded-2xl bg-gradient-to-b from-white to-transparent dark:from-gray-800/50 dark:to-transparent border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 transition-all duration-300 shadow-sm dark:shadow-none">
+          <div class="group relative rounded-2xl border border-gray-200 bg-white p-8 shadow-2xl shadow-black/10 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-brand-gold/40 hover:bg-amber-50/70 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10">
             <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500/20 to-indigo-500/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
               <Icon name="tabler:map-pin" class="text-3xl text-blue-500 dark:text-blue-400" />
             </div>
-            <h3 class="font-headline text-xl text-gray-900 dark:text-white mb-3">
+            <h3 class="font-semibold tracking-tight text-xl text-gray-950 mb-3 dark:text-white">
               Отмечайте места
             </h3>
-            <p class="text-gray-600 dark:text-gray-400 leading-relaxed">
+            <p class="text-gray-600 leading-relaxed dark:text-white/55">
               Логируйте каждую страну и город, которые вы посетили, на интерактивной карте.
             </p>
           </div>
 
           <!-- Feature 3 -->
-          <div class="group relative p-8 rounded-2xl bg-gradient-to-b from-white to-transparent dark:from-gray-800/50 dark:to-transparent border border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 transition-all duration-300 shadow-sm dark:shadow-none">
+          <div class="group relative rounded-2xl border border-gray-200 bg-white p-8 shadow-2xl shadow-black/10 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-brand-gold/40 hover:bg-amber-50/70 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10">
             <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
               <Icon name="tabler:users" class="text-3xl text-purple-500 dark:text-purple-400" />
             </div>
-            <h3 class="font-headline text-xl text-gray-900 dark:text-white mb-3">
+            <h3 class="font-semibold tracking-tight text-xl text-gray-950 mb-3 dark:text-white">
               Находите друзей
             </h3>
-            <p class="text-gray-600 dark:text-gray-400 leading-relaxed">
+            <p class="text-gray-600 leading-relaxed dark:text-white/55">
               Подписывайтесь на путешественников со всего мира и вдохновляйтесь их историями.
             </p>
           </div>
@@ -195,12 +195,12 @@ const rippleCircleProps = computed(() => ({
     </section>
 
     <!-- CTA Section -->
-    <section class="relative py-24 bg-gradient-to-t from-gray-100 to-gray-50 dark:from-[#161b22] dark:to-[#0d1117] transition-colors duration-300">
+    <section class="relative py-24 bg-gradient-to-t from-amber-50 to-white transition-colors duration-300 dark:from-[#161b22] dark:to-[#0d1117]">
       <div class="container mx-auto px-6 lg:px-12 text-center">
-        <h2 class="font-headline text-4xl md:text-5xl text-gray-900 dark:text-white mb-6">
+        <h2 class="font-bold tracking-tight text-4xl md:text-5xl text-gray-950 mb-6 dark:text-white">
           Готовы начать?
         </h2>
-        <p class="text-gray-600 dark:text-gray-400 text-lg max-w-xl mx-auto mb-10">
+        <p class="text-gray-600 text-lg max-w-xl mx-auto mb-10 dark:text-white/55">
           Присоединяйтесь к глобальному сообществу путешественников уже сегодня
         </p>
 

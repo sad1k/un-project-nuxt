@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+definePageMeta({ layout: false });
+
 const authStore = useAuthStore();
 
 const isSigningIn = ref(false);
@@ -41,7 +43,7 @@ watchEffect(() => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-[#000000] text-white font-body selection:bg-brand-gold selection:text-brand-dark overflow-hidden">
+  <div class="min-h-screen bg-gray-50 text-gray-950 font-body selection:bg-brand-gold selection:text-brand-dark overflow-hidden dark:bg-[#000000] dark:text-white">
     <div v-if="authError" class="toast toast-top toast-center z-50">
       <div
         role="alert"
@@ -53,19 +55,19 @@ watchEffect(() => {
       </div>
     </div>
 
-    <div class="absolute inset-0 bg-gradient-to-br from-[#0d1117] via-[#0e0f0f] to-[#000000] z-0" />
+    <div class="absolute inset-0 bg-gradient-to-br from-sky-50 via-white to-amber-50 z-0 dark:from-[#0d1117] dark:via-[#0e0f0f] dark:to-[#000000]" />
 
     <div
       class="absolute inset-0 z-0 opacity-20"
       style="background-image: radial-gradient(circle at 1px 1px, rgba(99, 102, 241, 0.15) 1px, transparent 0); background-size: 40px 40px;"
     />
 
-    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-br from-amber-500/10 via-purple-500/10 to-blue-500/10 rounded-full blur-[120px] pointer-events-none" />
+    <div class="absolute top-1/2 left-1/2 h-[80vw] max-h-[600px] w-[80vw] max-w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-br from-amber-500/10 via-purple-500/10 to-blue-500/10 blur-[120px] pointer-events-none" />
 
     <div class="relative z-10 min-h-screen flex flex-col items-center justify-center px-6">
       <NuxtLink
         to="/"
-        class="absolute top-8 left-8 flex items-center gap-2 text-gray-400 hover:text-white transition-colors duration-300"
+        class="absolute left-4 top-4 flex items-center gap-2 text-gray-600 transition-colors duration-300 hover:text-gray-950 sm:left-8 sm:top-8 dark:text-gray-400 dark:hover:text-white"
       >
         <Icon name="tabler:arrow-left" class="text-xl" />
         <span class="text-sm font-medium">На главную</span>
@@ -76,15 +78,15 @@ watchEffect(() => {
           <div class="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30 mb-6">
             <Icon name="tabler:plane" class="text-4xl text-amber-400" />
           </div>
-          <h1 class="font-headline text-3xl md:text-4xl text-white mb-4">
+          <h1 class="font-bold tracking-tight text-3xl md:text-4xl text-gray-950 mb-4 dark:text-white">
             Добро пожаловать
           </h1>
-          <p class="text-gray-400 text-lg">
+          <p class="text-gray-600 text-lg dark:text-gray-400">
             Войдите, чтобы начать делиться своими путешествиями
           </p>
         </div>
 
-        <div class="relative p-8 rounded-3xl bg-gradient-to-b from-gray-800/60 to-gray-900/40 border border-gray-700/50 backdrop-blur-xl shadow-2xl">
+        <div class="relative p-8 rounded-3xl bg-white/85 border border-gray-200 backdrop-blur-xl shadow-2xl dark:bg-gradient-to-b dark:from-gray-800/60 dark:to-gray-900/40 dark:border-gray-700/50">
           <div class="absolute inset-0 rounded-3xl bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
 
           <div class="relative space-y-4">
@@ -119,8 +121,8 @@ watchEffect(() => {
             </button>
           </div>
 
-          <div class="relative mt-8 pt-6 border-t border-gray-700/50">
-            <p class="text-center text-sm text-gray-500">
+          <div class="relative mt-8 pt-6 border-t border-gray-200 dark:border-gray-700/50">
+            <p class="text-center text-sm text-gray-500 dark:text-gray-500">
               Регистрируясь, вы соглашаетесь с
               <a href="#" class="text-amber-400 hover:text-amber-300 transition-colors">условиями использования</a>
               и

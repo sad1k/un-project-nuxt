@@ -1,16 +1,48 @@
 <script lang="ts" setup>
+import FeedGlobe from "~/components/feed/feed-globe.client.vue";
+
 const feedStore = useFeedStore();
 const authStore = useAuthStore();
+const route = useRoute();
 
-const { posts, loading, hasMore, error, initialLoading } = storeToRefs(feedStore);
+const { posts, loading, hasMore, error, initialLoading, authorId } = storeToRefs(feedStore);
 
 const feedContainer = ref<HTMLElement | null>(null);
-const isSidebarOpen = ref(true);
-const activeTab = ref<"latest" | "popular">("latest");
+const activeTab = computed<"feed" | "globe">(() => route.query.tab === "globe" ? "globe" : "feed");
 const newPostContent = ref("");
 
+const authorName = computed(() => {
+  if (!authorId.value || posts.value.length === 0)
+    return null;
+  const match = posts.value.find(p => p.userId === authorId.value);
+  return match?.userName ?? null;
+});
+
+const publishTarget = computed(() => {
+  const caption = newPostContent.value.trim();
+  return {
+    path: "/dashboard/publish",
+    query: caption ? { caption } : undefined,
+  };
+});
+
+function clearAuthorFilter() {
+  feedStore.setAuthor(undefined);
+  navigateTo("/feed");
+  feedStore.fetchFeed(true);
+}
+
+watch(() => route.query.author, (val) => {
+  const id = val ? Number(val) : undefined;
+  feedStore.setAuthor(id && !Number.isNaN(id) ? id : undefined);
+  feedStore.fetchFeed(true);
+}, { immediate: false });
+
 onMounted(async () => {
-  isSidebarOpen.value = localStorage.getItem("feedSidebarOpen") !== "false";
+  const rawAuthor = route.query.author;
+  const id = rawAuthor ? Number(rawAuthor) : undefined;
+  if (id && !Number.isNaN(id))
+    feedStore.setAuthor(id);
   await feedStore.fetchFeed(true);
 });
 
@@ -25,7 +57,7 @@ function handleScroll() {
   const { scrollTop, scrollHeight, clientHeight } = feedContainer.value;
   const threshold = 200;
 
-  if (scrollHeight - scrollTop - clientHeight < threshold && hasMore.value && !loading.value) {
+  if (activeTab.value === "feed" && scrollHeight - scrollTop - clientHeight < threshold && hasMore.value && !loading.value) {
     feedStore.fetchFeed();
   }
 }
@@ -33,167 +65,120 @@ function handleScroll() {
 async function refreshFeed() {
   await feedStore.fetchFeed(true);
 }
-
-function toggleSidebar() {
-  isSidebarOpen.value = !isSidebarOpen.value;
-  localStorage.setItem("feedSidebarOpen", isSidebarOpen.value.toString());
-}
-
-const sidebarItems = computed(() => [
-  {
-    label: "Лента",
-    icon: "tabler:home",
-    id: "feed",
-    href: "/feed",
-  },
-  {
-    label: "Добавить место",
-    icon: "tabler:map-pin-plus",
-    id: "add-location",
-    href: "/dashboard/add",
-  },
-  {
-    label: "Мои места",
-    icon: "tabler:map",
-    id: "dashboard",
-    href: "/dashboard",
-  },
-  {
-    label: "Опубликовать",
-    icon: "tabler:send",
-    id: "publish",
-    href: "/dashboard/publish",
-  },
-]);
 </script>
 
 <template>
-  <div class="flex h-screen bg-gray-50 dark:bg-[#000000] text-gray-900 dark:text-white transition-colors duration-300">
-    <div
-      class="bg-white dark:bg-[#0d0d0d] border-r border-gray-200 dark:border-white/10 transition-all duration-300 shrink-0 flex flex-col"
-      :class="{ 'w-64': isSidebarOpen, 'w-16': !isSidebarOpen }"
-    >
-      <div
-        class="flex hover:cursor-pointer hover:bg-gray-100 dark:hover:bg-white/5 p-3 transition-colors border-b border-gray-200 dark:border-white/5"
-        :class="{ 'justify-center': !isSidebarOpen, 'justify-between items-center': isSidebarOpen }"
-        @click="toggleSidebar"
-      >
-        <div v-if="isSidebarOpen" class="flex items-center gap-2">
-          <Icon
-            name="tabler:world"
-            size="28"
-            class="text-brand-gold"
-          />
-          <span class="font-headline text-lg">WanderLog</span>
-        </div>
-        <Icon
-          v-if="isSidebarOpen"
-          name="tabler:chevron-left"
-          size="24"
-          class="text-gray-400"
-        />
-        <Icon
-          v-else
-          name="tabler:world"
-          size="28"
-          class="text-brand-gold"
-        />
-      </div>
-
-      <div class="flex flex-col py-2 flex-1">
-        <SidebarButton
-          v-for="item in sidebarItems"
-          :key="item.id"
-          :label="item.label"
-          :show-label="isSidebarOpen"
-          :icon="item.icon"
-          :href="item.href"
-          :to="item.href"
-        />
-      </div>
-
-      <div class="border-t border-gray-200 dark:border-white/5 py-2">
-        <SidebarButton
-          v-if="authStore.user"
-          label="Выйти"
-          icon="tabler:logout-2"
-          href="/sign-out"
-          :show-label="isSidebarOpen"
-        />
-        <SidebarButton
-          v-else
-          label="Войти"
-          icon="tabler:login"
-          href="/sign-in"
-          :show-label="isSidebarOpen"
-        />
+  <div class="min-h-[calc(100vh-4rem)] bg-gray-50 text-gray-950 transition-colors duration-300 dark:bg-[#050505] dark:text-white">
+    <div class="feed-page-tabs pointer-events-none sticky top-16 z-40 flex justify-center px-4 pt-4 md:px-6">
+      <div class="pointer-events-auto">
+        <FeedViewSwitcher />
       </div>
     </div>
 
-    <div class="flex-1 flex flex-col overflow-hidden">
-      <div class="px-6 py-4 border-b border-gray-200 dark:border-white/10">
-        <div class="max-w-2xl mx-auto">
-          <div class="relative">
-            <Icon
-              name="tabler:search"
-              size="20"
-              class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500"
-            />
-            <input
-              type="text"
-              placeholder="Поиск мест, людей или тегов..."
-              class="w-full pl-12 pr-4 py-3 bg-gray-100 dark:bg-[#1a1a1a] border border-transparent dark:border-white/10 rounded-full text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:border-brand-gold/50 focus:bg-white dark:focus:bg-[#1a1a1a] transition-colors"
-            >
-          </div>
+    <div v-if="activeTab === 'globe'" class="relative min-h-[calc(100vh-4rem)] overflow-hidden">
+      <ClientOnly>
+        <div class="feed-globe-background absolute inset-0">
+          <FeedGlobe />
         </div>
-      </div>
+      </ClientOnly>
 
-      <div
-        ref="feedContainer"
-        class="flex-1 overflow-y-auto px-6 py-6"
-        @scroll="handleScroll"
-      >
-        <div class="max-w-2xl mx-auto">
-          <div v-if="authStore.user" class="bg-white dark:bg-[#0d0d0d] border border-gray-200 dark:border-white/10 rounded-2xl p-4 mb-8 shadow-sm dark:shadow-none">
+      <div class="pointer-events-none relative z-10 flex min-h-[calc(100vh-4rem)] flex-col justify-end px-4 py-5 md:px-6">
+        <div class="pointer-events-auto mx-auto w-full max-w-2xl pb-8">
+          <div v-if="authStore.user" class="feed-composer feed-composer--floating">
             <div class="flex items-start gap-3">
               <div
                 v-if="authStore.user.image"
-                class="w-10 h-10 rounded-full overflow-hidden shrink-0"
+                class="h-11 w-11 shrink-0 overflow-hidden rounded-full"
               >
                 <img
                   :src="authStore.user.image"
                   alt="Avatar"
-                  class="w-full h-full object-cover"
+                  class="h-full w-full object-cover"
                 >
               </div>
               <div
                 v-else
-                class="w-10 h-10 rounded-full bg-gradient-to-br from-brand-violet to-brand-emerald flex items-center justify-center shrink-0"
+                class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-violet to-brand-emerald"
               >
-                <span class="text-white font-bold text-sm">{{ authStore.user.name?.charAt(0).toUpperCase() }}</span>
+                <span class="text-sm font-bold text-white">{{ authStore.user.name?.charAt(0).toUpperCase() }}</span>
               </div>
-              <input
+              <textarea
                 v-model="newPostContent"
-                type="text"
-                placeholder="Поделитесь своим приключением..."
-                class="flex-1 bg-transparent text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none text-sm py-2"
-              >
+                class="min-h-24 flex-1 resize-none bg-transparent text-sm text-gray-950 placeholder:text-gray-500 focus:outline-none dark:text-white dark:placeholder:text-white/45"
+                maxlength="500"
+                placeholder="Расскажите историю к фото..."
+              />
             </div>
-            <div class="flex items-center justify-between mt-4 pt-3 border-t border-gray-200 dark:border-white/5">
-              <div class="flex items-center gap-1">
-                <button class="p-2 hover:bg-white/5 rounded-lg transition-colors text-gray-400 hover:text-cyan-400">
+            <div class="mt-4 flex items-center justify-between border-t border-gray-200/70 pt-3 dark:border-white/10">
+              <span class="text-xs text-gray-500 dark:text-white/45">{{ newPostContent.length }}/500</span>
+              <NuxtLink
+                :to="publishTarget"
+                class="flex items-center gap-2 rounded-full border border-brand-gold/40 bg-brand-gold px-5 py-2 text-sm font-semibold text-black transition-colors hover:bg-brand-gold/90"
+              >
+                <Icon name="tabler:photo-plus" size="17" />
+                Добавить фото
+              </NuxtLink>
+            </div>
+          </div>
+
+          <NuxtLink
+            v-else
+            to="/sign-in"
+            class="feed-composer feed-composer--floating flex items-center justify-center gap-2 text-sm font-semibold"
+          >
+            <Icon name="tabler:login" size="18" />
+            Войти, чтобы создать пост
+          </NuxtLink>
+        </div>
+      </div>
+    </div>
+
+    <div v-else class="flex min-w-0 flex-1 flex-col overflow-hidden bg-[radial-gradient(circle_at_top_right,rgba(31,120,119,0.12),transparent_30%),#f9fafb] dark:bg-[radial-gradient(circle_at_top_right,rgba(31,120,119,0.12),transparent_30%),#050505]">
+      <div
+        ref="feedContainer"
+        class="flex-1 overflow-y-auto px-4 pb-5 pt-24 md:px-6"
+        @scroll="handleScroll"
+      >
+        <div class="mx-auto max-w-2xl">
+          <div v-if="authStore.user" class="feed-composer mb-8">
+            <div class="flex items-start gap-3">
+              <div
+                v-if="authStore.user.image"
+                class="h-10 w-10 shrink-0 overflow-hidden rounded-full"
+              >
+                <img
+                  :src="authStore.user.image"
+                  alt="Avatar"
+                  class="h-full w-full object-cover"
+                >
+              </div>
+              <div
+                v-else
+                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-violet to-brand-emerald"
+              >
+                <span class="text-sm font-bold text-white">{{ authStore.user.name?.charAt(0).toUpperCase() }}</span>
+              </div>
+              <textarea
+                v-model="newPostContent"
+                class="min-h-24 flex-1 resize-none bg-transparent py-1 text-sm text-gray-950 placeholder:text-gray-400 focus:outline-none dark:text-white dark:placeholder:text-white/40"
+                maxlength="500"
+                placeholder="Поделитесь историей к фото..."
+              />
+            </div>
+            <div class="mt-4 flex items-center justify-between border-t border-gray-200/70 pt-3 dark:border-white/10">
+              <div class="flex items-center gap-2">
+                <NuxtLink
+                  to="/dashboard/place-photo/new"
+                  class="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-brand-emerald dark:hover:bg-white/5"
+                  aria-label="Загрузить новое фото"
+                >
                   <Icon name="tabler:photo" size="20" />
-                </button>
-                <button class="p-2 hover:bg-white/5 rounded-lg transition-colors text-gray-400 hover:text-cyan-400">
-                  <Icon name="tabler:map-pin" size="20" />
-                </button>
-                <button class="p-2 hover:bg-white/5 rounded-lg transition-colors text-gray-400 hover:text-cyan-400">
-                  <Icon name="tabler:mood-smile" size="20" />
-                </button>
+                </NuxtLink>
+                <span class="text-xs text-gray-500 dark:text-white/45">{{ newPostContent.length }}/500</span>
               </div>
               <NuxtLink
-                to="/dashboard/publish"
-                class="px-5 py-2 bg-transparent border border-gray-300 dark:border-white/20 text-gray-900 dark:text-white text-sm font-medium rounded-full hover:bg-gray-100 dark:hover:bg-white/5 transition-colors flex items-center gap-2"
+                :to="publishTarget"
+                class="flex items-center gap-2 rounded-full border border-brand-gold/40 bg-brand-gold px-5 py-2 text-sm font-medium text-black transition-colors hover:bg-brand-gold/90"
               >
                 Опубликовать
                 <Icon name="tabler:send" size="16" />
@@ -201,27 +186,24 @@ const sidebarItems = computed(() => [
             </div>
           </div>
 
-          <div class="flex items-center justify-between mb-6">
+          <div v-if="authorId" class="mb-6 flex items-center gap-3 rounded-xl border border-brand-gold/25 bg-brand-gold/10 px-4 py-3">
+            <Icon name="tabler:user" size="18" class="shrink-0 text-brand-gold" />
+            <span class="min-w-0 flex-1 text-sm font-medium text-gray-900 dark:text-white">
+              Публикации {{ authorName ?? 'пользователя' }}
+            </span>
+            <button
+              class="shrink-0 rounded-lg p-1.5 text-gray-500 transition hover:bg-gray-200 dark:hover:bg-white/10"
+              aria-label="Убрать фильтр"
+              @click="clearAuthorFilter"
+            >
+              <Icon name="tabler:x" size="16" />
+            </button>
+          </div>
+
+          <div class="mb-6 flex items-center justify-between">
             <h2 class="text-xl font-bold text-gray-900 dark:text-white">
-              Ваша лента
+              {{ authorId ? 'Лента автора' : 'Ваша лента' }}
             </h2>
-            <div class="flex items-center gap-2 text-sm">
-              <button
-                :class="activeTab === 'latest' ? 'text-cyan-400' : 'text-gray-500 hover:text-gray-300'"
-                class="transition-colors"
-                @click="activeTab = 'latest'"
-              >
-                Новое
-              </button>
-              <span class="text-gray-600">•</span>
-              <button
-                :class="activeTab === 'popular' ? 'text-cyan-400' : 'text-gray-500 hover:text-gray-300'"
-                class="transition-colors"
-                @click="activeTab = 'popular'"
-              >
-                Популярное
-              </button>
-            </div>
           </div>
 
           <div v-if="initialLoading" class="flex flex-col items-center justify-center py-20">
@@ -231,48 +213,48 @@ const sidebarItems = computed(() => [
             </p>
           </div>
 
-          <div v-else-if="error" class="text-center py-12">
+          <div v-else-if="error" class="py-12 text-center">
             <Icon
               name="tabler:alert-circle"
               size="48"
-              class="text-rose-500 mx-auto mb-4"
+              class="mx-auto mb-4 text-rose-500"
             />
             <p class="text-gray-400">
               {{ error }}
             </p>
             <button
-              class="mt-4 px-4 py-2 bg-brand-gold text-black font-semibold rounded-lg hover:bg-brand-gold/90 transition-colors"
+              class="mt-4 rounded-lg bg-brand-gold px-4 py-2 font-semibold text-black transition-colors hover:bg-brand-gold/90"
               @click="refreshFeed"
             >
               Попробовать снова
             </button>
           </div>
 
-          <div v-else-if="posts.length === 0" class="text-center py-16">
-            <div class="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center">
+          <div v-else-if="posts.length === 0" class="py-16 text-center">
+            <div class="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-amber-500/20 to-orange-500/20">
               <Icon
                 name="tabler:photo"
                 size="48"
                 class="text-brand-gold"
               />
             </div>
-            <h2 class="text-2xl font-headline text-gray-900 dark:text-white mb-2">
+            <h2 class="font-semibold tracking-tight mb-2 text-2xl text-gray-900 dark:text-white">
               Пока нет публикаций
             </h2>
-            <p class="text-gray-400 max-w-md mx-auto">
+            <p class="mx-auto max-w-md text-gray-400">
               Будьте первым, кто поделится своими путешествиями с сообществом!
             </p>
             <NuxtLink
               v-if="authStore.user"
               to="/dashboard/publish"
-              class="inline-block mt-6 px-6 py-3 bg-gradient-to-r from-amber-400 to-orange-500 text-black font-bold rounded-xl hover:opacity-90 transition-opacity"
+              class="mt-6 inline-block rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 px-6 py-3 font-bold text-black transition-opacity hover:opacity-90"
             >
               Создать публикацию
             </NuxtLink>
             <NuxtLink
               v-else
               to="/sign-in"
-              class="inline-block mt-6 px-6 py-3 bg-gradient-to-r from-amber-400 to-orange-500 text-black font-bold rounded-xl hover:opacity-90 transition-opacity"
+              class="mt-6 inline-block rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 px-6 py-3 font-bold text-black transition-opacity hover:opacity-90"
             >
               Войти и начать
             </NuxtLink>
@@ -289,8 +271,8 @@ const sidebarItems = computed(() => [
               <span class="loading loading-spinner loading-lg text-brand-gold" />
             </div>
 
-            <div v-else-if="!hasMore && posts.length > 0" class="text-center py-8">
-              <p class="text-gray-500 text-sm">
+            <div v-else-if="!hasMore && posts.length > 0" class="py-8 text-center">
+              <p class="text-sm text-gray-500">
                 Вы просмотрели все публикации
               </p>
             </div>
@@ -304,5 +286,39 @@ const sidebarItems = computed(() => [
 <style scoped>
 .font-headline {
   font-family: "Dela Gothic One", cursive;
+}
+
+.feed-page-tabs {
+  margin-bottom: -4rem;
+}
+
+.feed-composer {
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 1.25rem;
+  background: rgba(255, 255, 255, 0.82);
+  padding: 1rem;
+  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.12);
+  backdrop-filter: blur(18px);
+}
+
+.dark .feed-composer {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(10, 10, 10, 0.58);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.32);
+}
+
+.feed-composer--floating {
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.dark .feed-composer--floating {
+  background: rgba(5, 5, 5, 0.54);
+}
+
+.feed-globe-background :deep(section) {
+  height: 100%;
+  min-height: 100%;
+  border: 0;
+  border-radius: 0;
 }
 </style>
