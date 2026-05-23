@@ -11,6 +11,7 @@ import {
   persistAiRouteEvent,
   persistAiRoutePoint,
   refreshAiRouteGenerationHeartbeat,
+  resolveAiRouteFailureStage,
 } from "~/lib/db/queries/ai-route";
 import env from "~/lib/env";
 import { logSafeServerEvent } from "~/utils/safe-observability";
@@ -25,8 +26,11 @@ type RouteGenerationRunnerInput = {
   eventSink?: (event: RouteEventEnvelope) => void;
 };
 
+const HEARTBEAT_INTERVAL_MS = 3000;
+
 export async function runRouteGeneration(input: RouteGenerationRunnerInput) {
   const runnerId = createRunnerId();
+  const startedAt = Date.now();
 
   await claimAiRouteGenerationRun(input.userId, {
     runnerId,
@@ -42,13 +46,41 @@ export async function runRouteGeneration(input: RouteGenerationRunnerInput) {
   });
 
   let sequence = 0;
-  let textBuffer = "";
   let completed = false;
   let providerCandidateCount = 0;
   let invalidProviderEventCount = 0;
   let routePointCount = 0;
+  let firstPointAt: number | null = null;
+  let lastPointAt: number | null = null;
+  let persistChain: Promise<unknown> = Promise.resolve();
+  let lastHeartbeatScheduledAt = 0;
 
-  const emit = async (rawEvent: unknown) => {
+  const schedulePersist = (label: string, fn: () => Promise<unknown>) => {
+    persistChain = persistChain
+      .then(fn)
+      .catch((error) => {
+        logSafeServerEvent("error", "ai.route_generation.persist_failed", {
+          label,
+          code: error instanceof Error ? error.message : String(error),
+          sessionId: input.sessionId,
+          variantId: input.variantId,
+        });
+      });
+  };
+
+  const maybeScheduleHeartbeat = () => {
+    const now = Date.now();
+    if (now - lastHeartbeatScheduledAt < HEARTBEAT_INTERVAL_MS)
+      return;
+
+    lastHeartbeatScheduledAt = now;
+    schedulePersist("heartbeat", () => refreshAiRouteGenerationHeartbeat(input.userId, {
+      sessionId: input.sessionId,
+      variantId: input.variantId,
+    }));
+  };
+
+  const emit = (rawEvent: unknown) => {
     const validated = RouteEventEnvelopeSchema.safeParse(rawEvent);
     if (!validated.success) {
       invalidProviderEventCount += 1;
@@ -61,69 +93,79 @@ export async function runRouteGeneration(input: RouteGenerationRunnerInput) {
 
       const warning = createRouteWarningEvent({
         code: "invalid_route_event_skipped",
-        message: "A route update could not be validated and was skipped.",
+        message: "Обновление маршрута не удалось проверить, поэтому оно пропущено.",
         sequence: sequence++,
         sessionId: input.sessionId,
         variantId: input.variantId,
       });
 
-      await persistAiRouteEvent(input.userId, {
+      input.eventSink?.(warning);
+      schedulePersist("event_warning", () => persistAiRouteEvent(input.userId, {
         event: warning,
         sequence: warning.sequence,
         sessionId: input.sessionId,
         validationStatus: "skipped",
         variantId: input.variantId,
-      });
-      await refreshAiRouteGenerationHeartbeat(input.userId, {
-        sessionId: input.sessionId,
-        variantId: input.variantId,
-      });
-      input.eventSink?.(warning);
+      }));
+      maybeScheduleHeartbeat();
       return;
     }
 
     const routeEvent = validated.data;
-    await persistAiRouteEvent(input.userId, {
+    input.eventSink?.(routeEvent);
+
+    schedulePersist("event", () => persistAiRouteEvent(input.userId, {
       event: routeEvent,
       sequence: routeEvent.sequence,
       sessionId: input.sessionId,
       variantId: routeEvent.variantId,
-    });
+    }));
 
     if (isRoutePointEvent(routeEvent)) {
       routePointCount += 1;
-      await persistAiRoutePoint(input.userId, {
+      const now = Date.now();
+      if (firstPointAt === null)
+        firstPointAt = now;
+      lastPointAt = now;
+      schedulePersist("point", () => persistAiRoutePoint(input.userId, {
         point: routeEvent.point,
         sequence: routeEvent.sequence,
         variantId: routeEvent.variantId,
-      });
+      }));
     }
 
     if (routeEvent.type === "route.variant.completed") {
       completed = true;
-      await markAiRouteVariantCompleted(input.userId, {
+      schedulePersist("variant_completed", () => markAiRouteVariantCompleted(input.userId, {
         sessionId: input.sessionId,
         summary: routeEvent.summary,
         title: routeEvent.title,
         variantId: input.variantId,
-      });
+      }));
     }
 
-    await refreshAiRouteGenerationHeartbeat(input.userId, {
-      sessionId: input.sessionId,
-      variantId: input.variantId,
-    });
-    input.eventSink?.(routeEvent);
+    maybeScheduleHeartbeat();
+  };
+
+  const consumeCandidate = (candidate: Record<string, unknown>) => {
+    for (const normalized of normalizeProviderRouteCandidate(candidate)) {
+      providerCandidateCount += 1;
+      emit(enrichRouteEvent(normalized, {
+        sequence: sequence++,
+        sessionId: input.sessionId,
+        variantId: input.variantId,
+      }));
+    }
   };
 
   try {
-    await emit({
+    emit({
       activeVariantId: input.variantId,
       sequence: sequence++,
       sessionId: input.sessionId,
       type: "route.session.created",
     });
-    await emit({
+    emit({
       parentVariantId: input.parentVariantId,
       sequence: sequence++,
       sessionId: input.sessionId,
@@ -141,7 +183,7 @@ export async function runRouteGeneration(input: RouteGenerationRunnerInput) {
 
       for await (const routeEvent of mockStream) {
         sequence = routeEvent.sequence + 1;
-        await emit(routeEvent);
+        emit(routeEvent);
       }
     }
     else {
@@ -150,41 +192,31 @@ export async function runRouteGeneration(input: RouteGenerationRunnerInput) {
         instructions: ROUTE_SYSTEM_INSTRUCTIONS,
       });
 
+      const parser = createStreamingJsonParser();
+
       for await (const providerEvent of providerStream) {
-        textBuffer += extractProviderTextDelta(providerEvent);
-        const [lines, rest] = splitReadyJsonLines(textBuffer);
-        textBuffer = rest;
+        const delta = extractProviderTextDelta(providerEvent);
+        const completedObjects = feedStreamingJsonParser(parser, delta);
 
-        for (const line of lines) {
-          const candidate = parseJsonLine(line);
-          if (!candidate)
-            continue;
-
-          providerCandidateCount += 1;
-          await emit(enrichRouteEvent(candidate, {
-            sequence: sequence++,
-            sessionId: input.sessionId,
-            variantId: input.variantId,
-          }));
+        for (const objectJson of completedObjects) {
+          const parsed = parseJsonLine(objectJson);
+          if (parsed)
+            consumeCandidate(parsed);
         }
       }
 
-      const finalCandidates = parseProviderRouteCandidates(textBuffer);
-      for (const candidate of finalCandidates) {
-        providerCandidateCount += 1;
-        await emit(enrichRouteEvent(candidate, {
-          sequence: sequence++,
-          sessionId: input.sessionId,
-          variantId: input.variantId,
-        }));
-      }
+      if (providerCandidateCount === 0) {
+        const fallbackCandidates = parseProviderRouteCandidates(parser.buffer);
+        for (const candidate of fallbackCandidates)
+          consumeCandidate(candidate);
 
-      if (!providerCandidateCount) {
-        logSafeServerEvent("error", "ai.route_generation.no_parseable_events", {
-          mockEnabled: env.AI_ROUTE_MOCK_ENABLED,
-          sessionId: input.sessionId,
-          variantId: input.variantId,
-        });
+        if (providerCandidateCount === 0) {
+          logSafeServerEvent("error", "ai.route_generation.no_parseable_events", {
+            mockEnabled: env.AI_ROUTE_MOCK_ENABLED,
+            sessionId: input.sessionId,
+            variantId: input.variantId,
+          });
+        }
       }
     }
 
@@ -200,16 +232,19 @@ export async function runRouteGeneration(input: RouteGenerationRunnerInput) {
     }
 
     if (!completed) {
-      await emit({
+      emit({
         sequence: sequence++,
         sessionId: input.sessionId,
-        summary: "Route generation completed.",
+        summary: "Генерация маршрута завершена.",
         type: "route.variant.completed",
         variantId: input.variantId,
       });
     }
 
     logSafeServerEvent("warn", "ai.route_generation.completed", {
+      firstPointLatencyMs: firstPointAt ? firstPointAt - startedAt : null,
+      lastPointLatencyMs: lastPointAt ? lastPointAt - startedAt : null,
+      totalLatencyMs: Date.now() - startedAt,
       invalidProviderEventCount,
       providerCandidateCount,
       routePointCount,
@@ -228,12 +263,13 @@ export async function runRouteGeneration(input: RouteGenerationRunnerInput) {
       sessionId: input.sessionId,
       variantId: input.variantId,
     });
-    await markAiRouteVariantFailed(input.userId, {
+    schedulePersist("variant_failed", () => markAiRouteVariantFailed(input.userId, {
       failureCode: code,
+      failureStage: resolveAiRouteFailureStage(code),
       sessionId: input.sessionId,
       variantId: input.variantId,
-    });
-    await emit({
+    }));
+    emit({
       code,
       message: getRouteFailureMessage(code),
       sequence: sequence++,
@@ -241,6 +277,9 @@ export async function runRouteGeneration(input: RouteGenerationRunnerInput) {
       type: "route.failed",
       variantId: input.variantId,
     });
+  }
+  finally {
+    await persistChain;
   }
 }
 
@@ -252,9 +291,78 @@ function createRunnerId() {
   return globalThis.crypto?.randomUUID?.() ?? `route-runner:${Date.now()}:${Math.random().toString(36).slice(2)}`;
 }
 
-function splitReadyJsonLines(buffer: string): [string[], string] {
-  const lines = buffer.split(/\r?\n/);
-  return [lines.slice(0, -1).filter(Boolean), lines.at(-1) || ""];
+type StreamingJsonParser = {
+  buffer: string;
+  cursor: number;
+  inString: boolean;
+  escaped: boolean;
+  openStack: number[];
+  hasEmittedNested: boolean;
+};
+
+function createStreamingJsonParser(): StreamingJsonParser {
+  return {
+    buffer: "",
+    cursor: 0,
+    inString: false,
+    escaped: false,
+    openStack: [],
+    hasEmittedNested: false,
+  };
+}
+
+function feedStreamingJsonParser(parser: StreamingJsonParser, delta: string): string[] {
+  if (!delta)
+    return [];
+
+  parser.buffer += delta;
+  const completed: string[] = [];
+
+  for (; parser.cursor < parser.buffer.length; parser.cursor += 1) {
+    const ch = parser.buffer[parser.cursor];
+
+    if (parser.inString) {
+      if (parser.escaped) {
+        parser.escaped = false;
+        continue;
+      }
+
+      if (ch === "\\") {
+        parser.escaped = true;
+        continue;
+      }
+
+      if (ch === "\"")
+        parser.inString = false;
+
+      continue;
+    }
+
+    if (ch === "\"") {
+      parser.inString = true;
+      continue;
+    }
+
+    if (ch === "{") {
+      parser.openStack.push(parser.cursor);
+      continue;
+    }
+
+    if (ch !== "}" || parser.openStack.length === 0)
+      continue;
+
+    const start = parser.openStack.pop() as number;
+
+    if (parser.openStack.length === 1) {
+      completed.push(parser.buffer.slice(start, parser.cursor + 1));
+      parser.hasEmittedNested = true;
+    }
+    else if (parser.openStack.length === 0 && !parser.hasEmittedNested) {
+      completed.push(parser.buffer.slice(start, parser.cursor + 1));
+    }
+  }
+
+  return completed;
 }
 
 function parseJsonLine(line: string) {
@@ -432,15 +540,15 @@ function isRecord(input: unknown): input is Record<string, unknown> {
 
 function getRouteFailureMessage(code: string) {
   if (code === "provider_rate_limited")
-    return "The route AI is busy right now. Please try again in a minute.";
+    return "AI маршрутов сейчас занят. Попробуйте ещё раз через минуту.";
 
   if (code === "provider_auth_failed" || code === "provider_access_denied")
-    return "Route AI access failed. Check the provider key or selected model.";
+    return "Не удалось получить доступ к AI маршрутов. Проверьте ключ провайдера или выбранную модель.";
 
   if (code === "provider_unavailable")
-    return "The route AI provider is temporarily unavailable. Please try again soon.";
+    return "Провайдер AI маршрутов временно недоступен. Попробуйте ещё раз чуть позже.";
 
-  return "Route generation failed. Try again with adjusted preferences.";
+  return "Не удалось сгенерировать маршрут. Попробуйте изменить пожелания.";
 }
 
 function enrichRouteEvent(
@@ -599,6 +707,7 @@ function normalizeProviderRoutePoint(point: Record<string, unknown>) {
     approximateDistanceMeters: normalizeProviderNumber(
       point.approximateDistanceMeters ?? point.distanceMeters ?? point.distance,
     ),
+    alternativeForPointId: normalizeProviderAlternativeForPointId(point.alternativeForPointId),
     confidence: normalizeProviderConfidence(point.confidence),
     coordinates: normalizeProviderCoordinates(point),
     day: normalizeProviderDay(point.day ?? point.dayNumber ?? point.dayIndex, 0),
@@ -688,7 +797,13 @@ function normalizeProviderRationale(point: Record<string, unknown>) {
       return value.trim().slice(0, 500);
   }
 
-  return "Recommended route stop.";
+  return "Рекомендованная точка маршрута.";
+}
+
+function normalizeProviderAlternativeForPointId(input: unknown) {
+  return typeof input === "string" && input.trim()
+    ? input.trim().slice(0, 80)
+    : undefined;
 }
 
 function normalizeProviderConfidence(input: unknown) {

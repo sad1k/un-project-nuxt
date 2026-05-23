@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" role="img" aria-labelledby="title desc">
+  <title id="title">WanderLog icon</title>
+  <desc id="desc">A teal route marker over a pale map fold.</desc>
+  <rect width="192" height="192" rx="42" fill="#0F766E"/>
+  <path d="M43 53h106l-22 86H21l22-86Z" fill="#ECFEFF"/>
+  <path d="M71 53 49 139M113 53 91 139" stroke="#99F6E4" stroke-width="8" stroke-linecap="round"/>
+  <path d="M108 67c0 28-32 62-32 62S44 95 44 67a32 32 0 0 1 64 0Z" fill="#F97316"/>
+  <circle cx="76" cy="67" r="12" fill="#FFF7ED"/>
+  <path d="M117 94c12-6 27-5 39 1" stroke="#134E4A" stroke-width="9" stroke-linecap="round"/>
+  <path d="M131 116c8-3 17-3 27 2" stroke="#134E4A" stroke-width="9" stroke-linecap="round"/>
+</svg>
