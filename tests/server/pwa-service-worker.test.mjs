@@ -70,9 +70,10 @@ test("registers StaleWhileRevalidate for nuxt assets", async () => {
   assert.ok(sw.includes("/_nuxt/"));
 });
 
-test("uses BackgroundSyncPlugin with queue name wl-writes", async () => {
+test("uses workbox Queue with queue name wl-writes", async () => {
   const sw = await readFile(swPath, "utf8");
-  assert.ok(sw.includes("BackgroundSyncPlugin"));
+  assert.ok(sw.includes("workbox-background-sync"));
+  assert.ok(sw.includes("Queue"));
   assert.ok(sw.includes("wl-writes"));
 });
 

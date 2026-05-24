@@ -1,4 +1,4 @@
-import { BackgroundSyncPlugin } from "workbox-background-sync";
+import { Queue } from "workbox-background-sync";
 import { ExpirationPlugin } from "workbox-expiration";
 import { precacheAndRoute } from "workbox-precaching";
 import { registerRoute } from "workbox-routing";
@@ -54,8 +54,8 @@ registerRoute(
   }),
 );
 
-// 3) Write queue: BackgroundSyncPlugin for non-photo mutations
-const writeQueuePlugin = new BackgroundSyncPlugin("wl-writes", {
+// 3) Write queue: Queue directly for non-photo mutations
+const writeQueue = new Queue("wl-writes", {
   maxRetentionTime: 24 * 60,
   onSync: async ({ queue }) => {
     let entry;
@@ -88,9 +88,9 @@ const writeQueuePlugin = new BackgroundSyncPlugin("wl-writes", {
   },
 });
 
-// Match mutating /api/ requests EXCEPT photo sign-images (custom queue handles photos)
+// Match mutating /api/ requests EXCEPT photo sign-images and auth (single route filters all methods)
 registerRoute(
-  ({ url, request }) => (request.method === "POST" || request.method === "PUT" || request.method === "DELETE")
+  ({ url, request }) => ["POST", "PUT", "DELETE"].includes(request.method)
     && url.pathname.startsWith("/api/")
     && !url.pathname.includes("/sign-images")
     && !url.pathname.startsWith("/api/auth"),
@@ -99,17 +99,18 @@ registerRoute(
       return await fetch(event.request.clone());
     }
     catch {
-      await writeQueuePlugin.fetchDidFail({ request: event.request });
-      return new Response(JSON.stringify({ queued: true }), {
-        status: 202,
-        headers: { "Content-Type": "application/json" },
-      });
+      // Only POST enqueues for now (PUT/DELETE retry is follow-up work)
+      if (event.request.method === "POST") {
+        await writeQueue.pushRequest({ request: event.request.clone() });
+        return new Response(JSON.stringify({ queued: true }), {
+          status: 202,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      throw new Error("Offline");
     }
   },
-  "POST",
 );
-registerRoute(/.*\/api\//, ({ event }) => fetch(event.request), "PUT");
-registerRoute(/.*\/api\//, ({ event }) => fetch(event.request), "DELETE");
 
 // 4) Navigation fallback to offline.html
 registerRoute(
@@ -223,6 +224,11 @@ async function shouldShowInAppToast(payload) {
   if (!focused) {
     return false;
   }
-  focused.postMessage({ type: "wl-in-app-toast", payload });
-  return true;
+  try {
+    focused.postMessage({ type: "wl-in-app-toast", payload });
+    return true;
+  }
+  catch {
+    return false;
+  }
 }
