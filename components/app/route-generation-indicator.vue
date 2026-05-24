@@ -105,7 +105,7 @@ function formatDisplayStatus(status: string) {
     </button>
 
     <div
-      class="app-chrome-strong dropdown-content z-50 mt-2 w-80 rounded-lg border p-3 shadow-xl"
+      class="app-chrome-strong dropdown-content z-50 mt-2 w-80 rounded-lg border p-3 shadow-xl max-md:fixed max-md:inset-x-3 max-md:top-[64px] max-md:mt-0 max-md:w-auto max-md:max-h-[70vh] max-md:overflow-y-auto"
       tabindex="0"
     >
       <div

@@ -30,6 +30,7 @@ let mapboxAccessToken = "";
 let animationFrameId: number | null = null;
 let spinTimeoutId: ReturnType<typeof setTimeout> | null = null;
 let spinning = true;
+let hasActiveRoute = false;
 let routeGeometryRequestId = 0;
 let activeTheme: keyof typeof MAP_THEME_STYLES = "dark";
 let activeStyleMode: "theme" | "satellite" = "theme";
@@ -44,7 +45,14 @@ type RoutePopupOptions = {
   onDirectionsRequest?: (point: RouteMapPoint, nextPoint: RouteMapPoint | null) => void;
   onSaveRequest?: (point: RouteMapPoint) => Promise<void> | void;
   onStoryRequest?: (point: RouteMapPoint) => void;
+  onMarkerClick?: (point: RouteMapPoint) => void;
 };
+
+function isTouchDevice() {
+  if (typeof window === "undefined")
+    return false;
+  return window.matchMedia?.("(hover: none) and (pointer: coarse)").matches ?? false;
+}
 
 async function getMapboxGL() {
   if (!mapboxModule) {
@@ -142,6 +150,8 @@ function pauseGlobeSpin(resumeDelay = 3000) {
     return;
 
   spinTimeoutId = setTimeout(() => {
+    if (hasActiveRoute)
+      return;
     spinning = true;
     if (map.getZoom() < 4)
       startGlobeSpin(map);
@@ -149,7 +159,7 @@ function pauseGlobeSpin(resumeDelay = 3000) {
 }
 
 function startGlobeSpin(map: any) {
-  if (!spinning)
+  if (!spinning || hasActiveRoute)
     return;
   animationFrameId = requestAnimationFrame(() => {
     if (!map || !spinning)
@@ -199,6 +209,8 @@ export function useMapbox() {
     }
 
     map.on("idle", () => {
+      if (hasActiveRoute)
+        return;
       if (map.getZoom() < 4 && spinning) {
         startGlobeSpin(map);
       }
@@ -224,6 +236,7 @@ export function useMapbox() {
     activeRoutePopup = null;
     activeMarkers.forEach(marker => marker.remove());
     activeMarkers.length = 0;
+    hasActiveRoute = false;
   }
 
   async function addMarkers(points: RouteMapPoint[], options: RoutePopupOptions = {}) {
@@ -234,41 +247,55 @@ export function useMapbox() {
       return;
 
     const validPoints = points.filter(isValidRouteMapPoint);
+    if (validPoints.length > 0)
+      hasActiveRoute = true;
+
+    const touch = isTouchDevice();
+
     validPoints.forEach((point, index) => {
       const el = createMarkerElement(point, index, index * 150);
-
-      const popup = new mb.Popup({
-        offset: 20,
-        className: "explore-route-popup",
-        maxWidth: "min(300px, calc(100vw - 32px))",
-        closeButton: false,
-        closeOnClick: false,
-      }).setHTML(createPopupHTML(point));
 
       const marker = new mb.Marker({ element: el })
         .setLngLat([point.lng, point.lat])
         .addTo(map);
 
       const nextPoint = validPoints[index + 1] ?? null;
-      const showPopup = () => {
-        cancelRoutePopupClose();
-        if (activeRoutePopup && activeRoutePopup !== popup)
-          activeRoutePopup.remove();
 
-        activeRoutePopup = popup;
-        popup.setHTML(point.markerKind === "generated"
-          ? createPlacePopupLoadingHTML({ name: point.name, day: point.day })
-          : createPopupHTML(point));
-        popup.setLngLat([point.lng, point.lat]).addTo(map);
-        bindPopupActions(point, nextPoint, popup, options);
-        bindPopupHoverClose(popup);
-        if (point.markerKind === "generated")
-          void refreshPopupHTML(point, nextPoint, popup, options);
-      };
+      if (touch) {
+        el.addEventListener("click", (event) => {
+          event.stopPropagation();
+          options.onMarkerClick?.(point);
+        });
+      }
+      else {
+        const popup = new mb.Popup({
+          offset: 20,
+          className: "explore-route-popup",
+          maxWidth: "min(300px, calc(100vw - 32px))",
+          closeButton: false,
+          closeOnClick: false,
+        }).setHTML(createPopupHTML(point));
 
-      el.addEventListener("mouseenter", showPopup);
-      el.addEventListener("mouseleave", () => scheduleRoutePopupClose(popup));
-      el.addEventListener("click", showPopup);
+        const showPopup = () => {
+          cancelRoutePopupClose();
+          if (activeRoutePopup && activeRoutePopup !== popup)
+            activeRoutePopup.remove();
+
+          activeRoutePopup = popup;
+          popup.setHTML(point.markerKind === "generated"
+            ? createPlacePopupLoadingHTML({ name: point.name, day: point.day })
+            : createPopupHTML(point));
+          popup.setLngLat([point.lng, point.lat]).addTo(map);
+          bindPopupActions(point, nextPoint, popup, options);
+          bindPopupHoverClose(popup);
+          if (point.markerKind === "generated")
+            void refreshPopupHTML(point, nextPoint, popup, options);
+        };
+
+        el.addEventListener("mouseenter", showPopup);
+        el.addEventListener("mouseleave", () => scheduleRoutePopupClose(popup));
+        el.addEventListener("click", showPopup);
+      }
 
       activeMarkers.push(marker);
     });
