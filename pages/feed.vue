@@ -104,13 +104,13 @@ async function refreshFeed() {
               </div>
               <textarea
                 v-model="newPostContent"
-                class="min-h-12 flex-1 resize-none bg-transparent text-sm text-gray-950 placeholder:text-gray-500 focus:outline-none md:min-h-24 dark:text-white dark:placeholder:text-white/45"
+                class="min-h-12 flex-1 resize-none bg-transparent text-sm text-[var(--app-chrome-text)] placeholder:text-[var(--app-chrome-text-muted)] focus:outline-none md:min-h-24"
                 maxlength="500"
                 placeholder="Расскажите историю к фото..."
               />
             </div>
-            <div class="mt-4 flex items-center justify-between border-t border-gray-200/70 pt-3 dark:border-white/10">
-              <span class="text-xs text-gray-500 dark:text-white/45">{{ newPostContent.length }}/500</span>
+            <div class="mt-4 flex items-center justify-between border-t border-[var(--app-chrome-border)] pt-3">
+              <span class="text-xs text-[var(--app-chrome-text-faint)]">{{ newPostContent.length }}/500</span>
               <NuxtLink
                 :to="publishTarget"
                 class="flex items-center gap-2 rounded-full border border-brand-gold/40 bg-brand-gold px-5 py-2 text-sm font-semibold text-black transition-colors hover:bg-brand-gold/90"
@@ -160,21 +160,21 @@ async function refreshFeed() {
               </div>
               <textarea
                 v-model="newPostContent"
-                class="min-h-12 flex-1 resize-none bg-transparent py-1 text-sm text-gray-950 placeholder:text-gray-400 focus:outline-none md:min-h-24 dark:text-white dark:placeholder:text-white/40"
+                class="min-h-12 flex-1 resize-none bg-transparent py-1 text-sm text-[var(--app-chrome-text)] placeholder:text-[var(--app-chrome-text-muted)] focus:outline-none md:min-h-24"
                 maxlength="500"
                 placeholder="Поделитесь историей к фото..."
               />
             </div>
-            <div class="mt-4 flex items-center justify-between border-t border-gray-200/70 pt-3 dark:border-white/10">
+            <div class="mt-4 flex items-center justify-between border-t border-[var(--app-chrome-border)] pt-3">
               <div class="flex items-center gap-2">
                 <NuxtLink
                   to="/dashboard/place-photo/new"
-                  class="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-brand-emerald dark:hover:bg-white/5"
+                  class="rounded-lg p-2 text-[var(--app-chrome-text-faint)] transition-colors hover:bg-[var(--app-chrome-control-hover)] hover:text-brand-emerald"
                   aria-label="Загрузить новое фото"
                 >
                   <Icon name="tabler:photo" size="20" />
                 </NuxtLink>
-                <span class="text-xs text-gray-500 dark:text-white/45">{{ newPostContent.length }}/500</span>
+                <span class="text-xs text-[var(--app-chrome-text-faint)]">{{ newPostContent.length }}/500</span>
               </div>
               <NuxtLink
                 :to="publishTarget"
@@ -293,26 +293,16 @@ async function refreshFeed() {
 }
 
 .feed-composer {
-  border: 1px solid rgba(15, 23, 42, 0.1);
+  border: 1px solid var(--app-chrome-border);
   border-radius: 1.25rem;
-  background: rgba(255, 255, 255, 0.82);
+  background: var(--app-chrome-bg);
   padding: 1rem;
-  box-shadow: 0 20px 60px rgba(15, 23, 42, 0.12);
+  box-shadow: 0 20px 60px var(--app-chrome-shadow);
   backdrop-filter: blur(18px);
 }
 
-.dark .feed-composer {
-  border-color: rgba(255, 255, 255, 0.1);
-  background: rgba(10, 10, 10, 0.58);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.32);
-}
-
 .feed-composer--floating {
-  background: rgba(255, 255, 255, 0.72);
-}
-
-.dark .feed-composer--floating {
-  background: rgba(5, 5, 5, 0.54);
+  background: var(--app-chrome-control-bg);
 }
 
 .feed-globe-background :deep(section) {
