@@ -32,11 +32,32 @@ Run: `node scripts/run-node-tests.mjs tests/server/pwa-service-worker.test.mjs t
 
 Expected: all green. These are regression guards — must stay green through every phase.
 
-**Step 0.4: Verify dev server boots.**
+**Step 0.4: Capture lint baseline.**
+
+Run: `pnpm lint:source`
+
+Expected: passes with zero new errors (record any pre-existing warnings). Lint must stay **green at or below baseline** after every code change in this plan. **Lint failures are blockers, same as failing tests** — never commit code with new lint errors.
+
+**Step 0.5: Verify dev server boots.**
 
 Run: `pnpm dev` (Ctrl+C after `Listening on http://localhost:3001`).
 
 Expected: dev server starts on port 3001 without errors.
+
+---
+
+## Per-task verification (REQUIRED for every code task)
+
+For every Task that modifies `.ts` / `.vue` / `.mjs` / `.js` / `.cjs`:
+
+1. Write failing test → run → confirm RED
+2. Implement minimal code
+3. Run test → confirm GREEN
+4. **Run `pnpm lint:fix`** (auto-fix)
+5. **Run `pnpm lint:source`** (verify ≤ baseline; fix any new errors before committing)
+6. Stage explicitly named files (no `git add .`) and commit
+
+Markdown-only tasks skip steps 4–5. Mixed tasks: lint applies.
 
 ---
 
