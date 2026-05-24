@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import type { PlaceIntelligence } from "~/lib/explore/place-intelligence";
 import type { RouteMapPoint } from "~/lib/explore/route-map";
 
 import { createPlacePopupHTML } from "~/components/explore/place-popup";
@@ -19,12 +20,16 @@ const colorMode = useColorMode();
 const mapLoaded = ref(false);
 const selectedDay = useState<number | null>("explore-selected-route-day", () => null);
 const selectedStoryRoutePointId = useState<string | null>("explore-selected-story-route-point-id", () => null);
-const showPublicPhotos = ref(true);
 const lastFittedScope = ref("");
 const lastCompletedFitKey = ref("");
 const routeMapPoints = computed(() => toRouteMapPoints(activePoints.value));
 const selectedRoutePoints = computed(() => filterRoutePointsByDay(routeMapPoints.value, selectedDay.value));
 const selectedRouteLegs = computed(() => buildRouteLegs(selectedRoutePoints.value));
+
+const selectedSheetPlace = ref<RouteMapPoint | null>(null);
+const selectedSheetIntelligence = ref<PlaceIntelligence | null>(null);
+const selectedSheetLoading = ref(false);
+let sheetLoadToken = 0;
 const mapControlButtonClass = "explore-control flex h-10 w-10 items-center justify-center shadow-lg backdrop-blur-xl transition hover:text-brand-gold";
 
 function onMapLoaded() {
@@ -42,9 +47,16 @@ watch(
   },
 );
 
-watch(activeVariantId, () => {
+watch(activeVariantId, async () => {
   lastFittedScope.value = "";
   lastCompletedFitKey.value = "";
+  closePlaceSheet();
+  await nextTick();
+  if (!mapbox.mapLoaded.value)
+    return;
+  const points = selectedRoutePoints.value.length ? selectedRoutePoints.value : routeMapPoints.value;
+  if (points.length)
+    await mapbox.fitToRoute(points);
 });
 
 watch(
@@ -88,6 +100,9 @@ watch(
       onStoryRequest(point) {
         selectedDay.value = point.day;
         selectedStoryRoutePointId.value = point.sourceId;
+      },
+      onMarkerClick(point) {
+        void openPlaceSheet(point);
       },
     });
     mapbox.renderRoute(pts, legs);
@@ -163,8 +178,48 @@ function toggleMapLayer() {
   mapbox.toggleMapStyle();
 }
 
-function togglePublicPhotos() {
-  showPublicPhotos.value = !showPublicPhotos.value;
+async function openPlaceSheet(point: RouteMapPoint) {
+  selectedSheetPlace.value = point;
+  selectedSheetIntelligence.value = null;
+  selectedSheetLoading.value = point.markerKind === "generated";
+
+  if (point.markerKind !== "generated")
+    return;
+
+  const token = ++sheetLoadToken;
+  try {
+    const intelligence = await placeIntelligence.loadForRoutePoint(point, activeVariantId.value);
+    if (token !== sheetLoadToken)
+      return;
+    selectedSheetIntelligence.value = intelligence;
+  }
+  finally {
+    if (token === sheetLoadToken)
+      selectedSheetLoading.value = false;
+  }
+}
+
+function closePlaceSheet() {
+  sheetLoadToken += 1;
+  selectedSheetPlace.value = null;
+  selectedSheetIntelligence.value = null;
+  selectedSheetLoading.value = false;
+}
+
+function onSheetSave(point: RouteMapPoint) {
+  void saveRoutePointFromPopup(point);
+}
+
+function onSheetDirections(point: RouteMapPoint) {
+  const index = selectedRoutePoints.value.findIndex(item => item.sourceId === point.sourceId);
+  const nextPoint = index >= 0 ? selectedRoutePoints.value[index + 1] ?? null : null;
+  openDirectionsToNextStop(point, nextPoint);
+}
+
+function onSheetStory(point: RouteMapPoint) {
+  selectedDay.value = point.day;
+  selectedStoryRoutePointId.value = point.sourceId;
+  closePlaceSheet();
 }
 </script>
 
@@ -185,7 +240,6 @@ function togglePublicPhotos() {
     </div>
 
     <ExploreMapView @loaded="onMapLoaded" />
-    <PlacePhotoPublicPhotoLayer v-if="mapLoaded && showPublicPhotos" />
 
     <div class="explore-top-scrim pointer-events-none absolute inset-x-0 top-0 z-10 h-24" />
     <div class="explore-bottom-scrim pointer-events-none absolute inset-x-0 bottom-0 z-10 h-28" />
@@ -245,20 +299,20 @@ function togglePublicPhotos() {
       >
         <Icon name="tabler:layers-subtract" size="14" />
       </button>
-      <button
-        aria-label="Публичные фото"
-        class="rounded-xl border"
-        :class="[mapControlButtonClass, showPublicPhotos ? 'text-brand-gold' : '']"
-        data-testid="explore-public-photos"
-        type="button"
-        @click="togglePublicPhotos"
-      >
-        <Icon name="tabler:photo-scan" size="14" />
-      </button>
     </div>
 
     <ExploreWizard />
     <AppSideRail mode="overlay" />
     <AppMobileToolbar />
+
+    <ExplorePlaceBottomSheet
+      :place="selectedSheetPlace"
+      :intelligence="selectedSheetIntelligence"
+      :loading="selectedSheetLoading"
+      @close="closePlaceSheet"
+      @save="onSheetSave"
+      @directions="onSheetDirections"
+      @story="onSheetStory"
+    />
   </div>
 </template>

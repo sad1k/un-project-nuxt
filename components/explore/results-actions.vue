@@ -169,7 +169,7 @@ async function share() {
       <Transition name="pop">
         <div
           v-if="openPopover === 'weather'"
-          class="explore-popover z-40 rounded-xl border p-3 max-md:fixed max-md:right-3 max-md:top-[120px] max-md:w-[calc(100vw-1.5rem)] max-md:max-w-80 md:absolute md:right-0 md:top-full md:mt-2 md:w-80"
+          class="explore-popover z-40 rounded-xl border p-3 max-md:fixed max-md:inset-x-3 max-md:bottom-[96px] max-md:top-auto max-md:right-auto max-md:left-3 max-md:w-auto max-md:max-w-none max-md:max-h-[60vh] max-md:overflow-y-auto md:absolute md:right-0 md:top-full md:mt-2 md:w-80"
         >
           <ExploreRouteWeatherTips
             :error="routeWeatherTips.error.value"
@@ -193,7 +193,7 @@ async function share() {
       <Transition name="pop">
         <div
           v-if="openPopover === 'history'"
-          class="explore-popover z-40 max-h-96 overflow-y-auto rounded-xl border p-3 max-md:fixed max-md:right-3 max-md:top-[120px] max-md:w-[calc(100vw-1.5rem)] max-md:max-w-80 md:absolute md:right-0 md:top-full md:mt-2 md:w-80"
+          class="explore-popover z-40 max-h-96 overflow-y-auto rounded-xl border p-3 max-md:fixed max-md:inset-x-3 max-md:bottom-[96px] max-md:top-auto max-md:right-auto max-md:left-3 max-md:w-auto max-md:max-w-none max-md:max-h-[60vh] max-md:overflow-y-auto md:absolute md:right-0 md:top-full md:mt-2 md:w-80"
         >
           <ExploreRouteHistory @select="close" />
         </div>
@@ -213,7 +213,7 @@ async function share() {
       <Transition name="pop">
         <div
           v-if="openPopover === 'followUp'"
-          class="explore-popover z-40 rounded-xl border p-3 max-md:fixed max-md:right-3 max-md:top-[120px] max-md:w-[calc(100vw-1.5rem)] max-md:max-w-80 md:absolute md:right-0 md:top-full md:mt-2 md:w-80"
+          class="explore-popover z-40 rounded-xl border p-3 max-md:fixed max-md:inset-x-3 max-md:bottom-[96px] max-md:top-auto max-md:right-auto max-md:left-3 max-md:w-auto max-md:max-w-none max-md:max-h-[60vh] max-md:overflow-y-auto md:absolute md:right-0 md:top-full md:mt-2 md:w-80"
         >
           <ExploreRouteFollowUp />
         </div>
@@ -233,7 +233,7 @@ async function share() {
       <Transition name="pop">
         <div
           v-if="openPopover === 'share'"
-          class="explore-popover z-40 rounded-xl border p-3 max-md:fixed max-md:right-3 max-md:top-[120px] max-md:w-[calc(100vw-1.5rem)] max-md:max-w-72 md:absolute md:right-0 md:top-full md:mt-2 md:w-72"
+          class="explore-popover z-40 rounded-xl border p-3 max-md:fixed max-md:inset-x-3 max-md:bottom-[96px] max-md:top-auto max-md:right-auto max-md:left-3 max-md:w-auto max-md:max-w-none max-md:max-h-[60vh] max-md:overflow-y-auto md:absolute md:right-0 md:top-full md:mt-2 md:w-72"
         >
           <div class="explore-text-soft mb-2 text-xs font-semibold">
             Share route
