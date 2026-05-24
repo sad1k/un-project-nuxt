@@ -33,8 +33,23 @@ onBeforeRouteLeave((to) => {
       </NuxtLink>
     </div>
 
-    <div v-if="status === 'pending'">
-      <span class="loading loading-spinner loading-xl text-brand-gold" />
+    <div
+      v-if="status === 'pending'"
+      class="flex flex-col gap-2 md:grid md:grid-cols-2 md:gap-4 lg:grid-cols-3"
+      aria-busy="true"
+      aria-label="Загрузка мест"
+    >
+      <div
+        v-for="i in 6"
+        :key="i"
+        class="flex w-full items-stretch gap-3 rounded-2xl border border-gray-200 bg-white/80 p-3 motion-safe:animate-pulse md:flex-col md:gap-0 md:p-0 dark:border-white/10 dark:bg-white/5"
+      >
+        <div class="h-[72px] w-[72px] shrink-0 rounded-xl bg-gray-200/70 md:h-32 md:w-full md:rounded-b-none md:rounded-t-2xl dark:bg-white/10" />
+        <div class="flex min-w-0 flex-1 flex-col justify-center gap-2 md:p-3">
+          <div class="h-4 w-2/3 rounded bg-gray-200/70 dark:bg-white/10" />
+          <div class="h-3 w-4/5 rounded bg-gray-200/50 dark:bg-white/[0.06]" />
+        </div>
+      </div>
     </div>
     <div
       v-else-if="locations && locations.length > 0"
