@@ -15,7 +15,7 @@ export default defineAuthenticatedHandler(async (event) => {
   if (!body.success) {
     throw createError({
       statusCode: 400,
-      statusMessage: "Invalid route diary save request",
+      statusMessage: "Некорректный запрос сохранения маршрута в дневник",
     });
   }
 
@@ -33,7 +33,7 @@ function parseSessionId(input: string | undefined) {
   if (!Number.isInteger(sessionId) || sessionId <= 0) {
     throw createError({
       statusCode: 400,
-      statusMessage: "Invalid route session id",
+      statusMessage: "Некорректный ID сессии маршрута",
     });
   }
 

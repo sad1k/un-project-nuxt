@@ -81,7 +81,7 @@ export const RouteGenerationRequestSchema = z.object({
   if (!value.sessionId && !value.context.city) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: "Initial route generation requires a selected city.",
+      message: "Для первой генерации маршрута нужно выбрать город.",
       path: ["context", "city"],
     });
   }
@@ -106,7 +106,7 @@ export const RoutePointSchema = z.object({
     if (!value.priceConfidence) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Price estimates require confidence metadata.",
+        message: "Для оценки стоимости нужны метаданные уверенности.",
         path: ["priceConfidence"],
       });
     }
@@ -114,7 +114,7 @@ export const RoutePointSchema = z.object({
     if (!value.priceSource) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Price estimates require source metadata.",
+        message: "Для оценки стоимости нужны метаданные источника.",
         path: ["priceSource"],
       });
     }

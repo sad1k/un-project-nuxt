@@ -8,10 +8,16 @@ const markerSource = await readFile("components/explore/route-marker.ts", "utf8"
 const mapboxSource = await readFile("composables/use-mapbox.ts", "utf8");
 const pageSource = await readFile("pages/explore.vue", "utf8");
 const cssSource = await readFile("assets/css/main.css", "utf8");
+const modelSource = await readFile("lib/explore/place-intelligence.ts", "utf8");
+const providerSource = await readFile("lib/explore/place-intelligence-providers.ts", "utf8");
 const composableSource = await readFile("composables/use-place-intelligence.ts", "utf8").catch(() => "");
 const createPopupSource = popupSource.slice(
   popupSource.indexOf("export function createPlacePopupHTML"),
   popupSource.indexOf("export function createPlacePopupLoadingHTML"),
+);
+const normalizePhotoSource = providerSource.slice(
+  providerSource.indexOf("function normalizePhoto"),
+  providerSource.indexOf("function normalizeRating"),
 );
 
 test("popup renderer is a pure photo-first HTML renderer", () => {
@@ -45,6 +51,24 @@ test("popup renderer shows missing data placeholders instead of silent gaps", ()
   assert.match(popupSource, /missingSlots/);
 });
 
+test("place photos are real provider or app media, never AI illustrations", () => {
+  assert.match(modelSource, /PlacePhotoSourceSchema/);
+  assert.match(modelSource, /provider/);
+  assert.match(modelSource, /app/);
+  assert.match(modelSource, /Place photos must come from real provider or app-owned media/);
+  assert.doesNotMatch(normalizePhotoSource, /kind:\s*"ai"/);
+  assert.doesNotMatch(normalizePhotoSource, /kind:\s*"missing"/);
+  assert.doesNotMatch(popupSource, /illustrative|AI-generated|generated placeholder/i);
+});
+
+test("popup photo section renders real source or attribution and explicit missing state", () => {
+  assert.match(popupSource, /const caption = place\.photo\.attribution \|\| place\.photo\.source\.label/);
+  assert.match(popupSource, /<figcaption/);
+  assert.match(popupSource, /place-popup__photo--missing/);
+  assert.match(popupSource, /photoMissing\?\.label/);
+  assert.doesNotMatch(popupSource, /AI-generated place photo|illustrative place photo/i);
+});
+
 test("popup renderer labels sourced rating reviews cost and community uncertainty", () => {
   assert.match(popupSource, /reviewCount/);
   assert.match(popupSource, /reviews/);
@@ -56,10 +80,10 @@ test("popup renderer labels sourced rating reviews cost and community uncertaint
 });
 
 test("route popup constrains tall and narrow content inside the viewport", () => {
-  assert.match(popupSource, /width:min\(280px,calc\(100vw - 48px\)\)/);
-  assert.match(popupSource, /max-height:max\(300px,min\(440px,calc\(100svh - 176px\)\)\)/);
-  assert.match(popupSource, /overflow-y:auto/);
-  assert.match(popupSource, /overscroll-behavior:contain/);
+  assert.match(cssSource, /width:\s*min\(280px,\s*calc\(100vw - 48px\)\)/);
+  assert.match(cssSource, /max-height:\s*max\(300px,\s*min\(440px,\s*calc\(100svh - 176px\)\)\)/);
+  assert.match(cssSource, /overflow-y:\s*auto/);
+  assert.match(cssSource, /overscroll-behavior:\s*contain/);
   assert.match(popupSource, /flex-wrap:wrap/);
   assert.match(popupSource, /position:sticky;bottom:0/);
   assert.match(popupSource, /data-place-save-cta/);

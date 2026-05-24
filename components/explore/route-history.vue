@@ -1,6 +1,8 @@
 <script lang="ts" setup>
 const { activeVariantId, pointsByVariantId, restoreRouteSession, sessionId, setActiveVariant, variants } = useAiRouteSession();
 const {
+  deleteRouteGenerationSession,
+  deletingSessionIds,
   refreshRouteGenerationStatus,
   sessions,
   startRouteGenerationStatusPolling,
@@ -13,18 +15,18 @@ const otherSessions = computed(() => sessions.value
 
 function getDiarySaveLabel(input?: { savedCount: number; expectedPointCount: number; status: string } | null) {
   if (!input)
-    return "No route stops saved";
+    return "Точки маршрута не сохранены";
 
   if (input.status === "saved")
-    return `Diary saved ${input.savedCount}/${input.expectedPointCount}`;
+    return `В дневнике ${input.savedCount}/${input.expectedPointCount}`;
 
   if (input.status === "failed")
-    return "Diary save failed";
+    return "Не удалось сохранить в дневник";
 
   if (input.status === "partial")
-    return `Diary partial ${input.savedCount}/${input.expectedPointCount}`;
+    return `Частично в дневнике ${input.savedCount}/${input.expectedPointCount}`;
 
-  return "No route stops saved";
+  return "Точки маршрута не сохранены";
 }
 
 function getDiarySaveIcon(input?: { status: string } | null) {
@@ -35,6 +37,21 @@ function getDiarySaveIcon(input?: { status: string } | null) {
     return "tabler:alert-triangle";
 
   return "tabler:bookmark-plus";
+}
+
+function getRouteSessionLabel(routeSession: { cityName: string | null; sessionId: number; title: string | null }) {
+  return routeSession.title || routeSession.cityName || `Сессия ${routeSession.sessionId}`;
+}
+
+function formatRouteStatus(status: string) {
+  const labels: Record<string, string> = {
+    completed: "готово",
+    failed: "ошибка",
+    generating: "генерируется",
+    stale: "зависло",
+  };
+
+  return labels[status] || status;
 }
 
 onMounted(() => {
@@ -52,10 +69,10 @@ onBeforeUnmount(() => {
     class="space-y-2"
   >
     <div class="flex items-center justify-between">
-      <h3 class="text-sm font-semibold text-gray-900">
-        Route history
+      <h3 class="text-[10px] font-bold uppercase tracking-[0.28em] text-[var(--explore-text-faint)]">
+        История маршрутов
       </h3>
-      <span class="text-xs text-gray-500">{{ variants.length }} variants</span>
+      <span class="text-xs text-[var(--explore-text-soft)]">{{ variants.length }} вариантов</span>
     </div>
 
     <div class="space-y-2">
@@ -63,16 +80,16 @@ onBeforeUnmount(() => {
         v-for="variant in variants"
         :key="variant.id"
         class="flex w-full items-center justify-between rounded-lg border px-3 py-2 text-left transition"
-        :class="variant.id === activeVariantId ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 bg-white text-gray-800 hover:border-gray-300'"
+        :class="variant.id === activeVariantId ? 'border-brand-gold/35 bg-brand-gold/10 text-[var(--explore-text)]' : 'border-[var(--explore-border)] bg-[var(--explore-surface-soft)] text-[var(--explore-text-muted)] hover:border-[var(--explore-border-strong)]'"
         type="button"
         @click="setActiveVariant(variant.id)"
       >
         <span class="min-w-0">
           <span class="block truncate text-sm font-medium">
-            {{ variant.title || `Route ${variant.id}` }}
+            {{ variant.title || `Маршрут ${variant.id}` }}
           </span>
           <span class="block text-xs opacity-70">
-            {{ pointsByVariantId[variant.id]?.length || variant.pointCount }} points - {{ variant.status }}
+            {{ pointsByVariantId[variant.id]?.length || variant.pointCount }} точек - {{ formatRouteStatus(variant.status) }}
           </span>
           <span
             v-if="variant.status === 'completed'"
@@ -98,11 +115,11 @@ onBeforeUnmount(() => {
       class="space-y-2 pt-2"
     >
       <div class="flex items-center justify-between">
-        <h3 class="text-sm font-semibold text-gray-900">
-          Saved generations
+        <h3 class="text-sm font-semibold text-[var(--explore-text)]">
+          Сохранённые генерации
         </h3>
         <button
-          class="btn btn-ghost btn-xs text-gray-500"
+          class="btn btn-ghost btn-xs text-[var(--explore-text-soft)] hover:text-[var(--explore-text)]"
           type="button"
           @click="refreshRouteGenerationStatus()"
         >
@@ -110,23 +127,25 @@ onBeforeUnmount(() => {
         </button>
       </div>
 
-      <button
+      <div
         v-for="routeSession in otherSessions"
         :key="routeSession.sessionId"
-        class="flex w-full items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2 text-left text-gray-800 transition hover:border-gray-300"
-        type="button"
-        @click="restoreRouteSession(routeSession.sessionId)"
+        class="flex w-full items-center justify-between rounded-lg border border-[var(--explore-border)] bg-[var(--explore-surface-soft)] px-3 py-2 text-left text-[var(--explore-text-muted)] transition hover:border-[var(--explore-border-strong)]"
       >
-        <span class="min-w-0">
+        <button
+          class="min-w-0 flex-1 text-left"
+          type="button"
+          @click="restoreRouteSession(routeSession.sessionId)"
+        >
           <span class="block truncate text-sm font-medium">
-            {{ routeSession.title || routeSession.cityName || `Session ${routeSession.sessionId}` }}
+            {{ getRouteSessionLabel(routeSession) }}
           </span>
-          <span class="block text-xs text-gray-500">
-            {{ routeSession.pointCount }} points - {{ routeSession.displayStatus }}
+          <span class="block text-xs text-[var(--explore-text-soft)]">
+            {{ routeSession.pointCount }} точек - {{ formatRouteStatus(routeSession.displayStatus) }}
           </span>
           <span
             v-if="routeSession.status === 'completed'"
-            class="mt-1 flex items-center gap-1 text-xs text-gray-500"
+            class="mt-1 flex items-center gap-1 text-xs text-[var(--explore-text-soft)]"
           >
             <Icon
               :name="getDiarySaveIcon(routeSession.diarySave)"
@@ -134,13 +153,28 @@ onBeforeUnmount(() => {
             />
             {{ getDiarySaveLabel(routeSession.diarySave) }}
           </span>
+        </button>
+        <span class="ml-3 flex shrink-0 items-center gap-1">
+          <Icon
+            :class="{ 'animate-spin': routeSession.status === 'generating' && !routeSession.isStale }"
+            :name="routeSession.status === 'generating' ? 'tabler:loader-2' : routeSession.status === 'completed' ? 'tabler:map-check' : 'tabler:alert-triangle'"
+            size="16"
+          />
+          <button
+            :aria-label="`Удалить ${getRouteSessionLabel(routeSession)} из истории маршрутов`"
+            class="btn btn-ghost btn-xs text-[var(--explore-text-soft)] hover:text-[var(--explore-danger-text)]"
+            :disabled="deletingSessionIds.includes(routeSession.sessionId)"
+            type="button"
+            @click="deleteRouteGenerationSession(routeSession.sessionId)"
+          >
+            <Icon
+              :class="{ 'animate-spin': deletingSessionIds.includes(routeSession.sessionId) }"
+              :name="deletingSessionIds.includes(routeSession.sessionId) ? 'tabler:loader-2' : 'tabler:trash'"
+              size="15"
+            />
+          </button>
         </span>
-        <Icon
-          :class="{ 'animate-spin': routeSession.status === 'generating' && !routeSession.isStale }"
-          :name="routeSession.status === 'generating' ? 'tabler:loader-2' : routeSession.status === 'completed' ? 'tabler:map-check' : 'tabler:alert-triangle'"
-          size="16"
-        />
-      </button>
+      </div>
     </div>
   </section>
 </template>

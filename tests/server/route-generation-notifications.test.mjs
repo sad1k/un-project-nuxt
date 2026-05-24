@@ -9,7 +9,7 @@ const statusEndpointSource = await readFile("server/api/notifications/route-gene
 const subscriptionEndpointSource = await readFile("server/api/notifications/route-generation-subscription.post.ts", "utf8");
 const notificationSource = await readFile("composables/use-route-generation-notifications.ts", "utf8");
 const indicatorSource = await readFile("components/app/route-generation-indicator.vue", "utf8");
-const serviceWorkerSource = await readFile("public/route-generation-sw.js", "utf8");
+const serviceWorkerSource = await readFile("public/wanderlog-sw.js", "utf8");
 const configSource = await readFile("nuxt.config.ts", "utf8");
 const envSource = await readFile("lib/env.ts", "utf8");
 
@@ -37,14 +37,14 @@ test("client emits in-app and browser notifications for completed route generati
   assert.match(notificationSource, /markRouteGenerationNotificationStatus/);
   assert.match(notificationSource, /route-generation-status/);
   assert.match(indicatorSource, /lastNotification/);
-  assert.match(indicatorSource, /Enable browser notifications/);
+  assert.match(indicatorSource, /Включить уведомления браузера/);
 });
 
 test("browser push groundwork is gated by public VAPID key without adding a sender dependency", () => {
   assert.match(envSource, /ROUTE_NOTIFICATION_VAPID_PUBLIC_KEY/);
   assert.match(configSource, /routeNotificationVapidPublicKey/);
   assert.match(notificationSource, /PushManager/);
-  assert.match(notificationSource, /route-generation-sw\.js/);
+  assert.match(notificationSource, /wanderlog-sw\.js/);
   assert.match(serviceWorkerSource, /showNotification/);
   assert.match(serviceWorkerSource, /notificationclick/);
 });

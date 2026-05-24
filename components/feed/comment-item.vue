@@ -23,7 +23,7 @@ const isOwner = computed(() => currentUserId === comment.userId);
     <div class="shrink-0">
       <div
         v-if="comment.userImage"
-        class="w-8 h-8 rounded-full overflow-hidden ring-2 ring-white/10"
+        class="w-8 h-8 rounded-full overflow-hidden ring-2 ring-gray-200 dark:ring-white/10"
       >
         <img
           :src="comment.userImage"
@@ -33,7 +33,7 @@ const isOwner = computed(() => currentUserId === comment.userId);
       </div>
       <div
         v-else
-        class="w-8 h-8 rounded-full bg-gradient-to-br from-brand-violet to-brand-emerald flex items-center justify-center ring-2 ring-white/10"
+        class="w-8 h-8 rounded-full bg-gradient-to-br from-brand-violet to-brand-emerald flex items-center justify-center ring-2 ring-gray-200 dark:ring-white/10"
       >
         <span class="text-white text-xs font-bold">{{ comment.userName.charAt(0).toUpperCase() }}</span>
       </div>
@@ -41,11 +41,11 @@ const isOwner = computed(() => currentUserId === comment.userId);
 
     <div class="flex-1 min-w-0">
       <div class="flex items-center gap-2 flex-wrap">
-        <span class="font-semibold text-sm text-white">{{ comment.userName }}</span>
+        <span class="font-semibold text-sm text-gray-950 dark:text-white">{{ comment.userName }}</span>
         <span class="text-xs text-gray-500">{{ formattedDate }}</span>
       </div>
 
-      <p class="text-sm text-gray-300 mt-1 break-words">
+      <p class="text-sm text-gray-700 mt-1 break-words dark:text-gray-300">
         <span
           v-if="comment.replyToUserName"
           class="text-brand-gold font-medium"

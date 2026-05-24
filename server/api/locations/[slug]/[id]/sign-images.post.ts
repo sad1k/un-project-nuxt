@@ -30,7 +30,7 @@ export default defineAuthenticatedHandler(async (event) => {
   if (!parsedId.success) {
     return sendError(event, createError({
       statusCode: 422,
-      statusMessage: "Invalid location log id",
+      statusMessage: "Некорректный ID записи места",
     }));
   }
 
@@ -43,7 +43,7 @@ export default defineAuthenticatedHandler(async (event) => {
   if (!locationLog) {
     return sendError(event, createError({
       statusCode: 404,
-      statusMessage: "Location log not found",
+      statusMessage: "Запись места не найдена",
     }));
   }
 

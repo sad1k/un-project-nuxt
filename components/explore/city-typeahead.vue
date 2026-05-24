@@ -49,7 +49,7 @@ async function loadSuggestions(nextQuery: string) {
     });
   }
   catch {
-    error.value = "City search is unavailable";
+    error.value = "Поиск города сейчас недоступен";
   }
   finally {
     loading.value = false;
@@ -69,7 +69,7 @@ async function selectSuggestion(suggestion: ExploreCitySuggestion) {
     suggestions.value = [];
   }
   catch {
-    error.value = "Could not select this city";
+    error.value = "Не удалось выбрать этот город";
   }
   finally {
     loading.value = false;
@@ -123,14 +123,14 @@ function createSessionToken() {
 <template>
   <div class="relative">
     <label
-      class="mb-2 block text-xs font-semibold uppercase tracking-wide text-gray-500"
+      class="explore-section-label mb-2 block text-[10px] font-bold uppercase tracking-[0.28em]"
       for="explore-city-search"
     >
-      Destination
+      Город
     </label>
     <div class="relative">
       <Icon
-        class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+        class="explore-text-faint absolute left-3 top-1/2 -translate-y-1/2"
         name="tabler:map-pin-search"
         size="18"
       />
@@ -140,8 +140,8 @@ function createSessionToken() {
         aria-autocomplete="list"
         :aria-expanded="open"
         autocomplete="off"
-        class="w-full rounded-lg border border-gray-200 bg-white px-10 py-3 text-sm text-gray-900 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-400/30"
-        placeholder="Search a city"
+        class="explore-input w-full rounded-xl border px-10 py-3 text-sm transition focus:border-brand-gold/50 focus:ring-2 focus:ring-brand-gold/15"
+        placeholder="Лиссабон, Порту, Токио..."
         type="search"
         @keydown.down.prevent="moveActiveSuggestion(1)"
         @keydown.enter.prevent="selectActiveSuggestion"
@@ -149,7 +149,7 @@ function createSessionToken() {
       >
       <Icon
         v-if="loading"
-        class="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-gray-400"
+        class="explore-text-faint absolute right-3 top-1/2 -translate-y-1/2 animate-spin"
         name="tabler:loader-2"
         size="18"
       />
@@ -157,30 +157,30 @@ function createSessionToken() {
 
     <div
       v-if="open"
-      class="absolute z-40 mt-2 max-h-64 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-xl"
+      class="explore-popover absolute z-40 mt-2 max-h-64 w-full overflow-y-auto rounded-xl border"
       role="listbox"
     >
       <button
         v-for="(suggestion, index) in suggestions"
         :key="suggestion.id"
-        class="flex w-full flex-col px-3 py-2 text-left transition hover:bg-amber-50"
-        :class="index === activeIndex ? 'bg-amber-50' : ''"
+        class="flex w-full flex-col px-3 py-2 text-left transition hover:bg-[var(--explore-surface-hover)]"
+        :class="index === activeIndex ? 'explore-active-surface' : ''"
         type="button"
         @click="selectSuggestion(suggestion)"
       >
-        <span class="text-sm font-semibold text-gray-900">{{ suggestion.name }}</span>
-        <span class="truncate text-xs text-gray-500">{{ suggestion.description || suggestion.label }}</span>
+        <span class="explore-text text-sm font-semibold">{{ suggestion.name }}</span>
+        <span class="explore-text-soft truncate text-xs">{{ suggestion.description || suggestion.label }}</span>
       </button>
 
       <div
         v-if="!loading && !suggestions.length && !error"
-        class="px-3 py-2 text-sm text-gray-500"
+        class="explore-text-soft px-3 py-2 text-sm"
       >
-        No city matches yet
+        Пока нет подходящих городов
       </div>
       <div
         v-if="error"
-        class="px-3 py-2 text-sm text-red-600"
+        class="px-3 py-2 text-sm text-[var(--explore-danger-text)]"
       >
         {{ error }}
       </div>

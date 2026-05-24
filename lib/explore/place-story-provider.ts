@@ -69,30 +69,30 @@ export function evaluatePlaceStorySupport(place: PlaceIntelligence): PlaceStoryS
     place.aiSummary
       ? {
           key: "ai_summary",
-          label: "Provider place summary",
+          label: "Сводка места от провайдера",
           source: place.aiSummary.summarySource,
         }
       : null,
     place.rating
       ? {
           key: "rating",
-          label: "Provider rating",
+          label: "Рейтинг провайдера",
           source: place.rating.source,
         }
       : null,
     ...place.reviews.slice(0, 2).map(review => ({
       key: "review",
-      label: "Sourced review snippet",
+      label: "Фрагмент отзыва из источника",
       source: review.source,
     })),
     place.routeRationale
       ? {
           key: "route_context",
-          label: "Route rationale",
+          label: "Обоснование маршрута",
           source: {
             confidence: "medium" as const,
             kind: "route" as const,
-            label: "AI route context",
+            label: "Контекст AI-маршрута",
           },
         }
       : null,
@@ -213,16 +213,16 @@ export function createAvailableAudioMetadata(input: {
 
 function createPlaceStoryNarrationInput(place: PlaceIntelligence) {
   return [
-    `Create a concise warm audio guide for ${place.name}.`,
-    "Length target: 60 to 120 seconds.",
-    "Use only the sourced place facts and route context below.",
-    "Do not invent history, quotes, opening hours, or claims not supported by the facts.",
-    `Route day: ${place.day ?? "unknown"}.`,
-    place.routeRationale ? `Route context: ${place.routeRationale}` : "",
-    place.aiSummary ? `Provider summary: ${place.aiSummary.text}` : "",
-    place.rating ? `Rating signal: ${place.rating.value}/${place.rating.scale}` : "",
-    ...place.reviews.map(review => `Review signal: ${review.text}`),
-    place.cost ? `Cost signal: ${place.cost.label}` : "",
+    `Создай краткий тёплый аудиогид для ${place.name}.`,
+    "Целевая длина: от 60 до 120 секунд.",
+    "Используй только факты о месте из источников и контекст маршрута ниже.",
+    "Не придумывай историю, цитаты, часы работы или утверждения, не подтверждённые фактами.",
+    `День маршрута: ${place.day ?? "неизвестно"}.`,
+    place.routeRationale ? `Контекст маршрута: ${place.routeRationale}` : "",
+    place.aiSummary ? `Сводка провайдера: ${place.aiSummary.text}` : "",
+    place.rating ? `Сигнал рейтинга: ${place.rating.value}/${place.rating.scale}` : "",
+    ...place.reviews.map(review => `Сигнал отзыва: ${review.text}`),
+    place.cost ? `Сигнал стоимости: ${place.cost.label}` : "",
   ]
     .filter(Boolean)
     .join("\n");

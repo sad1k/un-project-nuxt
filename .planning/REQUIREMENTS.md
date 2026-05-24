@@ -52,7 +52,7 @@ Requirements for the fully working Explore page and AI route planning MVP. Exist
 ### Place Intelligence
 
 - [ ] **PLACE-01**: User can click a place marker and see a popup with place information.
-- [ ] **PLACE-02**: User can see pictures of the place in the popup.
+- [ ] **PLACE-02**: User can see real provider-sourced or WanderLog app-owned pictures of the place in the popup; AI-generated or illustrative pictures must not be presented as place photos.
 - [ ] **PLACE-03**: User can see reviews and rating for the place when available.
 - [ ] **PLACE-04**: User can see estimated cost for each place when available.
 - [ ] **PLACE-05**: User can see how many WanderLog users visited the place when app data is available.
@@ -74,6 +74,37 @@ Requirements for the fully working Explore page and AI route planning MVP. Exist
 - [x] **OBS-01**: AI and Explore provider failures are observable through Sentry or sanitized server logging.
 - [x] **OBS-02**: AI, weather, reviews, and place-data credentials remain server-only unless explicitly safe for browser exposure.
 - [x] **OBS-03**: Conversation, route, saved-place, and community visit data cannot be read or modified across users.
+
+## Post-v1 Active Requirements
+
+Requirements added after the Explore/Admin foundation to expand WanderLog into a traveler-contribution product.
+
+### Traveler Place Photo Sharing
+
+- [ ] **PHOTO-01**: Authenticated user can upload or attach a photo to an existing or newly selected attraction/place.
+- [ ] **PHOTO-02**: User can confirm or adjust the photo's marker/location on the map before saving.
+- [ ] **PHOTO-03**: Uploaded place photos remain private and owner-scoped by default.
+- [ ] **PHOTO-04**: User can explicitly make a selected place photo public.
+- [ ] **PHOTO-05**: Public place photos are visible to other users in relevant place/map surfaces without exposing private diary context.
+- [ ] **PHOTO-06**: Owner can remove a photo from public display or delete it, and public reads respect ownership, privacy, and moderation/removal state.
+
+### Real Place Photo Enrichment
+
+- [x] **REALPHOTO-01**: Explore generated-route places resolve photos from real media sources only: public WanderLog place photos first, then configured place/photo providers.
+- [x] **REALPHOTO-02**: Google Places photo media is resolved through server-side fresh photo references and never persisted as permanent copied image assets unless provider terms explicitly allow it.
+- [x] **REALPHOTO-03**: Place-photo metadata cache records source, attribution, license/terms hints, expiry, provider place identity, and failure state without storing secrets or private route context.
+- [x] **REALPHOTO-04**: Fallback order is deterministic: WanderLog public photos -> Google Places Photos -> optional open/provider fallback such as Wikimedia or Foursquare -> explicit missing-photo state.
+- [x] **REALPHOTO-05**: AI-generated, stock-like, or illustrative images are not shown as place photos for generated-route places.
+- [x] **REALPHOTO-06**: Provider failures, cache misses, and missing-photo states are observable through sanitized logs/tests without exposing provider headers, API keys, prompts, or private location history.
+
+### Live Feed Globe
+
+- [x] **LIVEGLOBE-01**: Authenticated user can quickly publish an uploaded public place photo into the feed through a clear feed-oriented action.
+- [x] **LIVEGLOBE-02**: Feed includes a tab or surface that opens a global Mapbox globe for public photo posts.
+- [x] **LIVEGLOBE-03**: Newly created public photo posts appear on the globe as live/near-live animated points.
+- [x] **LIVEGLOBE-04**: When more than 3-4 public posts exist in one local radius, the globe keeps only the newest bounded set visible, replaces/fades the oldest visible point for new arrivals, and shows an overflow indicator for hidden posts.
+- [x] **LIVEGLOBE-05**: Globe point popups show only safe public metadata: photo, place, author display name, and date.
+- [x] **LIVEGLOBE-06**: Public globe reads are visible to unauthenticated visitors while publishing remains authenticated and owner-scoped, with tests preventing private diary metadata leakage.
 
 ## v2 Requirements
 
@@ -164,13 +195,34 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ADVPLACE-01 | Phase 7 | Complete |
 | ADVPLACE-02 | Phase 7 | Partial/Deferred |
 | ADVPLACE-03 | Phase 7 | Complete |
+| PHOTO-01 | Phase 10 | Pending |
+| PHOTO-02 | Phase 10 | Pending |
+| PHOTO-03 | Phase 10 | Pending |
+| PHOTO-04 | Phase 10 | Pending |
+| PHOTO-05 | Phase 10 | Pending |
+| PHOTO-06 | Phase 10 | Pending |
+| REALPHOTO-01 | Phase 11 | Complete |
+| REALPHOTO-02 | Phase 11 | Complete |
+| REALPHOTO-03 | Phase 11 | Complete |
+| REALPHOTO-04 | Phase 11 | Complete |
+| REALPHOTO-05 | Phase 11 | Complete |
+| REALPHOTO-06 | Phase 11 | Complete |
+| LIVEGLOBE-01 | Phase 12 | Complete |
+| LIVEGLOBE-02 | Phase 12 | Complete |
+| LIVEGLOBE-03 | Phase 12 | Complete |
+| LIVEGLOBE-04 | Phase 12 | Complete |
+| LIVEGLOBE-05 | Phase 12 | Complete |
+| LIVEGLOBE-06 | Phase 12 | Complete |
 
 **Coverage:**
 - v1 requirements: 41 total
 - Mapped to phases: 41
 - Unmapped: 0
+- Post-v1 active photo-sharing requirements: 6 total, 6 mapped to Phase 10
+- Post-v1 real place photo enrichment requirements: 6 total, 6 mapped to Phase 11
+- Post-v1 live feed globe requirements: 6 total, 6 mapped to Phase 12
 
 ---
 
 *Requirements defined: 2026-05-08*
-*Last updated: 2026-05-18 after Phase 7 execution*
+*Last updated: 2026-05-22 after adding Phase 12 live feed globe scope*

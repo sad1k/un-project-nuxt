@@ -10,12 +10,12 @@ const props = defineProps<{
 
 <template>
   <fieldset class="fieldset">
-    <legend class="fieldset-legend">
+    <legend class="fieldset-legend text-gray-700 dark:text-white/70">
       {{ props.label }}
     </legend>
     <Field
       :as="type === 'textarea' ? 'textarea' : undefined"
-      class="w-full"
+      class="w-full border-gray-200 bg-white/80 text-gray-950 placeholder:text-gray-400 focus:border-brand-gold focus:outline-none dark:border-white/10 dark:bg-white/5 dark:text-white dark:placeholder:text-white/40"
       :name="props.name"
       :disabled="disabled"
       :type="props.type || 'text'"

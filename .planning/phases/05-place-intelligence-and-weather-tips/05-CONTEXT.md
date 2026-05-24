@@ -15,7 +15,7 @@ Phase 5 enriches the existing Explore route-viewing experience with rich generat
 
 ### Popup Content Shape
 
-- **D-01:** Rich place popups should be photo-first. The first impression should be visual when a real place photo is available.
+- **D-01:** Rich place popups should be photo-first. The first impression should be visual when a real provider-sourced or WanderLog app-owned place photo is available.
 - **D-02:** Missing popup data should not collapse the UI or silently disappear. Show clear placeholders for missing photos, reviews, ratings, cost, or community signals.
 - **D-03:** Place name, route rationale, actions, and practical details still belong in the popup, but should support the photo-first hierarchy rather than displacing it.
 
@@ -23,6 +23,7 @@ Phase 5 enriches the existing Explore route-viewing experience with rich generat
 
 - **D-04:** Phase 5 may use external provider data for photos, reviews, ratings, and cost when provider data is available and safe to expose.
 - **D-05:** AI-enriched summaries are allowed, but they should enrich available provider/app/route data rather than fabricate unsupported facts.
+- **D-05a:** Place photos must be real media from provider or app-owned sources. AI-generated, stock-like, or illustrative fallback images must not be shown as place photos; use a missing-photo placeholder instead.
 - **D-06:** Ratings, review snippets, cost levels, and AI summaries should carry source/confidence or degrade to placeholders when support is weak.
 - **D-07:** Existing optional route cost fields from Phase 3 remain valid inputs, but Phase 5 should improve display and sourcing rather than treating cost as guaranteed.
 
@@ -40,7 +41,7 @@ Phase 5 enriches the existing Explore route-viewing experience with rich generat
 
 ### the agent's Discretion
 
-- The agent/planner may choose the exact popup layout, placeholder copy, provider boundary, data schema split, and weather provider integration as long as the popup is photo-first, missing data is explicit, AI enrichment is grounded in available data, and weather tips live in the sidebar.
+- The agent/planner may choose the exact popup layout, placeholder copy, provider boundary, data schema split, and weather provider integration as long as the popup is photo-first, photos are real provider/app media, missing data is explicit, AI enrichment is grounded in available data, and weather tips live in the sidebar.
 - The agent/planner may choose exact labels for community signals, but the UI must communicate uncertainty for likely/currently-there signals and avoid presenting them as guaranteed live occupancy.
 - The agent/planner may choose whether to persist enriched place intelligence or fetch/cache it best-effort, subject to provider terms, server-only credential handling, and privacy constraints.
 
@@ -109,7 +110,7 @@ Phase 5 enriches the existing Explore route-viewing experience with rich generat
 - Inputs and provider responses should be validated with Zod before persistence or UI exposure.
 - Provider credentials and sensitive config must remain server-only unless a provider explicitly supports public browser tokens.
 - App data should be bounded and summarized before AI/provider use; raw diary payloads and sensitive location context should not be logged.
-- Missing provider/app data should degrade gracefully. For Phase 5 this means explicit placeholders in the popup/sidebar rather than fabricated facts.
+- Missing provider/app data should degrade gracefully. For Phase 5 this means explicit placeholders in the popup/sidebar rather than fabricated facts or AI/illustrative images.
 - Existing verification includes focused server tests and Explore route-map tests; Phase 5 planning should add focused tests for enrichment shaping, missing-data placeholders, weather-tip correlation, and community-signal thresholds.
 
 ### Integration Points
@@ -125,6 +126,7 @@ Phase 5 enriches the existing Explore route-viewing experience with rich generat
 ## Specific Ideas
 
 - User wants place popups to be photo-first.
+- User wants real photos for generated-route places, not AI-generated or illustrative image substitutes.
 - User wants placeholders for missing data rather than empty or silently absent popup sections.
 - User wants external/provider-backed place data and AI-enriched summaries.
 - User wants likely/currently-there community signals, with the project constraint that these remain best-effort and app-data-supported.

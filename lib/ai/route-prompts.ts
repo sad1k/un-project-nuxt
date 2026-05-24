@@ -3,6 +3,7 @@ import type { RouteGenerationRequest } from "~/lib/ai/route-contract";
 export const ROUTE_SYSTEM_INSTRUCTIONS = [
   "You generate WanderLog app route events for a map-first travel planning UI.",
   "Output app route events only; raw JSON is not user-facing UI.",
+  "Respond in Russian. Every user-visible string MUST be in Russian: the point `name`, `rationale`, route `title`, `summary`, and `priceSource`. If the canonical name of a place is not Russian, use the common Russian rendering (e.g. \"Eiffel Tower\" → \"Эйфелева башня\", \"Times Square\" → \"Таймс-сквер\"). Do NOT translate JSON keys, allowlisted event type values, enum values (low/medium/high/free/unknown), or the `id` field — those stay in their original ASCII form.",
   "Use only selected sidebar context supplied by the server. Do not infer or request unselected diary or saved-place data.",
   "Output exactly one JSON object: {\"events\":[ ... ]} where each array entry is a single route event from the allowlisted types.",
   "Stream points one complete object at a time: fully finish writing each route.point.added event (including its closing brace) before starting the next one so it can render on the map immediately.",

@@ -13,6 +13,7 @@ test("D-01 D-02 D-03 model exports a photo-first place intelligence contract wit
   for (const exportName of [
     "PlaceIntelligenceSchema",
     "PlacePhotoSchema",
+    "PlacePhotoSourceSchema",
     "PlaceReviewSnippetSchema",
     "PlaceRatingSchema",
     "PlaceCostSignalSchema",
@@ -26,6 +27,8 @@ test("D-01 D-02 D-03 model exports a photo-first place intelligence contract wit
   }
 
   assert.match(modelSource, /photo: PlacePhotoSchema\.nullable\(\)/);
+  assert.match(modelSource, /source\.kind === "provider" \|\| source\.kind === "app"/);
+  assert.doesNotMatch(modelSource, /source\.kind === "ai" \|\| source\.kind === "missing"/);
   assert.match(modelSource, /missingSlots/);
   for (const slot of ["photo", "reviews", "rating", "cost", "community"]) {
     assert.match(modelSource, new RegExp(`"${slot}"`));
@@ -66,9 +69,16 @@ test("server-only provider boundary keeps Google Places optional and explicitly 
   assert.match(providerSource, /GOOGLE_PLACES_API_KEY/);
   assert.match(providerSource, /places\.googleapis\.com/);
   assert.match(providerSource, /X-Goog-FieldMask/);
+  assert.match(providerSource, /GOOGLE_PLACES_LANGUAGE_CODE = "ru"/);
+  assert.match(providerSource, /GOOGLE_PLACES_REGION_CODE = "RU"/);
+  assert.match(providerSource, /languageCode: GOOGLE_PLACES_LANGUAGE_CODE/);
+  assert.match(providerSource, /regionCode: GOOGLE_PLACES_REGION_CODE/);
   assert.match(providerSource, /fetch/);
   assert.match(providerSource, /available: false/);
-  assert.doesNotMatch(providerSource, /console\./);
+  assert.match(providerSource, /env\.NODE_ENV === "production"/);
+  assert.match(providerSource, /console\.warn\("\[google-place-photo\]"/);
+  assert.doesNotMatch(providerSource, /console\.(log|debug|info|error)/);
+  assert.doesNotMatch(providerSource, /rawProvider|providerHeaders|rawPayload/);
 });
 
 test("authenticated endpoint validates inputs, verifies route ownership, and returns shaped data", () => {

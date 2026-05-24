@@ -9,7 +9,7 @@ export default defineAuthenticatedHandler(async (event) => {
   if (!routePoint) {
     throw createError({
       statusCode: 404,
-      statusMessage: "Route point not found",
+      statusMessage: "Точка маршрута не найдена",
     });
   }
 
@@ -17,7 +17,7 @@ export default defineAuthenticatedHandler(async (event) => {
   if (!story?.audioObjectKey) {
     throw createError({
       statusCode: 404,
-      statusMessage: "Story audio not found",
+      statusMessage: "Аудиоистория не найдена",
     });
   }
 

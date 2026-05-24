@@ -10,6 +10,13 @@ const ROUTE_LEG_LABEL_SOURCE_ID = "explore-route-leg-labels";
 const ROUTE_DETAIL_ZOOM = 10;
 const MAPBOX_DIRECTIONS_MAX_WAYPOINTS = 25;
 const MAPBOX_DIRECTIONS_PROFILE = "walking";
+const DEFAULT_MAP_CENTER: [number, number] = [30, 15];
+const DEFAULT_MAP_ZOOM = 1.5;
+const MAP_THEME_STYLES = {
+  dark: "mapbox://styles/mapbox/dark-v11",
+  light: "mapbox://styles/mapbox/outdoors-v12",
+} as const;
+const SATELLITE_MAP_STYLE = "mapbox://styles/mapbox/satellite-streets-v12";
 
 // Module-level shared state so all components share the same instance.
 const mapInstance = shallowRef<any>(null);
@@ -24,6 +31,8 @@ let animationFrameId: number | null = null;
 let spinTimeoutId: ReturnType<typeof setTimeout> | null = null;
 let spinning = true;
 let routeGeometryRequestId = 0;
+let activeTheme: keyof typeof MAP_THEME_STYLES = "dark";
+let activeStyleMode: "theme" | "satellite" = "theme";
 
 type GeoJsonFeatureCollection = {
   type: "FeatureCollection";
@@ -101,6 +110,57 @@ function isValidRouteMapPoint(point: RouteMapPoint) {
     && point.lat <= 90;
 }
 
+function getActiveMapStyle() {
+  return activeStyleMode === "satellite"
+    ? SATELLITE_MAP_STYLE
+    : MAP_THEME_STYLES[activeTheme];
+}
+
+function applyExploreFog(map: any) {
+  const isDark = activeTheme === "dark" || activeStyleMode === "satellite";
+
+  map.setFog({
+    "color": isDark ? "rgb(5, 8, 15)" : "rgb(235, 241, 245)",
+    "high-color": isDark ? "rgb(12, 24, 44)" : "rgb(186, 220, 232)",
+    "horizon-blend": 0.08,
+    "space-color": isDark ? "rgb(2, 6, 23)" : "rgb(224, 235, 242)",
+    "star-intensity": isDark ? 0.22 : 0,
+  });
+}
+
+function pauseGlobeSpin(resumeDelay = 3000) {
+  spinning = false;
+  if (animationFrameId) {
+    cancelAnimationFrame(animationFrameId);
+    animationFrameId = null;
+  }
+  if (spinTimeoutId)
+    clearTimeout(spinTimeoutId);
+
+  const map = mapInstance.value;
+  if (!map)
+    return;
+
+  spinTimeoutId = setTimeout(() => {
+    spinning = true;
+    if (map.getZoom() < 4)
+      startGlobeSpin(map);
+  }, resumeDelay);
+}
+
+function startGlobeSpin(map: any) {
+  if (!spinning)
+    return;
+  animationFrameId = requestAnimationFrame(() => {
+    if (!map || !spinning)
+      return;
+    const center = map.getCenter();
+    center.lng += 0.005;
+    map.setCenter(center);
+    startGlobeSpin(map);
+  });
+}
+
 export function useMapbox() {
   async function initMap(container: HTMLElement, token: string) {
     if (mapInstance.value) {
@@ -115,24 +175,18 @@ export function useMapbox() {
 
     const map = new mb.Map({
       container,
-      style: "mapbox://styles/mapbox/light-v11",
+      style: getActiveMapStyle(),
       projection: "globe",
       pitch: 45,
       bearing: -17.6,
-      center: [30, 15],
-      zoom: 1.5,
+      center: DEFAULT_MAP_CENTER,
+      zoom: DEFAULT_MAP_ZOOM,
     });
 
     map.addControl(new mb.NavigationControl(), "bottom-right");
 
     map.on("style.load", () => {
-      map.setFog({
-        "color": "rgb(255, 245, 235)",
-        "high-color": "rgb(255, 220, 180)",
-        "horizon-blend": 0.08,
-        "space-color": "rgb(15, 15, 30)",
-        "star-intensity": 0.6,
-      });
+      applyExploreFog(map);
       mapLoaded.value = true;
     });
 
@@ -144,22 +198,9 @@ export function useMapbox() {
       mapLoaded.value = true;
     }
 
-    function startSpin() {
-      if (!spinning)
-        return;
-      animationFrameId = requestAnimationFrame(() => {
-        if (!map || !spinning)
-          return;
-        const center = map.getCenter();
-        center.lng += 0.005;
-        map.setCenter(center);
-        startSpin();
-      });
-    }
-
     map.on("idle", () => {
       if (map.getZoom() < 4 && spinning) {
-        startSpin();
+        startGlobeSpin(map);
       }
     });
 
@@ -167,18 +208,7 @@ export function useMapbox() {
     map.on("moveend", syncRouteDetailVisibility);
 
     const pauseSpin = () => {
-      spinning = false;
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
-        animationFrameId = null;
-      }
-      if (spinTimeoutId)
-        clearTimeout(spinTimeoutId);
-      spinTimeoutId = setTimeout(() => {
-        spinning = true;
-        if (map.getZoom() < 4)
-          startSpin();
-      }, 3000);
+      pauseGlobeSpin();
     };
 
     map.on("mousedown", pauseSpin);
@@ -405,7 +435,7 @@ export function useMapbox() {
         "line-cap": "round",
       },
       paint: {
-        "line-color": "#f59e0b",
+        "line-color": "#2dd4bf",
         "line-opacity": [
           "interpolate",
           ["linear"],
@@ -424,7 +454,7 @@ export function useMapbox() {
           12,
           5,
         ],
-        "line-dasharray": [2, 1.2],
+        "line-blur": 1,
       },
     });
   }
@@ -515,9 +545,9 @@ export function useMapbox() {
         "visibility": map.getZoom() >= ROUTE_DETAIL_ZOOM ? "visible" : "none",
       },
       paint: {
-        "text-color": "#111827",
-        "text-halo-color": "#ffffff",
-        "text-halo-width": 2,
+        "text-color": "#f3d19e",
+        "text-halo-color": "#050505",
+        "text-halo-width": 1.5,
       },
     });
   }
@@ -527,6 +557,72 @@ export function useMapbox() {
     removeLayerAndSource(ROUTE_LEG_LABEL_LAYER_ID, ROUTE_LEG_LABEL_SOURCE_ID);
     removeLayerAndSource(ROUTE_LINE_LAYER_ID, ROUTE_LINE_SOURCE_ID);
     removeLegacyRouteLayer();
+  }
+
+  function zoomIn() {
+    const map = mapInstance.value;
+    if (!map)
+      return;
+
+    pauseGlobeSpin();
+    map.zoomIn({ duration: 350 });
+  }
+
+  function zoomOut() {
+    const map = mapInstance.value;
+    if (!map)
+      return;
+
+    pauseGlobeSpin();
+    map.zoomOut({ duration: 350 });
+  }
+
+  async function centerMap(points: RouteMapPoint[] = []) {
+    const map = mapInstance.value;
+    if (!map)
+      return;
+
+    const validPoints = points.filter(isValidRouteMapPoint);
+    if (validPoints.length) {
+      await fitToRoute(validPoints);
+      return;
+    }
+
+    pauseGlobeSpin(5000);
+    map.flyTo({
+      center: DEFAULT_MAP_CENTER,
+      zoom: DEFAULT_MAP_ZOOM,
+      pitch: 45,
+      bearing: -17.6,
+      duration: 900,
+    });
+  }
+
+  function toggleMapStyle() {
+    const map = mapInstance.value;
+    if (!map)
+      return;
+
+    pauseGlobeSpin(5000);
+    mapLoaded.value = false;
+    activeStyleMode = activeStyleMode === "theme" ? "satellite" : "theme";
+    map.setStyle(getActiveMapStyle());
+  }
+
+  function setMapTheme(theme: "dark" | "light") {
+    const map = mapInstance.value;
+    activeTheme = theme;
+
+    if (!map)
+      return;
+
+    if (activeStyleMode === "satellite") {
+      applyExploreFog(map);
+      return;
+    }
+
+    mapLoaded.value = false;
+    map.setStyle(getActiveMapStyle());
   }
 
   function removeLegacyRouteLayer() {
@@ -585,7 +681,7 @@ export function useMapbox() {
     routePoints.forEach(point => bounds.extend([point.lng, point.lat]));
 
     map.fitBounds(bounds, {
-      padding: { top: 100, bottom: 80, left: 420, right: 80 },
+      padding: { top: 100, bottom: 96, left: 120, right: 440 },
       duration: 1500,
     });
   }
@@ -614,6 +710,11 @@ export function useMapbox() {
     drawRouteLine,
     renderRoute,
     fitToRoute,
+    zoomIn,
+    zoomOut,
+    centerMap,
+    toggleMapStyle,
+    setMapTheme,
     destroy,
   };
 }

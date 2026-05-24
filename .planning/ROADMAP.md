@@ -1,7 +1,7 @@
 # Roadmap: WanderLog
 
 **Created:** 2026-05-08
-**Updated:** 2026-05-18 after adding Phase 8 mobile PWA foundation
+**Updated:** 2026-05-23 after executing Phase 13 e2e load verification
 **Mode:** standard
 **Granularity:** coarse
 **Execution:** parallel where dependencies allow
@@ -16,6 +16,14 @@ enter city with autocomplete -> choose days/interests -> AI generates route -> r
 
 The user selected a Horizontal Layers structure, so phases build the supporting layers first and then integrate them into a complete Explore experience.
 
+After the Explore/Admin foundation, the next product layer lets travelers contribute real place photos: attach a photo to an attraction, pin or confirm it on the map, keep it private by default, and explicitly make it public so other users can see it in place/map surfaces.
+
+The next enrichment layer makes generated-route place photos more reliable by resolving real media through a deterministic provider/cache pipeline rather than using AI or illustrative substitutes.
+
+The next social discovery layer connects public traveler photo posts with a live feed globe: users can quickly publish a photo to the feed, and public photo posts appear as live points on a Mapbox globe tab with bounded density so nearby bursts stay beautiful instead of noisy.
+
+The current quality layer adds local e2e load and performance verification for the social/photo surfaces: synthetic users create places, upload photos through the real S3-compatible flow, publish posts, and exercise feed/public reads while request timings and thresholds are recorded.
+
 | # | Phase | Goal | Requirements |
 |---|-------|------|--------------|
 | 1 | Explore Scope and Verification Foundation | Lock the Explore feature contract, preserve template intent, and make new Explore/AI work testable | FOUND-01, FOUND-02, FOUND-03, FOUND-04 |
@@ -27,6 +35,11 @@ The user selected a Horizontal Layers structure, so phases build the supporting 
 | 6 | Save to Diary and Release Hardening | Save generated routes/places into the diary and verify security, ownership, observability, and release readiness | DIARY-01, DIARY-02, DIARY-03, OBS-01, OBS-02, OBS-03 |
 | 7 | Advanced Place Storytelling and Audio Narration | Add interactive place history/storytelling with audio narration, voice/language choices, and offline-ready playback caching | ADVPLACE-01, ADVPLACE-02, ADVPLACE-03 |
 | 8 | Mobile PWA Foundation | Establish the mobile web app foundation for installability, service-worker boundaries, offline-ready shell behavior, and mobile verification | TBD during phase discussion |
+| 9 | Admin Route Generation Observability and Improvement Loop | Add an admin surface for inspecting generated routes, failed route sessions, sanitized failure reasons, and service-improvement signals | TBD during phase discussion |
+| 10 | Traveler Place Photo Uploads and Public Map Sharing | Let travelers attach photos to attractions, mark them on the map, and explicitly publish selected photos for all users to view | PHOTO-01, PHOTO-02, PHOTO-03, PHOTO-04, PHOTO-05, PHOTO-06 |
+| 11 | Real Place Photo Provider and Cache Pipeline | Resolve generated-route place photos from real WanderLog/provider media with legal cache boundaries and explicit missing-photo fallback | REALPHOTO-01, REALPHOTO-02, REALPHOTO-03, REALPHOTO-04, REALPHOTO-05, REALPHOTO-06 |
+| 12 | Live Feed Globe and Photo Post Map Layer | Add quick feed publishing for place photos and a public live Mapbox globe tab where photo posts appear as bounded real-time points | LIVEGLOBE-01, LIVEGLOBE-02, LIVEGLOBE-03, LIVEGLOBE-04, LIVEGLOBE-05, LIVEGLOBE-06 |
+| 13 | E2E Load and Performance Verification | Add a local e2e load and performance verification harness for synthetic users, real S3-compatible photo uploads, feed posts, custom places, and feed/public reads | Load/performance verification |
 
 ## Phase Details
 
@@ -115,7 +128,7 @@ Plans:
 
 **Success Criteria:**
 1. Clicking a place opens a popup with name, description/info, and useful actions.
-2. Popup shows place photos when available.
+2. Popup shows real provider-sourced or WanderLog app-owned place photos when available, and otherwise shows an explicit missing-photo state instead of an AI/illustrative substitute.
 3. Popup shows reviews and rating when provider/app data is available.
 4. Popup shows estimated cost when available.
 5. Popup shows how many WanderLog users visited the place when app data exists.
@@ -125,6 +138,7 @@ Plans:
 **Notes:**
 - Interactive audio history/storytelling is tracked as v2 unless pulled forward later.
 - Community presence must not be fabricated.
+- Place photos must be real media from provider/app sources; generated or stock-like illustrative images are not valid substitutes for PLACE-02.
 
 ### Phase 5.1: Route Generation Continuity and Completion Notifications
 
@@ -231,7 +245,24 @@ Cross-cutting constraints:
 
 **Requirements:** TBD during phase discussion
 
-**Plans:** Not planned yet
+**Plans:** 3 plans
+
+Plans:
+
+**Wave 1**
+- [x] 08-01-PLAN.md - Make WanderLog installability explicit with manifest, icons, head metadata, and focused tests.
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [x] 08-02-PLAN.md - Create a unified notification-preserving service worker and safe offline shell.
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [x] 08-03-PLAN.md - Add mobile PWA install/status UX and final Phase 8 verification.
+
+Cross-cutting constraints:
+- Phase 8 is web/PWA foundation only; native mobile app work remains out of scope.
+- Do not add `@vite-pwa/nuxt`, Workbox, or any new dependency unless the user explicitly approves it.
+- Service-worker caching must not include authenticated API responses, provider responses, S3 assets, map tiles, or story audio.
+- Offline support is limited to installability, app shell, static fallback, route-generation notification support, and explicit user-saved audio behavior.
 
 **Success Criteria:**
 1. Mobile PWA installability requirements are explicit and verifiable.
@@ -240,8 +271,165 @@ Cross-cutting constraints:
 4. PWA credentials, notification permissions, and storage behavior remain server-safe and privacy-aware.
 
 **Notes:**
-- This phase is newly added and needs `$gsd-discuss-phase 8` or `$gsd-plan-phase 8` before implementation.
+- Planned without `08-CONTEXT.md` by user choice; scope comes from ROADMAP, PROJECT/REQUIREMENTS out-of-scope boundaries, codebase evidence, and `08-RESEARCH.md`.
 - Native mobile app work remains out of scope; this phase is web/PWA foundation only.
+
+### Phase 9: Admin Route Generation Observability and Improvement Loop
+
+**Goal:** Add an authenticated admin surface for reviewing generated route sessions, understanding why route generation failed, and turning sanitized operational evidence into concrete service-improvement actions.
+
+**Depends on:** Phase 8
+
+**Requirements:** TBD during phase discussion
+
+**Plans:** 3 plans
+
+Plans:
+
+**Wave 1**
+- [x] 09-01-PLAN.md - Create the role-backed admin authorization foundation for Phase 9.
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [x] 09-02-PLAN.md - Add admin route-generation data access, APIs, and normalized failure taxonomy.
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [x] 09-03-PLAN.md - Build the admin route-generation observability UI and final verification.
+
+Cross-cutting constraints:
+- Admin access must be explicitly authorized and unavailable to regular users.
+- Diagnostics must stay sanitized: no raw prompts, raw model responses, provider headers, secrets, private route context, or sensitive location history.
+- Failure reasons should be classified into actionable buckets such as validation, provider timeout, provider refusal, malformed route output, place enrichment failure, persistence failure, notification failure, and unknown.
+- The dashboard should support analysis and improvement without creating a hidden model-training pipeline or exposing private user content.
+
+**Success Criteria:**
+1. Admin can view recent generated route sessions with status, timing, city/duration/interests summary, user-safe identifiers, and generated-route availability.
+2. Admin can filter sessions by status, failure bucket, provider/model, date range, and route-generation stage.
+3. Failed sessions show sanitized error summaries, stage-level diagnostics, retryability, and links to relevant internal logs/events when available.
+4. Admin can inspect aggregate failure patterns and route-quality signals to identify service improvements.
+5. Admin-only routes, APIs, and database reads are covered by authorization and privacy-focused tests.
+6. The service records enough structured, sanitized events to explain failures without logging sensitive route content.
+
+**Notes:**
+- This phase was added after the user requested an admin panel to view generated routes, understand failures, analyze patterns, and improve the service.
+- Implementation should reuse the existing route-session persistence, status, notification, and sanitized observability work from Phases 3, 5.1, and 6.
+- Planning should decide whether this is an internal admin-only feature, a developer diagnostics page, or both.
+- Phase 9 implementation is complete with role-backed admin APIs/pages, sanitized list/detail views, hybrid failure taxonomy, and verification artifacts. Release blockers remain `pnpm typecheck` existing project errors, `pnpm build` timeout, local schema rollout, and manual admin/non-admin browser verification.
+
+### Phase 10: Traveler Place Photo Uploads and Public Map Sharing
+
+**Goal:** Let authenticated travelers attach their own photos to attractions, confirm or adjust the photo's map location, and explicitly publish selected photos so they appear for all users in place and map surfaces.
+
+**Depends on:** Phase 9
+
+**Requirements:** PHOTO-01, PHOTO-02, PHOTO-03, PHOTO-04, PHOTO-05, PHOTO-06
+
+**Plans:** 3 plans
+
+Cross-cutting constraints:
+- Photo uploads must reuse the existing authenticated image/S3 flow where possible instead of introducing a new storage path.
+- Photos are private by default; public visibility requires an explicit user action.
+- Public photos must expose only safe, intentional metadata and must not leak private diary context, hidden location notes, or provider/user secrets.
+- Map placement should reuse existing location/map primitives and support both known attractions and user-confirmed coordinates.
+- Public photo reads should be designed for moderation/removal and abuse handling even if full moderation tooling is staged.
+
+Plans:
+
+**Wave 1**
+- [x] 10-01-PLAN.md - Create the public place photo data model, owner visibility APIs, unauthenticated public read API, and privacy tests.
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [x] 10-02-PLAN.md - Build the mobile-first camera/GPS place-photo capture flow that saves private diary records.
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [x] 10-03-PLAN.md - Add the public photo map layer, owner publish/unpublish controls, and final Phase 10 verification.
+
+**Success Criteria:**
+1. Authenticated user can attach a photo to an existing or newly selected attraction/place.
+2. User can confirm or adjust the photo's marker/location on the map before saving.
+3. Uploaded photo remains scoped to the owner unless they explicitly mark it public.
+4. Public photos appear to other users in relevant place popups, map markers, or place photo galleries.
+5. Owner can make a public photo private again or remove it from public display.
+6. Upload, visibility, ownership, public read, and map-display behavior are covered by focused tests and privacy/security verification.
+
+**Notes:**
+- This phase was added after the user requested traveler-facing photo contributions: attach photos to attractions, mark them on the map, and optionally publish them globally.
+- Planning should decide whether public photos appear first in Explore place popups, dashboard maps, feed/community surfaces, or a minimal shared place gallery.
+- Implementation completed with private-by-default `locationLogImage` visibility fields, a mobile camera/GPS capture flow, an unauthenticated public photo map layer, and owner publish/unpublish controls. Verification is recorded in `.planning/phases/10-traveler-place-photo-uploads-and-public-map-sharing/10-VERIFICATION.md`.
+
+### Phase 11: Real Place Photo Provider and Cache Pipeline
+
+**Goal:** Make generated-route place photos come from real media sources only, using public WanderLog place photos and configured provider/open-media sources with legal cache boundaries and explicit missing-photo fallback.
+
+**Depends on:** Phase 5, Phase 10
+
+**Requirements:** REALPHOTO-01, REALPHOTO-02, REALPHOTO-03, REALPHOTO-04, REALPHOTO-05, REALPHOTO-06
+
+**Plans:** 3 plans
+
+Cross-cutting constraints:
+- Real place media only: AI-generated, stock-like, or illustrative images must not be shown as place photos.
+- Public WanderLog photos should be preferred before external provider media when a safe place/coordinate match exists.
+- Provider credentials remain server-only; provider headers, photo references, and private route context must not be logged.
+- Cache provider metadata and expiry, not permanent copied image binaries, unless the source terms explicitly allow durable storage.
+- Missing photos remain an honest UI state, not a reason to fabricate imagery.
+
+Plans:
+
+**Wave 1**
+- [x] 11-01-PLAN.md - Build the place media cache contract, source taxonomy, and tests.
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [x] 11-02-PLAN.md - Implement the real-photo source chain for public WanderLog, Google Places, and open/provider fallback.
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [x] 11-03-PLAN.md - Integrate real-photo resolution into Explore popups, API docs, observability, and final verification.
+
+**Success Criteria:**
+1. Generated-route place photos use the source order public WanderLog photos -> Google Places Photos -> optional open/provider fallback -> missing-photo state.
+2. The place media cache records source, attribution, provider identity, expiry, and failure state without secrets or private route context.
+3. Google photo media is resolved with fresh server-side references and short-lived response caching, not permanent unlicensed S3 copies.
+4. Public WanderLog place photos can appear in Explore place popups when they match the generated place safely.
+5. Tests prevent AI/illustrative images from entering `PlacePhoto` and verify missing-photo fallback behavior.
+6. Release verification covers focused server tests, source lint where practical, and sanitized secret/logging checks.
+
+**Notes:**
+- Phase 11 implementation is complete with real-media-only place photo resolution, source/attribution popup labels, OpenAPI documentation, focused test coverage, and verification artifacts in `.planning/phases/11-real-place-photo-provider-and-cache-pipeline/11-VERIFICATION.md`.
+- Release blockers remain project-wide lint/typecheck issues outside Phase 11 source, pending `placeMediaCache` schema rollout, and manual browser verification with a live provider key.
+
+### Phase 12: Live Feed Globe and Photo Post Map Layer
+
+**Goal:** Connect feed publishing with public map discovery by adding a quick photo-to-feed action and a public live Mapbox globe tab where newly created photo posts appear as animated points.
+
+**Depends on:** Phase 10, Phase 11
+
+**Requirements:** LIVEGLOBE-01, LIVEGLOBE-02, LIVEGLOBE-03, LIVEGLOBE-04, LIVEGLOBE-05, LIVEGLOBE-06
+
+**Plans:** 3 plans
+
+Plans:
+- [x] `12-01`: Public post/globe data contract, quick publish hardening, and safe unauthenticated payload tests.
+- [x] `12-02`: Feed tab, Mapbox globe component, popup rendering, quick publish affordance, and pure density limiter.
+- [x] `12-03`: Live/near-live update channel, polling fallback, OpenAPI docs, and final verification.
+
+Cross-cutting constraints:
+- The globe should use public post/photo data only and must not expose private diary text, hidden route context, or private user metadata.
+- Globe points use exact public coordinates because only intentionally public photos/posts appear on this surface.
+- The feed globe is visible to everyone, including unauthenticated visitors, while publishing remains authenticated and owner-scoped.
+- Dense areas should stay visually bounded: show at most 3-4 active points in a local radius and replace the oldest visible point when a new one appears, while preserving a `+N`/overflow signal for hidden posts.
+- Treat "real-time" as live-feeling post discovery; planner may choose SSE, polling, or an existing app-friendly update path without adding a new dependency casually.
+
+**Success Criteria:**
+1. Authenticated user can quickly publish an uploaded place photo to the feed through a clear feed-oriented action.
+2. Feed includes a tab/surface that opens a global Mapbox globe for a wow-effect view of public photo posts.
+3. New public photo posts appear on the globe as live/near-live animated points.
+4. When more than 3-4 posts appear in the same local radius, the surface keeps only the newest bounded set visible and hides/replaces older points with a clear overflow indicator.
+5. Globe point popups show only photo, place, author display name, and date.
+6. Public reads, live updates, density limiting, and privacy-safe payloads are covered by focused tests and visual/browser verification where practical.
+
+**Notes:**
+- This phase was added after the user requested unifying Mapbox and the feed into a live globe of public photo posts.
+- The feature should feel social and cinematic, but it should reuse the existing feed, post, public photo, S3, and Mapbox primitives rather than becoming a separate social product.
+- Phase 12 implementation is focused-source verified with 27/27 Phase 12 tests passing. Release blockers remain project-wide lint/typecheck/build issues and manual browser verification; see `.planning/phases/12-live-feed-globe-and-photo-post-map-layer/12-VERIFICATION.md`.
 
 ## Requirement Coverage
 
@@ -256,12 +444,60 @@ Cross-cutting constraints:
 | Phase 6 | 6 |
 | Phase 7 | 3 |
 | Phase 8 | 0 |
+| Phase 9 | 0 |
+| Phase 10 | 6 |
+| Phase 11 | 6 |
+| Phase 12 | 6 |
+| Phase 13 | 0 |
 
 All 41 v1 requirements are mapped to exactly one phase.
 Phase 7 tracks 3 pulled-forward v2 advanced place requirements.
-Phase 8 is newly added and has no mapped requirement IDs until discussion/planning clarifies the mobile PWA foundation scope.
+Phase 8 has no mapped requirement IDs because the mobile PWA foundation scope was clarified through phase planning rather than requirement IDs.
+Phase 9 is newly added and has no mapped requirement IDs until discussion/planning clarifies the admin observability scope.
+Phase 10 tracks 6 traveler photo-sharing requirements added after Phase 9.
+Phase 11 tracks 6 real place photo enrichment requirements added after the user chose real photos only for generated-route places.
+Phase 12 tracks 6 live feed globe requirements added after the user requested public photo posts on a global Mapbox feed tab.
+Phase 13 has no mapped requirement IDs because it is a load/performance verification phase scoped by discussion decisions rather than product requirement IDs.
+
+### Phase 13: E2E Load and Performance Verification
+
+**Goal:** Add a local e2e load and performance verification harness for the completed photo, place, post, and feed surfaces, targeting 100 synthetic users, 1000 real S3-compatible photo uploads, and 1000 feed posts over 10 minutes with request timing thresholds.
+
+**Requirements**: TBD during Phase 13 execution
+**Depends on:** Phase 12
+**Plans:** 3/3 plans complete
+
+Plans:
+
+**Wave 1**
+- [x] 13-01-PLAN.md - Build the local load identity, auth seeding, run manifest, and metrics foundation.
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [x] 13-02-PLAN.md - Implement the balanced e2e social/photo load scenario with full S3-compatible upload.
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [x] 13-03-PLAN.md - Add run-id cleanup, reporting, scripts, docs, and final Phase 13 verification. (completed 2026-05-23)
+
+Cross-cutting constraints:
+- Phase 13 targets local DB load only; it is not a production capacity claim.
+- Full S3-compatible upload is required and must be explicitly opted into because storage may be external even when the DB is local.
+- Load data is preserved after runs for diagnostics; cleanup must be a separate explicit command by run id.
+- Reports must include p50, p95, p99, RPS, status codes, error counts, timeout counts, read/write p95, and threshold pass/fail.
+- Practical local thresholds are read p95 <= 800ms, write p95 <= 1500ms, error rate <= 1%, and timeout rate <= 0.5%.
+
+**Success Criteria:**
+1. A developer can seed 100 synthetic local users with app-verified sessions for load testing.
+2. The load harness can create 1000 photos through the real signed S3-compatible upload flow and publish 1000 feed posts over a 10-minute profile.
+3. The profile also creates custom places and exercises normal feed, public place photo, and feed globe read paths.
+4. Reports show per-step and aggregate request timing metrics, read/write threshold checks, status codes, errors, and timeouts.
+5. Test data remains available for local diagnostics and can be explicitly cleaned by run id, including best-effort S3 object cleanup.
+
+**Notes:**
+- Phase 13 was added after the user requested e2e load testing for many users, photo uploads, feed posts, custom places, and normal feed requests.
+- The user selected local DB, 100 users / 1000 photos / 1000 posts / 10 minutes, practical local thresholds, full S3-compatible upload, direct DB user seeding, preserved test data, explicit cleanup, and a balanced social/photo load mix.
+- Planning context is captured in `.planning/phases/13-e2e-load-and-performance-verification/13-CONTEXT.md`.
 
 ---
 
 *Roadmap created: 2026-05-08*
-*Last updated: 2026-05-18 after adding Phase 8 mobile PWA foundation*
+*Last updated: 2026-05-23 after executing Phase 13 e2e load verification*

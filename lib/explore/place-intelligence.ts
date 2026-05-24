@@ -8,6 +8,11 @@ export const PlaceDataSourceSchema = z.object({
   confidence: RouteConfidenceSchema.default("low"),
 });
 
+export const PlacePhotoSourceSchema = PlaceDataSourceSchema.refine(
+  source => source.kind === "provider" || source.kind === "app",
+  "Place photos must come from real provider or app-owned media.",
+);
+
 export const PlaceMissingDataSlotSchema = z.object({
   key: z.enum(["photo", "reviews", "rating", "cost", "community"]),
   label: z.string().min(1).max(80),
@@ -19,7 +24,7 @@ export const PlacePhotoSchema = z.object({
   url: z.string().min(1),
   alt: z.string().min(1).max(180),
   attribution: z.string().max(220).optional(),
-  source: PlaceDataSourceSchema,
+  source: PlacePhotoSourceSchema,
 });
 
 export const PlaceReviewSnippetSchema = z.object({
@@ -122,7 +127,7 @@ export type PlaceIntelligenceInput = {
 
 const MISSING_SOURCE: PlaceDataSource = {
   kind: "missing",
-  label: "No sourced data available",
+  label: "Нет данных из источников",
   confidence: "low",
 };
 
@@ -183,7 +188,7 @@ function buildRouteCostSignal(route: PlaceIntelligenceInput["route"]): PlaceCost
     label: formatPriceLevel(route.estimatedPriceLevel),
     source: {
       kind: "route",
-      label: route.priceSource || "AI route estimate",
+      label: route.priceSource || "Оценка AI-маршрута",
       confidence: route.priceConfidence || "low",
     },
   };
@@ -197,11 +202,11 @@ function createMissingSlots(input: {
   hasCommunity: boolean;
 }): PlaceMissingDataSlot[] {
   return [
-    missingWhen(!input.hasPhoto, "photo", "Photo unavailable", "No sourced place photo is available yet."),
-    missingWhen(!input.hasReviews, "reviews", "Reviews unavailable", "No sourced review snippets are available yet."),
-    missingWhen(!input.hasRating, "rating", "Rating unavailable", "No sourced rating is available yet."),
-    missingWhen(!input.hasCost, "cost", "Cost unavailable", "No sourced cost signal is available yet."),
-    missingWhen(!input.hasCommunity, "community", "Community signal unavailable", "Not enough aggregate app visits for a likely/currently-there signal."),
+    missingWhen(!input.hasPhoto, "photo", "Фото недоступно", "Пока нет фото места из источников."),
+    missingWhen(!input.hasReviews, "reviews", "Отзывы недоступны", "Пока нет фрагментов отзывов из источников."),
+    missingWhen(!input.hasRating, "rating", "Рейтинг недоступен", "Пока нет рейтинга из источников."),
+    missingWhen(!input.hasCost, "cost", "Стоимость недоступна", "Пока нет сигнала о стоимости из источников."),
+    missingWhen(!input.hasCommunity, "community", "Сигнал сообщества недоступен", "Недостаточно агрегированных посещений в приложении для оценки текущей активности."),
   ].filter((slot): slot is PlaceMissingDataSlot => Boolean(slot));
 }
 
@@ -224,11 +229,11 @@ function missingWhen(
 
 export function formatPriceLevel(level: PlaceCostSignal["level"]): string {
   const labels: Record<PlaceCostSignal["level"], string> = {
-    free: "Free",
-    low: "Low cost",
-    medium: "Moderate cost",
-    high: "Higher cost",
-    unknown: "Cost unknown",
+    free: "Бесплатно",
+    low: "Низкая стоимость",
+    medium: "Средняя стоимость",
+    high: "Высокая стоимость",
+    unknown: "Стоимость неизвестна",
   };
 
   return labels[level];

@@ -30,5 +30,5 @@ test("client stores and restores the active route session after reloads", () => 
   assert.match(sessionSource, /persistRouteSessionReference/);
   assert.match(sessionSource, /restoreRouteSession/);
   assert.match(sessionSource, /applyRouteSessionSnapshot/);
-  assert.match(sessionSource, /Route generation was interrupted/);
+  assert.match(sessionSource, /Генерация маршрута была прервана/);
 });

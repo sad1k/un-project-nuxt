@@ -1,29 +1,19 @@
 <script setup lang="ts">
+definePageMeta({ layout: false });
+
 const route = useRoute();
 const error = route.query.error || "Произошла ошибка";
 </script>
 
 <template>
-  <div class="card bg-base-100 shadow-xl container mx-auto mt-4 min-h-72 text-center flex flex-col justify-center items-center gap-4">
-    <div role="alert" class="alert alert-error">
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        class="h-6 w-6 shrink-0 stroke-current"
-        fill="none"
-        viewBox="0 0 24 24"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-        />
-      </svg>
+  <div class="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-2xl flex-col items-center justify-center gap-4 px-4 text-center">
+    <div role="alert" class="flex w-full items-center justify-center gap-3 rounded-2xl border border-rose-400/25 bg-rose-500/15 p-5 text-rose-100 shadow-2xl shadow-black/20 backdrop-blur-xl">
+      <Icon name="tabler:alert-circle" size="24" />
       <span>Упс! {{ error }}</span>
     </div>
     <NuxtLink
       to="/"
-      class="btn btn-primary"
+      class="btn border-none bg-brand-gold text-brand-dark hover:bg-white"
     >
       Вернуться на главную
       <Icon

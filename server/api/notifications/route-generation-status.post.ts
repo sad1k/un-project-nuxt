@@ -16,7 +16,7 @@ export default defineAuthenticatedHandler(async (event) => {
   if (!variant) {
     throw createError({
       statusCode: 404,
-      statusMessage: "Route variant not found",
+      statusMessage: "Вариант маршрута не найден",
     });
   }
 

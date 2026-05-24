@@ -29,26 +29,3 @@ logs
 docker-data
 # Sentry Config File
 .env.sentry-build-plugin
-
-# Local agent/tooling configs (not for deployment)
-.claude/
-.codex/
-.omc/
-
-# Local SQLite database (dev only, not for Vercel)
-local.db
-local.db-shm
-local.db-wal
-*.db
-*.db-shm
-*.db-wal
-
-# Local docx working artifacts
-docx_*/
-/*.jpg
-/*.jpeg
-
-# Windows temp files
-~$*
-~WRL*.tmp
-*.tmp

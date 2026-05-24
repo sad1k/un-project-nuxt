@@ -212,7 +212,7 @@ async function streamRouteEvents(payload: {
       error: serializeError(caughtError),
       ...getClientDiagnosticContext(),
     });
-    error.value = "Route generation failed. Try again with adjusted preferences.";
+    error.value = "Не удалось сгенерировать маршрут. Попробуйте изменить пожелания.";
   }
   finally {
     isGenerating.value = false;
@@ -239,7 +239,7 @@ function appendSseBlock(block: string) {
         linePreview: line.slice(0, 500),
         ...getClientDiagnosticContext(),
       });
-      lastWarning.value = "A route update could not be displayed.";
+      lastWarning.value = "Не удалось показать обновление маршрута.";
     }
   }
 }
@@ -366,7 +366,7 @@ function applyRouteSessionSnapshot(snapshot: RouteSessionSnapshot) {
   isGenerating.value = false;
   error.value = null;
   lastWarning.value = snapshot.status === "generating"
-    ? "Route generation was interrupted. Restored the latest saved progress."
+    ? "Генерация маршрута была прервана. Восстановлен последний сохранённый прогресс."
     : null;
   persistRouteSessionReference(snapshot.sessionId);
 }

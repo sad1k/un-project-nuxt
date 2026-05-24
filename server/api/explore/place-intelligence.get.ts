@@ -4,6 +4,7 @@ import { findAiRoutePointForPlaceIntelligence } from "~/lib/db/queries/ai-route"
 import { findCommunityPlaceSignal } from "~/lib/db/queries/place-intelligence";
 import { buildPlaceIntelligence, createUnavailablePlaceIntelligence } from "~/lib/explore/place-intelligence";
 import { fetchGooglePlaceIntelligence } from "~/lib/explore/place-intelligence-providers";
+import { resolveRealPlacePhoto, toPlacePhoto } from "~/lib/explore/place-media";
 import defineAuthenticatedHandler from "~/utils/define-authenticated-handler";
 
 const QuerySchema = z.object({
@@ -27,7 +28,7 @@ export default defineAuthenticatedHandler(async (event) => {
   if (query.variantId && query.routePointId && !routePoint) {
     throw createError({
       statusCode: 404,
-      statusMessage: "Route point not found",
+      statusMessage: "Точка маршрута не найдена",
     });
   }
 
@@ -42,13 +43,18 @@ export default defineAuthenticatedHandler(async (event) => {
     rationale: routePoint?.rationale,
   };
 
-  const [providerResult, community] = await Promise.all([
+  const [providerResult, community, resolvedPhoto] = await Promise.all([
     fetchGooglePlaceIntelligence({
       name: basePlace.name,
       lat: basePlace.coordinates.lat,
       long: basePlace.coordinates.long,
     }),
     findCommunityPlaceSignal({
+      name: basePlace.name,
+      lat: basePlace.coordinates.lat,
+      long: basePlace.coordinates.long,
+    }),
+    resolveRealPlacePhoto({
       name: basePlace.name,
       lat: basePlace.coordinates.lat,
       long: basePlace.coordinates.long,
@@ -74,7 +80,10 @@ export default defineAuthenticatedHandler(async (event) => {
       : {
           rationale: basePlace.rationale,
         },
-    provider: providerResult.data ?? null,
+    provider: {
+      ...(providerResult.data ?? {}),
+      photo: resolvedPhoto.status === "photo" ? toPlacePhoto(resolvedPhoto.photo, basePlace.name) : null,
+    },
     community,
   });
 });

@@ -36,11 +36,11 @@ function installRouteGenerationNotificationWatcher() {
 
         const payload = {
           body: session.status === "completed"
-            ? `${session.pointCount} route points are ready.`
-            : "Route generation needs attention.",
+            ? `Готово точек маршрута: ${session.pointCount}.`
+            : "Генерация маршрута требует внимания.",
           sessionId: session.sessionId,
           status: session.status,
-          title: session.title || session.cityName || "WanderLog route",
+          title: session.title || session.cityName || "Маршрут WanderLog",
           variantId: session.variantId,
         } satisfies RouteGenerationNotificationPayload;
 
@@ -55,7 +55,7 @@ function installRouteGenerationNotificationWatcher() {
 
 async function requestRouteGenerationNotifications() {
   if (!import.meta.client || !("Notification" in window)) {
-    browserNotificationError.value = "Browser notifications are not supported.";
+    browserNotificationError.value = "Уведомления браузера не поддерживаются.";
     return false;
   }
 
@@ -81,7 +81,7 @@ async function registerRouteGenerationPushSubscription() {
     return;
 
   try {
-    const registration = await navigator.serviceWorker.register("/route-generation-sw.js");
+    const registration = await navigator.serviceWorker.register("/wanderlog-sw.js");
     const subscription = await registration.pushManager.subscribe({
       applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
       userVisibleOnly: true,
@@ -106,7 +106,7 @@ async function registerRouteGenerationPushSubscription() {
   }
   catch (caughtError) {
     console.error("[useRouteGenerationNotifications] Push subscription registration failed", caughtError);
-    browserNotificationError.value = "Browser push notifications could not be enabled.";
+    browserNotificationError.value = "Не удалось включить push-уведомления браузера.";
   }
 }
 
@@ -119,7 +119,7 @@ function emitRouteGenerationNotification(payload: RouteGenerationNotificationPay
 
   try {
     const notification = new Notification(
-      payload.status === "completed" ? "Route ready" : "Route generation failed",
+      payload.status === "completed" ? "Маршрут готов" : "Генерация маршрута не удалась",
       {
         body: payload.body,
         icon: "/favicon.ico",

@@ -193,9 +193,52 @@ export async function runRouteGeneration(input: RouteGenerationRunnerInput) {
       });
 
       const parser = createStreamingJsonParser();
+      let providerEventCount = 0;
+      let providerBytesReceived = 0;
+      let providerFirstByteAt: number | null = null;
+      let lastTickAt = Date.now();
 
       for await (const providerEvent of providerStream) {
         const delta = extractProviderTextDelta(providerEvent);
+        providerEventCount += 1;
+        providerBytesReceived += delta.length;
+
+        if (providerEventCount <= 3) {
+          logSafeServerEvent("warn", "ai.route_generation.provider_chunk_shape", {
+            chunkIndex: providerEventCount,
+            deltaLength: delta.length,
+            chunkShape: describeChunkShape(providerEvent),
+            sessionId: input.sessionId,
+            variantId: input.variantId,
+          });
+        }
+
+        if (providerFirstByteAt === null && delta.length > 0) {
+          providerFirstByteAt = Date.now();
+          logSafeServerEvent("warn", "ai.route_generation.provider_first_byte", {
+            ttfbMs: providerFirstByteAt - startedAt,
+            sessionId: input.sessionId,
+            variantId: input.variantId,
+          });
+        }
+
+        const now = Date.now();
+        if (now - lastTickAt >= 1000) {
+          const elapsedMs = providerFirstByteAt ? now - providerFirstByteAt : now - startedAt;
+          const charsPerSec = elapsedMs > 0 ? Math.round((providerBytesReceived * 1000) / elapsedMs) : 0;
+          logSafeServerEvent("warn", "ai.route_generation.provider_tick", {
+            chunkCount: providerEventCount,
+            bytesReceived: providerBytesReceived,
+            charsPerSec,
+            tps: Math.round(charsPerSec / 3),
+            pointsEmitted: routePointCount,
+            elapsedMs: now - startedAt,
+            sessionId: input.sessionId,
+            variantId: input.variantId,
+          });
+          lastTickAt = now;
+        }
+
         const completedObjects = feedStreamingJsonParser(parser, delta);
 
         for (const objectJson of completedObjects) {
@@ -204,6 +247,21 @@ export async function runRouteGeneration(input: RouteGenerationRunnerInput) {
             consumeCandidate(parsed);
         }
       }
+
+      const providerStreamElapsedMs = providerFirstByteAt ? Date.now() - providerFirstByteAt : null;
+      const providerCharsPerSec = providerStreamElapsedMs && providerStreamElapsedMs > 0
+        ? Math.round((providerBytesReceived * 1000) / providerStreamElapsedMs)
+        : null;
+      logSafeServerEvent("warn", "ai.route_generation.provider_stream_finished", {
+        chunkCount: providerEventCount,
+        bytesReceived: providerBytesReceived,
+        charsPerSec: providerCharsPerSec,
+        tps: providerCharsPerSec ? Math.round(providerCharsPerSec / 3) : null,
+        ttfbMs: providerFirstByteAt ? providerFirstByteAt - startedAt : null,
+        streamDurationMs: providerStreamElapsedMs,
+        sessionId: input.sessionId,
+        variantId: input.variantId,
+      });
 
       if (providerCandidateCount === 0) {
         const fallbackCandidates = parseProviderRouteCandidates(parser.buffer);
@@ -289,6 +347,22 @@ export function serializeRouteEventSse(input: RouteEventEnvelope) {
 
 function createRunnerId() {
   return globalThis.crypto?.randomUUID?.() ?? `route-runner:${Date.now()}:${Math.random().toString(36).slice(2)}`;
+}
+
+function describeChunkShape(input: unknown): string {
+  if (!isRecord(input))
+    return typeof input;
+
+  const topKeys = Object.keys(input).slice(0, 6).join(",");
+  const choices = Array.isArray(input.choices) ? input.choices : null;
+  const firstChoice = choices && isRecord(choices[0]) ? choices[0] : null;
+  const deltaKeys = firstChoice && isRecord(firstChoice.delta)
+    ? Object.keys(firstChoice.delta).slice(0, 6).join(",")
+    : null;
+  const messageKeys = firstChoice && isRecord(firstChoice.message)
+    ? Object.keys(firstChoice.message).slice(0, 6).join(",")
+    : null;
+  return `top:[${topKeys}]${deltaKeys ? ` delta:[${deltaKeys}]` : ""}${messageKeys ? ` message:[${messageKeys}]` : ""}`;
 }
 
 type StreamingJsonParser = {

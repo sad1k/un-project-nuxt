@@ -26,8 +26,8 @@ test("cost metadata stays optional but confidence and source are required when p
   assert.match(source, /estimatedPriceLevel/);
   assert.match(source, /priceConfidence/);
   assert.match(source, /priceSource/);
-  assert.match(source, /Price estimates require confidence metadata/);
-  assert.match(source, /Price estimates require source metadata/);
+  assert.match(source, /Для оценки стоимости нужны метаданные уверенности/);
+  assert.match(source, /Для оценки стоимости нужны метаданные источника/);
 });
 
 test("route contract stays detached from Vue, browser fetch, and server env", () => {

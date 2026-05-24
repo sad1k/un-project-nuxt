@@ -30,7 +30,7 @@ export default defineAuthenticatedHandler(async (event) => {
   if (!body.success) {
     throw createError({
       statusCode: 422,
-      statusMessage: "Invalid place story request",
+      statusMessage: "Некорректный запрос истории места",
     });
   }
 
@@ -39,7 +39,7 @@ export default defineAuthenticatedHandler(async (event) => {
   if (!routePoint) {
     throw createError({
       statusCode: 404,
-      statusMessage: "Route point not found",
+      statusMessage: "Точка маршрута не найдена",
     });
   }
 
@@ -61,19 +61,19 @@ export default defineAuthenticatedHandler(async (event) => {
       title: existing.title,
       voice: {
         id: existing.voiceId,
-        label: "Default narrator",
+        label: "Стандартный рассказчик",
         requirementStatus: "default_only",
       },
     });
   }
 
-  const title = `Story for ${routePoint.name}`;
+  const title = `История: ${routePoint.name}`;
   const place = await buildPlaceIntelligenceForStory(routePoint);
   const support = evaluatePlaceStorySupport(place);
   if (!support.supported) {
     await saveRoutePlaceStoryUnavailable(event.context.user.id, {
       ...request,
-      sourceNote: "Story unavailable until more sourced place facts are available.",
+      sourceNote: "История недоступна, пока не появится больше фактов о месте из источников.",
       sourceSupport: support,
       title,
       voiceId: env.OPENAI_TTS_VOICE,
@@ -127,7 +127,7 @@ export default defineAuthenticatedHandler(async (event) => {
       title,
       voice: {
         id: env.OPENAI_TTS_VOICE,
-        label: "Default narrator",
+        label: "Стандартный рассказчик",
         requirementStatus: "default_only",
       },
     });
@@ -137,7 +137,7 @@ export default defineAuthenticatedHandler(async (event) => {
     await saveRoutePlaceStoryFailed(event.context.user.id, {
       ...request,
       failureCode,
-      sourceNote: "Story audio could not be generated right now.",
+      sourceNote: "Не удалось сгенерировать аудиоисторию прямо сейчас.",
       sourceSupport: support,
       title,
       voiceId: env.OPENAI_TTS_VOICE,
@@ -145,7 +145,7 @@ export default defineAuthenticatedHandler(async (event) => {
 
     throw createError({
       statusCode: failureCode === "missing_tts_api_key" ? 503 : 502,
-      statusMessage: "Story audio unavailable",
+      statusMessage: "Аудиоистория недоступна",
     });
   }
 });

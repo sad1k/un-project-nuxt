@@ -2,7 +2,6 @@
 import type { LngLat, YMap } from "@yandex/ymaps3-types";
 import type { YMapLocationRequest } from "@yandex/ymaps3-types/imperative/YMap";
 import type { MapEvent } from "@yandex/ymaps3-types/imperative/YMapFeature/types";
-import type { Ref } from "vue";
 
 import {
   YandexMap,
@@ -15,38 +14,23 @@ import {
   YandexMapZoomControl,
 } from "vue-yandex-maps";
 
-import { createYndxMapAdapter } from "~/lib/map/yndxmap-adapter";
+import { createYndxMapAdapter, YNDX_MAP_DEFAULT_LOCATION } from "~/lib/map/yndxmap-adapter";
 
 const colorMode = useColorMode();
 const mapStore = useMapStore();
 
 const tooltipVisible = ref(true);
 
-// Default location (Moscow)
-const defaultLocation: YMapLocationRequest = {
-  center: [37.617644, 55.755819],
-  zoom: 9,
-};
-
-// Create the map ref locally and pass it to the adapter
 const mapRef = shallowRef<YMap | null>(null);
-const fallbackLocationRef = ref<YMapLocationRequest>({ ...defaultLocation });
+const LOCATION = ref<YMapLocationRequest>({ ...YNDX_MAP_DEFAULT_LOCATION });
 
-// Use adapter's location ref when available
-const locationRef = computed<YMapLocationRequest>(() => {
-  return (mapStore.adapter?.location as Ref<YMapLocationRequest> | undefined)?.value ?? fallbackLocationRef.value;
-});
-
-const mapSettings = computed(() => {
-  return {
-    location: locationRef.value,
-    theme: colorMode.value as "dark" | "light",
-  };
-});
+const mapSettings = computed(() => ({
+  location: { ...LOCATION.value },
+  theme: colorMode.value as "dark" | "light",
+}));
 
 onMounted(async () => {
-  // Pass the map ref to the adapter factory
-  await mapStore.init(() => createYndxMapAdapter(mapRef));
+  await mapStore.init(() => createYndxMapAdapter(mapRef, LOCATION));
 });
 
 function updateAddedPoint(location: LngLat) {

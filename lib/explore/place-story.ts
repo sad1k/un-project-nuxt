@@ -66,13 +66,13 @@ export type PlaceStoryAudio = z.infer<typeof PlaceStoryAudioSchema>;
 export type PlaceStoryRequest = z.infer<typeof PlaceStoryRequestSchema>;
 export type PlaceStoryResponse = z.infer<typeof PlaceStoryResponseSchema>;
 
-export const PLACE_STORY_SOURCE_NOTE = "Based on sourced place data and route context.";
-export const PLACE_STORY_DISCLOSURE = "Audio narration is AI-generated.";
+export const PLACE_STORY_SOURCE_NOTE = "На основе данных из источников и контекста маршрута.";
+export const PLACE_STORY_DISCLOSURE = "Аудиорассказ сгенерирован AI.";
 
 export function createDefaultPlaceStoryVoice(voiceId = "coral"): PlaceStoryVoice {
   return {
     id: voiceId,
-    label: "Default narrator",
+    label: "Стандартный рассказчик",
     requirementStatus: "default_only",
   };
 }
@@ -123,7 +123,7 @@ export function createUnavailablePlaceStoryResponse(input: {
     routePointId: input.request.routePointId,
     status: "unavailable",
     title: input.title,
-    sourceNote: "Story unavailable until more sourced place facts are available.",
+    sourceNote: "История недоступна, пока не появится больше фактов о месте из источников.",
     disclosure: PLACE_STORY_DISCLOSURE,
     voice: createDefaultPlaceStoryVoice(input.voiceId),
     sourceSupport: input.sourceSupport,

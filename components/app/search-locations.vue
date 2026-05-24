@@ -48,7 +48,7 @@ function onSelect(searchLocation: SearchLocation) {
 <template>
   <div>
     <div class="text-xs text-gray-400 mb-4 italic text-left align-left">
-      Search Engine made by <a
+      Поиск работает на <a
         href="https://nominatim.org/"
         target="_blank"
         class="text-primary"

@@ -6,6 +6,9 @@ export type FeedPost = {
   createdAt: number;
   imageKey: string;
   imageDescription: string | null;
+  publicPlaceName: string | null;
+  publicLat: number | null;
+  publicLong: number | null;
   userId: number;
   userName: string;
   userImage: string | null;
@@ -41,6 +44,8 @@ export const useFeedStore = defineStore("feedStore", () => {
   const initialLoading = ref(true);
   const error = ref<string | null>(null);
 
+  const authorId = ref<number | undefined>(undefined);
+
   async function fetchFeed(reset = false) {
     if (loading.value)
       return;
@@ -55,6 +60,8 @@ export const useFeedStore = defineStore("feedStore", () => {
       const params = new URLSearchParams();
       if (cursor)
         params.set("cursor", cursor.toString());
+      if (authorId.value)
+        params.set("author", authorId.value.toString());
 
       const response = await $fetch<FeedResponse>(`/api/feed?${params.toString()}`);
 
@@ -138,6 +145,10 @@ export const useFeedStore = defineStore("feedStore", () => {
     }
   }
 
+  function setAuthor(id: number | undefined) {
+    authorId.value = id;
+  }
+
   function reset() {
     posts.value = [];
     nextCursor.value = null;
@@ -145,6 +156,7 @@ export const useFeedStore = defineStore("feedStore", () => {
     loading.value = false;
     initialLoading.value = true;
     error.value = null;
+    authorId.value = undefined;
   }
 
   return {
@@ -157,9 +169,11 @@ export const useFeedStore = defineStore("feedStore", () => {
     fetchFeed,
     likePost,
     unlikePost,
+    authorId,
     toggleLike,
     incrementCommentsCount,
     decrementCommentsCount,
+    setAuthor,
     reset,
   };
 });

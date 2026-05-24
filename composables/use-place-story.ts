@@ -371,7 +371,7 @@ export function usePlaceStory() {
     audio.addEventListener("error", () => {
       setState(key, {
         ...getStateFromKey(key),
-        error: "Story audio could not be played.",
+        error: "Не удалось воспроизвести аудиоисторию.",
         status: "error",
       });
     });

@@ -7,6 +7,7 @@ const {
   activeGenerationSessions,
   hasActiveGeneration,
   latestCompletedSession,
+  latestStaleGenerationSession,
   refreshRouteGenerationStatus,
   sessions,
   startRouteGenerationStatusPolling,
@@ -25,22 +26,28 @@ const visibleSessions = computed(() => activeGenerationSessions.value.length
 
 const title = computed(() => {
   if (activeGenerationSessions.value.length > 1) {
-    return `${activeGenerationSessions.value.length} routes generating`;
+    return `Генерируется маршрутов: ${activeGenerationSessions.value.length}`;
   }
 
   if (activeGenerationSessions.value.length === 1) {
     return activeGenerationSessions.value[0].cityName
-      ? `Generating ${activeGenerationSessions.value[0].cityName}`
-      : "Generating route";
+      ? `Генерируем ${activeGenerationSessions.value[0].cityName}`
+      : "Генерируем маршрут";
+  }
+
+  if (latestStaleGenerationSession.value) {
+    return latestStaleGenerationSession.value.cityName
+      ? `Маршрут ${latestStaleGenerationSession.value.cityName} завис`
+      : "Маршрут завис";
   }
 
   if (latestCompletedSession.value) {
     return latestCompletedSession.value.cityName
-      ? `${latestCompletedSession.value.cityName} route ready`
-      : "Route ready";
+      ? `Маршрут ${latestCompletedSession.value.cityName} готов`
+      : "Маршрут готов";
   }
 
-  return "Route generation";
+  return "Генерация маршрута";
 });
 
 onMounted(() => {
@@ -50,16 +57,40 @@ onMounted(() => {
 onBeforeUnmount(() => {
   stopRouteGenerationStatusPolling();
 });
+
+function getSessionIcon(session: { status: "generating" | "completed" | "failed"; isStale: boolean }) {
+  if (session.isStale)
+    return "tabler:alert-triangle";
+
+  if (session.status === "generating")
+    return "tabler:loader-2";
+
+  if (session.status === "completed")
+    return "tabler:map-check";
+
+  return "tabler:alert-triangle";
+}
+
+function formatDisplayStatus(status: string) {
+  const labels: Record<string, string> = {
+    completed: "готово",
+    failed: "ошибка",
+    generating: "генерируется",
+    stale: "зависло",
+  };
+
+  return labels[status] || status;
+}
 </script>
 
 <template>
   <div
-    v-if="hasActiveGeneration || latestCompletedSession"
+    v-if="hasActiveGeneration || latestStaleGenerationSession || latestCompletedSession"
     class="dropdown dropdown-end"
     :class="{ 'pointer-events-auto': props.floating }"
   >
     <button
-      class="btn btn-sm gap-2 border-gray-200 bg-white text-gray-900 shadow-sm hover:border-gray-300"
+      class="app-chrome-control btn btn-sm gap-2 border shadow-sm hover:text-brand-gold"
       :class="{ 'rounded-full': props.floating }"
       type="button"
       tabindex="0"
@@ -67,19 +98,19 @@ onBeforeUnmount(() => {
     >
       <Icon
         :class="{ 'animate-spin': hasActiveGeneration }"
-        :name="hasActiveGeneration ? 'tabler:loader-2' : 'tabler:check'"
+        :name="hasActiveGeneration ? 'tabler:loader-2' : latestStaleGenerationSession ? 'tabler:alert-triangle' : 'tabler:check'"
         size="16"
       />
       <span class="max-w-44 truncate text-xs font-medium">{{ title }}</span>
     </button>
 
     <div
-      class="dropdown-content z-50 mt-2 w-80 rounded-lg border border-gray-200 bg-white p-3 text-gray-900 shadow-xl"
+      class="app-chrome-strong dropdown-content z-50 mt-2 w-80 rounded-lg border p-3 shadow-xl"
       tabindex="0"
     >
       <div
         v-if="lastNotification"
-        class="mb-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-emerald-900"
+        class="explore-status-success mb-3 rounded-lg border p-3"
       >
         <div class="flex items-start justify-between gap-3">
           <div class="min-w-0">
@@ -91,7 +122,7 @@ onBeforeUnmount(() => {
             </p>
           </div>
           <button
-            aria-label="Dismiss route notification"
+            aria-label="Закрыть уведомление о маршруте"
             class="btn btn-ghost btn-xs"
             type="button"
             @click="dismissRouteGenerationNotification()"
@@ -103,7 +134,7 @@ onBeforeUnmount(() => {
 
       <div class="mb-2 flex items-center justify-between">
         <p class="text-sm font-semibold">
-          Route generations
+          Генерации маршрутов
         </p>
         <button
           class="btn btn-ghost btn-xs"
@@ -116,32 +147,32 @@ onBeforeUnmount(() => {
 
       <button
         v-if="!browserNotificationsEnabled"
-        class="mb-3 flex w-full items-center justify-center gap-2 rounded-md border border-gray-200 px-3 py-2 text-xs font-medium transition hover:border-gray-300 hover:bg-gray-50"
+        class="app-chrome-control mb-3 flex w-full items-center justify-center gap-2 rounded-md border px-3 py-2 text-xs font-medium transition"
         type="button"
         @click="requestRouteGenerationNotifications()"
       >
         <Icon name="tabler:bell" size="14" />
-        Enable browser notifications
+        Включить уведомления браузера
       </button>
 
       <div class="space-y-2">
         <NuxtLink
           v-for="session in visibleSessions"
           :key="session.sessionId"
-          class="flex items-center justify-between rounded-md border border-gray-200 px-3 py-2 text-left transition hover:border-gray-300 hover:bg-gray-50"
+          class="app-chrome-control flex items-center justify-between rounded-md border px-3 py-2 text-left transition"
           :to="{ path: '/explore', query: { sessionId: session.sessionId } }"
         >
           <span class="min-w-0">
             <span class="block truncate text-sm font-medium">
-              {{ session.title || session.cityName || `Route ${session.sessionId}` }}
+              {{ session.title || session.cityName || `Маршрут ${session.sessionId}` }}
             </span>
-            <span class="block text-xs text-gray-500">
-              {{ session.pointCount }} points - {{ session.displayStatus }}
+            <span class="app-chrome-faint block text-xs">
+              {{ session.pointCount }} точек - {{ formatDisplayStatus(session.displayStatus) }}
             </span>
           </span>
           <Icon
             :class="{ 'animate-spin': session.status === 'generating' && !session.isStale }"
-            :name="session.status === 'generating' ? 'tabler:loader-2' : session.status === 'completed' ? 'tabler:map-check' : 'tabler:alert-triangle'"
+            :name="getSessionIcon(session)"
             size="18"
           />
         </NuxtLink>

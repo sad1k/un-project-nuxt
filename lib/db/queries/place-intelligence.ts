@@ -48,7 +48,7 @@ export async function findCommunityPlaceSignal(input: {
     label: formatCommunityLabel(input.name, visitCount, recentVisitCount, recentWindowHours),
     source: {
       kind: "app",
-      label: "Aggregate WanderLog visits",
+      label: "Агрегированные посещения WanderLog",
       confidence,
     },
   };
@@ -61,7 +61,7 @@ function formatCommunityLabel(
   recentWindowHours: number,
 ) {
   if (recentVisitCount >= 3)
-    return `${name} has recent aggregate activity in the last ${recentWindowHours} hours.`;
+    return `${name}: есть недавняя агрегированная активность за последние ${recentWindowHours} ч.`;
 
-  return `${visitCount} aggregate app visits near this stop.`;
+  return `Агрегированных посещений рядом с этой точкой: ${visitCount}.`;
 }

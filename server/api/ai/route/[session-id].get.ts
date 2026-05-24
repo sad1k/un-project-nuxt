@@ -18,7 +18,7 @@ export default defineAuthenticatedHandler(async (event) => {
   if (!session) {
     throw createError({
       statusCode: 404,
-      statusMessage: "Route session not found",
+      statusMessage: "Сессия маршрута не найдена",
     });
   }
 
@@ -42,6 +42,7 @@ export default defineAuthenticatedHandler(async (event) => {
       title: variant.title ?? undefined,
       summary: variant.summary ?? undefined,
       failureCode: variant.failureCode ?? undefined,
+      failureStage: variant.failureStage ?? undefined,
       generationStartedAt: variant.generationStartedAt ?? undefined,
       generationHeartbeatAt: variant.generationHeartbeatAt ?? undefined,
       generationCompletedAt: variant.generationCompletedAt ?? undefined,
@@ -68,7 +69,7 @@ function parseSessionId(input: string | undefined) {
   if (!Number.isInteger(sessionId) || sessionId <= 0) {
     throw createError({
       statusCode: 400,
-      statusMessage: "Invalid route session id",
+      statusMessage: "Некорректный ID сессии маршрута",
     });
   }
 

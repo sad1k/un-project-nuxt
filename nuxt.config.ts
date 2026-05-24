@@ -31,7 +31,7 @@ export default defineNuxtConfig({
     transpile: ["nuxt-maplibre"], // <------
   },
 
-  css: ["~/assets/css/main.css", "mapbox-gl/dist/mapbox-gl.css"],
+  css: ["mapbox-gl/dist/mapbox-gl.css", "~/assets/css/main.css"],
 
   eslint: {
     config: {

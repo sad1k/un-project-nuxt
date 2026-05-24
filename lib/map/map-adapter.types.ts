@@ -15,6 +15,7 @@ export type FlyToOptions = {
   center: [number, number];
   zoom: number;
   speed?: number;
+  duration?: number;
 };
 
 // FitBounds options
@@ -25,11 +26,10 @@ export type FitBoundsOptions = {
 // The main adapter interface
 export type MapAdapter = {
   map?: any;
-  location?: any; // Reactive location ref for vue-yandex-maps
+  location?: { value: Record<string, unknown> };
 
-  // Core map operations
-  flyTo: (options: FlyToOptions) => void;
-  fitBounds: (bounds: MapBounds, options?: FitBoundsOptions) => void;
+  flyTo: (options: FlyToOptions) => Promise<void> | void;
+  fitBounds: (bounds: MapBounds, options?: FitBoundsOptions) => Promise<void> | void;
 
   // Bounds factory
   createBounds: (sw: [number, number], ne: [number, number]) => MapBounds;

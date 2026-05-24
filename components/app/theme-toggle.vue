@@ -12,7 +12,7 @@ const isDark = computed({
 </script>
 
 <template>
-  <label class="swap swap-rotate mx-4">
+  <label class="app-chrome-control swap swap-rotate grid h-10 w-10 place-items-center rounded-full border transition hover:text-brand-gold">
     <input v-model="isDark" type="checkbox">
 
     <Icon

@@ -3,6 +3,7 @@ export * from "./auth";
 export * from "./location";
 export * from "./location-log";
 export * from "./location-log-image";
+export * from "./place-media-cache";
 export * from "./post";
 export * from "./post-comment";
 export * from "./post-like";

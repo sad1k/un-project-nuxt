@@ -1,3 +1,3 @@
 <template>
-  <h1>Delete log</h1>
+  <h1>Удалить запись</h1>
 </template>

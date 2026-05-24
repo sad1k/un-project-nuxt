@@ -17,7 +17,7 @@ export default defineAuthenticatedHandler(async (event) => {
   if (!routePoint) {
     throw createError({
       statusCode: 404,
-      statusMessage: "Route point not found",
+      statusMessage: "Точка маршрута не найдена",
     });
   }
 
@@ -25,7 +25,7 @@ export default defineAuthenticatedHandler(async (event) => {
   if (!story) {
     return createReadyPlaceStoryResponse({
       request: query,
-      title: `Story for ${routePoint.name}`,
+      title: `История: ${routePoint.name}`,
       voiceId: env.OPENAI_TTS_VOICE,
     });
   }
@@ -50,7 +50,7 @@ export default defineAuthenticatedHandler(async (event) => {
     title: story.title,
     voice: {
       id: story.voiceId,
-      label: "Default narrator",
+      label: "Стандартный рассказчик",
       requirementStatus: "default_only",
     },
   });

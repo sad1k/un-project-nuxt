@@ -1,55 +1,56 @@
 import type { LngLatBounds, YMap } from "@yandex/ymaps3-types";
 import type { YMapLocationRequest } from "@yandex/ymaps3-types/imperative/YMap";
-import type { ShallowRef } from "vue";
+import type { Ref, ShallowRef } from "vue";
 
 import { getBoundsFromCoords, getLocationFromBounds } from "vue-yandex-maps";
 
 import type { FlyToOptions, MapAdapter, MapBounds } from "./map-adapter.types";
 
-// Default location (Moscow)
-const DEFAULT_LOCATION: YMapLocationRequest = {
+export const YNDX_MAP_DEFAULT_LOCATION: YMapLocationRequest = {
   center: [37.617644, 55.755819],
   zoom: 9,
 };
 
-// Helper to wait for animation
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-export async function createYndxMapAdapter(
+export function createYndxMapAdapter(
   map: ShallowRef<YMap | null>,
-): Promise<MapAdapter | null> {
-  const location = ref<YMapLocationRequest>({ ...DEFAULT_LOCATION });
-
+  location: Ref<YMapLocationRequest>,
+): MapAdapter {
   let currentBoundsLocation: { center: [number, number]; zoom: number } | null = null;
+
+  function setLocation(nextLocation: YMapLocationRequest) {
+    location.value = { ...nextLocation };
+  }
 
   return {
     map,
     location,
 
-    async flyTo(options: FlyToOptions): Promise<void> {
+    async flyTo(options: FlyToOptions) {
       const zoomOutDuration = 1000;
-      const zoomInDuration = 1500;
+      const zoomInDuration = options.duration ?? 1500;
 
       if (currentBoundsLocation) {
-        location.value = {
+        setLocation({
           center: currentBoundsLocation.center,
           zoom: currentBoundsLocation.zoom,
           duration: zoomOutDuration,
           easing: "ease-in",
-        };
+        });
 
         await sleep(zoomOutDuration);
       }
 
-      location.value = {
+      setLocation({
         center: options.center,
         zoom: options.zoom,
         duration: zoomInDuration,
         easing: "ease-out",
-      };
+      });
     },
 
-    async fitBounds(bounds: MapBounds): Promise<void> {
+    async fitBounds(bounds: MapBounds) {
       const castedBounds = bounds._bounds as LngLatBounds;
 
       if (!castedBounds || !map.value) {
@@ -65,13 +66,13 @@ export async function createYndxMapAdapter(
 
       currentBoundsLocation = { center: center as [number, number], zoom };
 
-      location.value = {
+      setLocation({
         center,
         zoom,
         bounds: castedBounds,
         duration: 2000,
         easing: "ease-in-out",
-      };
+      });
     },
 
     createBounds(sw: [number, number], ne: [number, number]): MapBounds {
@@ -90,7 +91,7 @@ export async function createYndxMapAdapter(
       return createBoundsObject();
     },
 
-    isReady(): boolean {
+    isReady() {
       return !!map.value;
     },
   };

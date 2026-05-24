@@ -25,7 +25,7 @@ export default defineAuthenticatedHandler(defineCachedFunction(async (event) => 
     if (!response.ok) {
       return sendError(event, createError({
         statusCode: 504,
-        statusMessage: "Location search provider unavailable",
+        statusMessage: "Провайдер поиска мест недоступен",
       }));
     }
 
@@ -37,7 +37,7 @@ export default defineAuthenticatedHandler(defineCachedFunction(async (event) => 
     return sendError(event, createError({
       data: e instanceof Error ? { message: e.message } : undefined,
       statusCode: 504,
-      statusMessage: "Location search provider unavailable",
+      statusMessage: "Провайдер поиска мест недоступен",
     }));
   }
 }, {

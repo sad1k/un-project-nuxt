@@ -6,7 +6,16 @@ import db from "./db";
 import * as schema from "./db/schema";
 import env from "./env";
 
+const trustedOrigins = [
+  env.BETTER_AUTH_URL,
+  ...(env.BETTER_AUTH_TRUSTED_ORIGINS?.split(",") ?? []),
+]
+  .map(origin => origin.trim())
+  .filter((origin, index, origins) => origin && origins.indexOf(origin) === index);
+
 export const auth = betterAuth({
+  trustedOrigins,
+
   hooks: {
     after: createAuthMiddleware(async (ctx) => {
       if (ctx.path === "/get-session") {

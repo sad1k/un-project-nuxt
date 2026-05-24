@@ -41,6 +41,9 @@ test("OpenAI-compatible client can use OpenRouter Qwen route defaults", () => {
   assert.match(providerSource, /OPENROUTER_ROUTE_MODEL/);
   assert.match(providerSource, /X-OpenRouter-Title/);
   assert.match(providerSource, /OPENROUTER_APP_TITLE/);
+  assert.match(providerSource, /response_format/);
+  assert.match(providerSource, /json_object/);
+  assert.match(providerSource, /require_parameters/);
   assert.match(providerSource, /model\.startsWith\("qwen\/qwen3\.5-"\)/);
 });
 
@@ -118,6 +121,8 @@ test("stream endpoint authenticates, validates, persists, and emits app route ev
   assert.match(runnerSource, /normalizeProviderCoordinates/);
   assert.match(runnerSource, /getProviderPointName/);
   assert.match(runnerSource, /normalizeProviderRationale/);
+  assert.match(runnerSource, /normalizeProviderAlternativeForPointId/);
+  assert.match(runnerSource, /alternativeForPointId: normalizeProviderAlternativeForPointId\(point\.alternativeForPointId\)/);
   assert.match(runnerSource, /const estimatedPriceLevel = normalizeProviderPriceLevel/);
   assert.match(runnerSource, /estimatedPriceLevel,/);
   assert.match(runnerSource, /persistAiRouteEvent/);

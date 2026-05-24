@@ -26,21 +26,21 @@ async function submit() {
     @submit.prevent="submit"
   >
     <label
-      class="text-sm font-semibold text-gray-900"
+      class="text-sm font-semibold text-[var(--explore-text)]"
       for="route-follow-up"
     >
-      Refine route
+      Уточнить маршрут
     </label>
     <div class="flex gap-2">
       <input
         id="route-follow-up"
         v-model="followUpMessage"
-        class="min-w-0 flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none transition focus:border-gray-900"
-        placeholder="Change a wish or replace a point"
+        class="explore-input min-w-0 flex-1 rounded-lg border px-3 py-2 text-sm transition focus:border-brand-gold/50"
+        placeholder="Измените пожелание или замените точку"
         type="text"
       >
       <button
-        class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-900 text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-50"
+        class="explore-primary-button flex h-10 w-10 shrink-0 items-center justify-center rounded-lg transition disabled:cursor-not-allowed disabled:opacity-50"
         :disabled="!canSubmit"
         type="submit"
       >

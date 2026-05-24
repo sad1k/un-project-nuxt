@@ -39,7 +39,7 @@ export type RouteWeatherTip = z.infer<typeof RouteWeatherTipSchema>;
 export type RouteWeatherTips = z.infer<typeof RouteWeatherTipsSchema>;
 
 const OPEN_METEO_SOURCE = {
-  label: "Open-Meteo forecast",
+  label: "Прогноз Open-Meteo",
   confidence: "medium" as const,
 };
 
@@ -49,16 +49,16 @@ export function buildRouteWeatherTips(input: {
   cityLabel?: string;
 }): RouteWeatherTips {
   if (!input.forecastDays.length)
-    return createUnavailableRouteWeatherTips("Weather forecast is unavailable for this route.");
+    return createUnavailableRouteWeatherTips("Прогноз погоды недоступен для этого маршрута.");
 
   const tips = input.forecastDays.flatMap(day => buildTipsForForecastDay(day));
   if (input.selectedDays > 1) {
     tips.unshift({
       id: "multi-day-route",
       severity: "info",
-      title: "Multi-day route weather",
-      body: `Check each day before heading out; conditions can change across a ${input.selectedDays}-day itinerary.`,
-      whatToTake: ["Flexible layer", "Refillable water bottle"],
+      title: "Погода на многодневном маршруте",
+      body: `Проверяйте каждый день перед выходом: условия могут меняться в течение ${input.selectedDays}-дневного маршрута.`,
+      whatToTake: ["Слой одежды по погоде", "Бутылка для воды"],
       source: OPEN_METEO_SOURCE,
     });
   }
@@ -67,9 +67,9 @@ export function buildRouteWeatherTips(input: {
     tips.push({
       id: "mild-weather",
       severity: "info",
-      title: "Weather looks manageable",
-      body: "No strong rain, heat, cold, or wind signal is available for the selected route window.",
-      whatToTake: ["Comfortable shoes", "Water"],
+      title: "Погода выглядит управляемой",
+      body: "Для выбранного окна маршрута нет сильных сигналов дождя, жары, холода или ветра.",
+      whatToTake: ["Удобная обувь", "Вода"],
       source: OPEN_METEO_SOURCE,
     });
   }
@@ -77,31 +77,31 @@ export function buildRouteWeatherTips(input: {
   return RouteWeatherTipsSchema.parse({
     status: "available",
     summary: input.cityLabel
-      ? `Weather-aware tips for ${input.cityLabel}.`
-      : "Weather-aware tips for this route.",
+      ? `Погодные советы для ${input.cityLabel}.`
+      : "Погодные советы для этого маршрута.",
     tips: tips.slice(0, 12),
     source: OPEN_METEO_SOURCE,
   });
 }
 
-export function createUnavailableRouteWeatherTips(reason = "Weather data is unavailable right now."): RouteWeatherTips {
+export function createUnavailableRouteWeatherTips(reason = "Данные о погоде сейчас недоступны."): RouteWeatherTips {
   return RouteWeatherTipsSchema.parse({
     status: "unavailable",
     summary: reason,
     tips: [{
       id: "weather-unavailable",
       severity: "info",
-      title: "Weather unavailable",
-      body: "Forecast data is missing, so avoid assuming conditions from the route alone.",
-      whatToTake: ["Check local forecast", "Pack a light layer"],
+      title: "Погода недоступна",
+      body: "Данных прогноза нет, поэтому не делайте выводы об условиях только по маршруту.",
+      whatToTake: ["Проверить местный прогноз", "Взять лёгкий слой одежды"],
       unavailable: true,
       source: {
-        label: "Weather unavailable",
+        label: "Погода недоступна",
         confidence: "low",
       },
     }],
     source: {
-      label: "Weather unavailable",
+      label: "Погода недоступна",
       confidence: "low",
     },
   });
@@ -109,16 +109,16 @@ export function createUnavailableRouteWeatherTips(reason = "Weather data is unav
 
 function buildTipsForForecastDay(day: WeatherForecastDay): RouteWeatherTip[] {
   const tips: RouteWeatherTip[] = [];
-  const dayLabel = `Day ${day.day}`;
+  const dayLabel = `День ${day.day}`;
 
   if (isRainy(day)) {
     tips.push({
       id: `rain-${day.day}`,
       day: day.day,
       severity: getSevereWeatherCode(day.weatherCode) ? "high" : "caution",
-      title: `${dayLabel}: rain preparation`,
-      body: "Rain is possible along the route; expect slower walking and less comfortable outdoor stops.",
-      whatToTake: ["umbrella", "rain layer", "Water-resistant shoes"],
+      title: `${dayLabel}: подготовка к дождю`,
+      body: "На маршруте возможен дождь; прогулка может стать медленнее, а остановки на улице менее комфортными.",
+      whatToTake: ["Зонт", "Дождевой слой", "Водоотталкивающая обувь"],
       source: OPEN_METEO_SOURCE,
     });
   }
@@ -128,9 +128,9 @@ function buildTipsForForecastDay(day: WeatherForecastDay): RouteWeatherTip[] {
       id: `heat-${day.day}`,
       day: day.day,
       severity: day.apparentTemperatureMax >= 35 ? "high" : "caution",
-      title: `${dayLabel}: heat and sun`,
-      body: "High apparent temperature can make long walks feel harder, especially between exposed stops.",
-      whatToTake: ["water", "sun protection", "Breathable layer"],
+      title: `${dayLabel}: жара и солнце`,
+      body: "Высокая ощущаемая температура может усложнить долгие прогулки, особенно на открытых участках.",
+      whatToTake: ["Вода", "Защита от солнца", "Дышащая одежда"],
       source: OPEN_METEO_SOURCE,
     });
   }
@@ -140,9 +140,9 @@ function buildTipsForForecastDay(day: WeatherForecastDay): RouteWeatherTip[] {
       id: `cold-${day.day}`,
       day: day.day,
       severity: day.apparentTemperatureMin <= -5 ? "high" : "caution",
-      title: `${dayLabel}: cold comfort`,
-      body: "Low apparent temperature may make waiting outdoors uncomfortable.",
-      whatToTake: ["warm layer", "Gloves or hat"],
+      title: `${dayLabel}: защита от холода`,
+      body: "Низкая ощущаемая температура может сделать ожидание на улице некомфортным.",
+      whatToTake: ["Тёплый слой", "Перчатки или шапка"],
       source: OPEN_METEO_SOURCE,
     });
   }
@@ -152,9 +152,9 @@ function buildTipsForForecastDay(day: WeatherForecastDay): RouteWeatherTip[] {
       id: `wind-${day.day}`,
       day: day.day,
       severity: day.windSpeedMax >= 55 ? "high" : "caution",
-      title: `${dayLabel}: wind caution`,
-      body: "Strong wind can make bridges, waterfronts, and exposed viewpoints less comfortable.",
-      whatToTake: ["Wind layer", "Secure hat or loose items"],
+      title: `${dayLabel}: осторожно, ветер`,
+      body: "Сильный ветер может сделать мосты, набережные и открытые обзорные точки менее комфортными.",
+      whatToTake: ["Ветрозащитный слой", "Закрепить шапку и лёгкие вещи"],
       source: OPEN_METEO_SOURCE,
     });
   }
@@ -165,9 +165,9 @@ function buildTipsForForecastDay(day: WeatherForecastDay): RouteWeatherTip[] {
       id: `severe-${day.day}`,
       day: day.day,
       severity: "high",
-      title: `${dayLabel}: severe weather risk`,
+      title: `${dayLabel}: риск суровой погоды`,
       body: severeCode,
-      whatToTake: ["Indoor backup", "Local forecast check"],
+      whatToTake: ["Запасной вариант в помещении", "Проверка местного прогноза"],
       source: OPEN_METEO_SOURCE,
     });
   }
@@ -183,13 +183,13 @@ function isRainy(day: WeatherForecastDay) {
 
 function getSevereWeatherCode(weatherCode: number | null | undefined) {
   if (weatherCode === 95 || weatherCode === 96 || weatherCode === 99)
-    return "Thunderstorm conditions may affect outdoor stops.";
+    return "Грозовые условия могут повлиять на остановки на улице.";
 
   if (weatherCode === 82)
-    return "Heavy rain showers may affect outdoor stops.";
+    return "Сильные ливни могут повлиять на остановки на улице.";
 
   if (weatherCode === 75 || weatherCode === 77 || weatherCode === 86)
-    return "Snow or ice may affect walking comfort.";
+    return "Снег или лёд могут повлиять на комфорт прогулки.";
 
   return "";
 }

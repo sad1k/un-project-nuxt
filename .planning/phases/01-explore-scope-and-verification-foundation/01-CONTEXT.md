@@ -39,7 +39,7 @@ Phase 1 delivers a locked feature contract and verification foundation for the f
 
 - **D-12:** Explore should provide tips correlated with weather, especially what the user should take on the route.
 - **D-13:** Interactive history/storytelling with sound is desired, but should be tracked as a later enhancement unless planning finds a small safe slice.
-- **D-14:** Place pictures belong in the click popup and should use provider/app image data where available.
+- **D-14:** Place pictures belong in the click popup and should use real provider/app image data where available. AI-generated or illustrative substitutes must not be presented as place photos; if no real photo is available, show an explicit missing-photo state.
 
 ### Documentation
 

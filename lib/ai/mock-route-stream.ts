@@ -56,26 +56,41 @@ function buildMockRoutePoints(request: RouteGenerationRequest): RoutePoint[] {
   if (candidatePoints.length)
     return candidatePoints;
 
-  const cityName = city?.name || "your city";
+  const cityName = city?.name || "вашего города";
   const interests = request.context.interests.length ? request.context.interests : ["culture", "food", "nature"];
 
   return interests.slice(0, Math.max(3, Math.min(6, request.context.selectedDays * 2))).map((interest, index): RoutePoint => ({
     id: `mock-${interest}-${index + 1}`,
-    name: `${titleCase(interest)} stop in ${cityName}`,
+    name: `${interestLabelRu(interest)} в ${cityName}`,
     day: Math.min(request.context.selectedDays, Math.floor(index / 3) + 1),
     coordinates: offsetCoordinates(base, index),
     estimatedStart: `${9 + index * 2}:00`,
     estimatedDurationMinutes: 90,
     rationale: request.followUpMessage
-      ? `Adjusted for your follow-up: ${request.followUpMessage.slice(0, 120)}`
-      : `Mock AI selected this stop for your ${interest} interest.`,
+      ? `Учли ваше уточнение: ${request.followUpMessage.slice(0, 120)}`
+      : `Заглушка AI подобрала эту остановку под интерес «${interestLabelRu(interest)}».`,
     confidence: index < 2 ? "high" : "medium",
     alternativeForPointId: request.followUpMessage && index === 0 ? "previous-active-point" : undefined,
     approximateDistanceMeters: index === 0 ? 0 : 900 + index * 700,
     estimatedPriceLevel: index % 3 === 0 ? "free" : "unknown",
     priceConfidence: index % 3 === 0 ? "medium" : undefined,
-    priceSource: index % 3 === 0 ? "mock estimate" : undefined,
+    priceSource: index % 3 === 0 ? "оценка заглушки" : undefined,
   }));
+}
+
+function interestLabelRu(interest: string) {
+  const labels: Record<string, string> = {
+    "culture": "Культурная остановка",
+    "food": "Гастрономическая остановка",
+    "nature": "Прогулка на природе",
+    "adventure": "Приключение",
+    "art": "Арт-локация",
+    "nightlife": "Ночная жизнь",
+    "shopping": "Шопинг",
+    "family": "Семейное место",
+    "hidden-gems": "Скрытая жемчужина",
+  };
+  return labels[interest] || titleCase(interest);
 }
 
 function offsetCoordinates(base: { lat: number; long: number }, index: number) {

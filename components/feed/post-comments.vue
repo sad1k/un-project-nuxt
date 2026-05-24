@@ -95,7 +95,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="border-t border-white/10 pt-4">
+  <div class="border-t border-gray-200 pt-4 dark:border-white/10">
     <div v-if="loading" class="flex justify-center py-4">
       <span class="loading loading-spinner loading-sm text-brand-gold" />
     </div>
@@ -105,7 +105,7 @@ onMounted(() => {
         Пока нет комментариев. Будьте первым!
       </div>
 
-      <div v-else class="divide-y divide-white/5 max-h-80 overflow-y-auto">
+      <div v-else class="divide-y divide-gray-100 max-h-80 overflow-y-auto dark:divide-white/5">
         <FeedCommentItem
           v-for="comment in comments"
           :key="comment.id"
@@ -120,13 +120,13 @@ onMounted(() => {
     <div v-if="currentUserId" class="mt-4">
       <div
         v-if="replyingTo"
-        class="flex items-center gap-2 mb-2 px-3 py-2 bg-white/5 rounded-lg"
+        class="flex items-center gap-2 mb-2 px-3 py-2 bg-gray-100 rounded-lg dark:bg-white/5"
       >
         <span class="text-xs text-gray-400">
           Ответ для <span class="text-brand-gold">@{{ replyingTo.userName }}</span>
         </span>
         <button
-          class="ml-auto text-gray-500 hover:text-white"
+          class="ml-auto text-gray-500 hover:text-gray-950 dark:hover:text-white"
           @click="cancelReply"
         >
           <Icon name="tabler:x" size="16" />
@@ -138,7 +138,7 @@ onMounted(() => {
           v-model="newComment"
           type="text"
           placeholder="Написать комментарий..."
-          class="flex-1 px-4 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm placeholder-gray-500 focus:outline-none focus:border-brand-gold transition-colors"
+          class="flex-1 px-4 py-2 bg-white border border-gray-200 rounded-lg text-gray-950 text-sm placeholder-gray-500 focus:outline-none focus:border-brand-gold transition-colors dark:bg-white/5 dark:border-white/10 dark:text-white"
           :disabled="submitting"
         >
         <button

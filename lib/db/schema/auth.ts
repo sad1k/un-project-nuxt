@@ -4,7 +4,10 @@ import { int, integer, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export type UserWithId = Omit<User, "id"> & {
   id: number;
+  role?: UserRole;
 };
+
+export type UserRole = "user" | "admin";
 
 export const user = sqliteTable("user", {
   id: int().primaryKey({ autoIncrement: true }),
@@ -12,6 +15,7 @@ export const user = sqliteTable("user", {
   email: text().notNull().unique(),
   emailVerified: integer({ mode: "boolean" }).$defaultFn(() => false).notNull(),
   image: text(),
+  role: text({ enum: ["user", "admin"] }).notNull().default("user"),
   createdAt: integer().notNull(),
   updatedAt: integer().notNull(),
 });

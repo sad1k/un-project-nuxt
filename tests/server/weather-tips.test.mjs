@@ -12,10 +12,10 @@ const panelSource = await readFile("components/explore/route-panel.vue", "utf8")
 test("TIPS-01 TIPS-02 D-11 D-12 D-13 weather model maps forecasts to practical sidebar tips", () => {
   assert.match(modelSource, /RouteWeatherTipsSchema/);
   assert.match(modelSource, /buildRouteWeatherTips/);
-  assert.match(modelSource, /umbrella|rain layer/);
-  assert.match(modelSource, /water|sun protection/);
-  assert.match(modelSource, /warm layer/);
-  assert.match(modelSource, /wind caution/);
+  assert.match(modelSource, /Зонт|Дождевой слой/);
+  assert.match(modelSource, /Вода|Защита от солнца/);
+  assert.match(modelSource, /Тёплый слой/);
+  assert.match(modelSource, /осторожно, ветер/);
   assert.match(modelSource, /unavailable/);
   assert.doesNotMatch(modelSource, /\bfetch\(/);
   assert.doesNotMatch(modelSource, /process\.env/);
@@ -57,7 +57,7 @@ test("client fetches route weather tips from route coordinates and caches contex
 });
 
 test("route sidebar renders weather tips in the panel, not popups", () => {
-  assert.match(componentSource, /what to take/i);
+  assert.match(componentSource, /Что взять/);
   assert.match(componentSource, /RouteWeatherTips/);
   assert.match(componentSource, /loading/);
   assert.match(componentSource, /unavailable/);

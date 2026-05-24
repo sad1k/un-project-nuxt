@@ -28,7 +28,7 @@ function handleClick() {
     :class="[
       liked
         ? 'text-rose-500 hover:bg-rose-500/10'
-        : 'text-gray-400 hover:text-rose-500 hover:bg-gray-800',
+        : 'text-gray-500 hover:text-rose-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800',
       disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer',
     ]"
     :disabled="disabled"

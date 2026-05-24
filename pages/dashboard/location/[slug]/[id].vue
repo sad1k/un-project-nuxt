@@ -64,7 +64,15 @@ async function deleteLocationLog() {
         v-if="locationLog && !loading"
         :location-log="locationLog"
         :loading="loading"
-      />
+      >
+        <template #default="{ image }">
+          <PlacePhotoPhotoVisibilityControls
+            :image="image"
+            :location-log="locationLog"
+            @updated="locationStore.currentLocationLogRefresh"
+          />
+        </template>
+      </ImageList>
       <div v-if="locationLog && !loading && !locationLog.images.length" class="mt-4">
         <p>Нет изображений. Добавьте первое изображение</p>
         <NuxtLink

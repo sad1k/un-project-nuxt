@@ -20,7 +20,7 @@ export default defineAuthenticatedHandler(async (event) => {
   if (!session) {
     throw createError({
       statusCode: 404,
-      statusMessage: "Route session not found",
+      statusMessage: "Сессия маршрута не найдена",
     });
   }
 
@@ -32,14 +32,14 @@ export default defineAuthenticatedHandler(async (event) => {
   if (!variant) {
     throw createError({
       statusCode: 500,
-      statusMessage: "Route variant could not be created",
+      statusMessage: "Не удалось создать вариант маршрута",
     });
   }
 
   await appendAiRouteMessage(userId, {
     sessionId: session.id,
     role: "user",
-    summary: body.followUpMessage || `Generate route for ${body.context.city?.name || "selected city"}`,
+    summary: body.followUpMessage || `Сгенерировать маршрут для ${body.context.city?.name || "выбранного города"}`,
   });
 
   const encoder = new TextEncoder();

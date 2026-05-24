@@ -100,8 +100,8 @@ function normalizeMapboxCandidateResponse(input: unknown, interest: ExploreInter
 function createFallbackCandidatePlaces(cityName: string, interests: ExploreInterest[]): ExploreCandidatePlace[] {
   return interests.slice(0, 6).map((interest, index) => ({
     id: `fallback:${normalizeExploreQuery(cityName).toLowerCase()}:${interest}`,
-    name: `${interestLabel(interest)} places in ${cityName}`,
-    description: "Popular starter idea for the route prompt",
+    name: `${interestLabel(interest)} в ${cityName}`,
+    description: "Популярная стартовая идея для маршрута",
     categories: [interest],
     source: "fallback",
     selected: index < 3,
@@ -129,10 +129,19 @@ function dedupeCandidatePlaces(places: ExploreCandidatePlace[]) {
 }
 
 function interestLabel(interest: ExploreInterest) {
-  return interest
-    .split("-")
-    .map(part => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
+  const labels: Record<ExploreInterest, string> = {
+    "adventure": "Приключения",
+    "art": "Искусство",
+    "culture": "Культура",
+    "family": "Семейные места",
+    "food": "Еда",
+    "hidden-gems": "Скрытые места",
+    "nature": "Природа",
+    "nightlife": "Ночная жизнь",
+    "shopping": "Шопинг",
+  };
+
+  return labels[interest];
 }
 
 function isExploreInterest(value: string): value is ExploreInterest {

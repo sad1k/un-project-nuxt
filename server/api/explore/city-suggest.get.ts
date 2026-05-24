@@ -79,12 +79,12 @@ async function fetchNominatimSuggestions(query: string): Promise<ExploreCitySugg
     });
 
     if (!response.ok)
-      throw createError({ statusCode: 504, statusMessage: "Location search provider unavailable" });
+      throw createError({ statusCode: 504, statusMessage: "Провайдер поиска мест недоступен" });
 
     return normalizeNominatimResults(await response.json());
   }
   catch {
-    throw createError({ statusCode: 504, statusMessage: "Location search provider unavailable" });
+    throw createError({ statusCode: 504, statusMessage: "Провайдер поиска мест недоступен" });
   }
 }
 

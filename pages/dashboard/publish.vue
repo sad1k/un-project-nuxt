@@ -9,6 +9,7 @@ type UserImage = {
 
 const config = useRuntimeConfig();
 const { $csrfFetch } = useNuxtApp();
+const route = useRoute();
 
 const { data: images, status, refresh } = useFetch<UserImage[]>("/api/posts/my-images", {
   lazy: true,
@@ -19,6 +20,11 @@ const caption = ref("");
 const publishing = ref(false);
 const publishError = ref<string | null>(null);
 const publishSuccess = ref(false);
+
+onMounted(() => {
+  if (typeof route.query.caption === "string")
+    caption.value = route.query.caption.slice(0, 500);
+});
 
 function selectImage(image: UserImage) {
   if (image.isPosted)
@@ -67,19 +73,24 @@ async function publishPost() {
 </script>
 
 <template>
-  <div class="h-full  ">
-    <h1 class="text-2xl font-headline mb-6 text-gray-900 dark:text-white">
-      Опубликовать в ленту
-    </h1>
+  <div class="h-full px-4 py-6 sm:px-6 lg:px-8">
+    <div class="mb-6">
+      <p class="mb-2 font-mono text-xs uppercase tracking-[0.28em] text-brand-gold/70">
+        WanderLog
+      </p>
+      <h1 class="text-3xl font-display tracking-wide text-gray-950 dark:text-white">
+        Опубликовать в ленту
+      </h1>
+    </div>
 
-    <div v-if="publishSuccess" class="mb-6 p-4 bg-green-100 dark:bg-green-500/20 border border-green-200 dark:border-green-500/30 rounded-xl">
+    <div v-if="publishSuccess" class="mb-6 rounded-xl border border-green-500/30 bg-green-500/20 p-4">
       <div class="flex items-center gap-3">
         <Icon
           name="tabler:check"
           size="24"
           class="text-green-500"
         />
-        <span class="text-green-700 dark:text-green-400">Публикация успешно создана!</span>
+        <span class="text-green-400">Публикация успешно создана!</span>
         <NuxtLink
           to="/feed"
           class="ml-auto text-sm text-brand-gold hover:underline"
@@ -153,7 +164,7 @@ async function publishPost() {
         </div>
       </div>
 
-      <div v-if="selectedImage" class="bg-white dark:bg-white/5 rounded-2xl p-6 h-full border border-gray-200 dark:border-white/5 shadow-sm dark:shadow-none">
+      <div v-if="selectedImage" class="h-full rounded-2xl border border-white/10 bg-white/5 p-6 shadow-2xl shadow-black/10 backdrop-blur-sm">
         <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
           Предпросмотр
         </h2>
@@ -170,7 +181,7 @@ async function publishPost() {
           <label class="block text-sm text-gray-500 dark:text-gray-400 mb-2">Подпись (необязательно)</label>
           <textarea
             v-model="caption"
-            class="w-full px-4 py-3 bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 rounded-xl text-gray-900 dark:text-white placeholder-gray-500 resize-none focus:outline-none focus:border-brand-gold transition-colors"
+            class="w-full resize-none rounded-xl border border-gray-200 bg-white/80 px-4 py-3 text-gray-950 placeholder:text-gray-400 transition-colors focus:border-brand-gold focus:outline-none dark:border-white/10 dark:bg-white/5 dark:text-white dark:placeholder:text-white/40"
             rows="3"
             placeholder="Добавьте подпись к публикации..."
             maxlength="500"
@@ -188,7 +199,7 @@ async function publishPost() {
 
         <div class="flex gap-3">
           <button
-            class="flex-1 px-4 py-3 bg-gray-200 dark:bg-white/10 text-gray-900 dark:text-white rounded-xl hover:bg-gray-300 dark:hover:bg-white/20 transition-colors"
+            class="flex-1 rounded-xl bg-gray-100 px-4 py-3 text-gray-900 transition-colors hover:bg-gray-200 dark:bg-white/10 dark:text-white dark:hover:bg-white/20"
             @click="clearSelection"
           >
             Отмена
@@ -211,7 +222,7 @@ async function publishPost() {
         </div>
       </div>
 
-      <div v-else class="bg-white dark:bg-white/5 rounded-2xl p-6 flex items-center justify-center h-64 lg:h-auto border border-gray-200 dark:border-white/5 shadow-sm dark:shadow-none">
+      <div v-else class="flex h-64 items-center justify-center rounded-2xl border border-white/10 bg-white/5 p-6 shadow-2xl shadow-black/10 backdrop-blur-sm lg:h-auto">
         <div class="text-center">
           <Icon
             name="tabler:photo-plus"

@@ -29,7 +29,10 @@ test("route prompt locks map-first route event behavior", () => {
   assert.match(promptSource, /ROUTE_SYSTEM_INSTRUCTIONS/);
   assert.match(promptSource, /raw JSON is not user-facing UI/);
   assert.match(promptSource, /selected sidebar context/);
-  assert.match(promptSource, /single JSON object/);
+  assert.match(promptSource, /one JSON object/);
+  assert.match(promptSource, /JSON object mode/);
+  assert.match(promptSource, /Do not include optional fields with null, empty strings/);
+  assert.match(promptSource, /Only set alternativeForPointId/);
   assert.match(promptSource, /Do not wrap output in markdown/);
   assert.match(promptSource, /preserve route variants/);
   assert.match(promptSource, /Never use numeric price levels/);

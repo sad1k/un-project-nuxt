@@ -20,7 +20,7 @@ export default defineAuthenticatedHandler(async (event) => {
   const query = await getValidatedQuery(event, QuerySchema.parse);
   const points = parsePoints(query.points);
   if (!points.length)
-    return createUnavailableRouteWeatherTips("Weather tips need at least one route coordinate.");
+    return createUnavailableRouteWeatherTips("Для погодных советов нужна хотя бы одна координата маршрута.");
 
   try {
     const forecast = await fetchOpenMeteoForecast({
@@ -37,7 +37,7 @@ export default defineAuthenticatedHandler(async (event) => {
     });
   }
   catch {
-    return createUnavailableRouteWeatherTips("Weather forecast is unavailable for this route.");
+    return createUnavailableRouteWeatherTips("Прогноз погоды недоступен для этого маршрута.");
   }
 });
 

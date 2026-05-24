@@ -23,7 +23,7 @@ export default defineAuthenticatedHandler(async (event) => {
     if (query.lat === undefined || query.long === undefined || !query.name) {
       throw createError({
         statusCode: 422,
-        statusMessage: "Fallback city selection requires name and coordinates",
+        statusMessage: "Для выбора города из резервного источника нужны название и координаты",
       });
     }
 
@@ -46,7 +46,7 @@ export default defineAuthenticatedHandler(async (event) => {
   if (!mapboxToken) {
     throw createError({
       statusCode: 503,
-      statusMessage: "Mapbox city retrieval is not configured",
+      statusMessage: "Получение города из Mapbox не настроено",
     });
   }
 
@@ -54,7 +54,7 @@ export default defineAuthenticatedHandler(async (event) => {
   if (!selectedCity) {
     throw createError({
       statusCode: 404,
-      statusMessage: "City suggestion could not be retrieved",
+      statusMessage: "Не удалось получить подсказку города",
     });
   }
 

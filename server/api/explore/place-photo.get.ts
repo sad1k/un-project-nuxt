@@ -4,7 +4,7 @@ import env from "~/lib/env";
 import defineAuthenticatedHandler from "~/utils/define-authenticated-handler";
 
 const QuerySchema = z.object({
-  name: z.string().trim().min(1).max(240),
+  name: z.string().trim().min(1).max(500).regex(/^places\/[\w-]+\/photos\/[\w-]+$/, "Invalid photo resource"),
 });
 
 export default defineAuthenticatedHandler(async (event) => {
@@ -13,7 +13,7 @@ export default defineAuthenticatedHandler(async (event) => {
   if (!env.GOOGLE_PLACES_API_KEY) {
     throw createError({
       statusCode: 404,
-      statusMessage: "Place photo unavailable",
+      statusMessage: "Фото места недоступно",
     });
   }
 
@@ -25,7 +25,7 @@ export default defineAuthenticatedHandler(async (event) => {
   if (!response.ok || !response.body) {
     throw createError({
       statusCode: 404,
-      statusMessage: "Place photo unavailable",
+      statusMessage: "Фото места недоступно",
     });
   }
 

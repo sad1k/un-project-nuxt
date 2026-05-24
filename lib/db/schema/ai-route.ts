@@ -49,6 +49,7 @@ export const aiRouteVariant = sqliteTable("aiRouteVariant", {
   status: text().notNull().default("generating"),
   title: text(),
   summary: text(),
+  failureStage: text({ enum: ["validation", "provider", "parsing", "persistence", "diary_save", "notification", "unknown"] }),
   failureCode: text(),
   generationStartedAt: int(),
   generationHeartbeatAt: int(),

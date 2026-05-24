@@ -5,7 +5,7 @@ import { test } from "node:test";
 
 const composableSource = await readFile("composables/use-place-story.ts", "utf8");
 const cardSource = await readFile("components/explore/place-story-card.vue", "utf8");
-const serviceWorkerSource = await readFile("public/route-generation-sw.js", "utf8");
+const serviceWorkerSource = await readFile("public/wanderlog-sw.js", "utf8");
 
 test("story composable uses an explicit Cache API bucket for saved audio", () => {
   assert.match(composableSource, /wanderlog-place-story-audio-v1/);
@@ -45,8 +45,10 @@ test("story card exposes simple save remove and unavailable offline states", () 
   assert.match(cardSource, /placeStory\.removeOffline/);
 });
 
-test("route generation service worker remains notification-scoped, not broad audio cache", () => {
+test("app service worker keeps story audio out of broad runtime caching", () => {
   assert.match(serviceWorkerSource, /push/);
   assert.match(serviceWorkerSource, /notificationclick/);
-  assert.doesNotMatch(serviceWorkerSource, /place-story|audio|CacheStorage|caches\.open|fetch/);
+  assert.match(serviceWorkerSource, /\/api\/explore\/place-story\/audio/);
+  assert.match(serviceWorkerSource, /shouldBypassRequest/);
+  assert.doesNotMatch(serviceWorkerSource, /PLACE_STORY_AUDIO_CACHE_NAME/);
 });

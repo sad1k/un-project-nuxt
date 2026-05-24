@@ -265,14 +265,25 @@ function getProviderRequestHeaders() {
 
 function getChatCompletionProviderOptions() {
   const model = getOpenAiRouteModel().toLowerCase();
+  const providerOptions = env.AI_ROUTE_PROVIDER === "openrouter"
+    ? {
+        provider: {
+          require_parameters: true,
+        },
+        response_format: {
+          type: "json_object",
+        },
+      }
+    : {};
 
   if (isQwenHybridThinkingModel(model)) {
     return {
+      ...providerOptions,
       enable_thinking: false,
     };
   }
 
-  return {};
+  return providerOptions;
 }
 
 function isQwenHybridThinkingModel(model: string) {
@@ -315,7 +326,7 @@ async function readProviderErrorBody(response: Response) {
     return sanitizeProviderBodyPreview(await response.clone().text());
   }
   catch (error) {
-    return `Could not read provider error body: ${error instanceof Error ? error.message : String(error)}`;
+    return `Не удалось прочитать тело ошибки провайдера: ${error instanceof Error ? error.message : String(error)}`;
   }
 }
 

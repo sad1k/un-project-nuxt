@@ -13,7 +13,7 @@ const composableSource = await readFile("composables/use-place-story.ts", "utf8"
 test("place popup exposes a compact story CTA without becoming an audio player", () => {
   assert.match(popupSource, /includeStoryCta/);
   assert.match(popupSource, /data-place-story-cta/);
-  assert.match(popupSource, /Listen to story/);
+  assert.match(popupSource, /Слушать историю/);
   assert.doesNotMatch(popupSource, /\bnew Audio\(/);
   assert.doesNotMatch(popupSource, /player-pause|progressSeconds|durationSeconds/);
 });
@@ -39,13 +39,13 @@ test("route panel owns the selected story card and route point selection", () =>
 });
 
 test("story card has basic explicit-tap player states but no selector or long reading UI", () => {
-  for (const label of ["Listen to story", "Preparing story", "Pause", "Resume", "Replay"]) {
+  for (const label of ["Слушать историю", "Готовим историю", "Пауза", "Продолжить", "Повторить"]) {
     assert.match(cardSource, new RegExp(label));
   }
 
   assert.match(cardSource, /progressPercent/);
   assert.match(cardSource, /handlePrimaryAction/);
-  assert.match(cardSource, /Audio narration is AI-generated/);
+  assert.match(cardSource, /Аудиорассказ сгенерирован AI/);
   assert.doesNotMatch(cardSource, /transcript/i);
   assert.doesNotMatch(cardSource, /voice selector|language selector|speed/iu);
 });
