@@ -104,7 +104,7 @@ async function refreshFeed() {
               </div>
               <textarea
                 v-model="newPostContent"
-                class="min-h-24 flex-1 resize-none bg-transparent text-sm text-gray-950 placeholder:text-gray-500 focus:outline-none dark:text-white dark:placeholder:text-white/45"
+                class="min-h-12 flex-1 resize-none bg-transparent text-sm text-gray-950 placeholder:text-gray-500 focus:outline-none md:min-h-24 dark:text-white dark:placeholder:text-white/45"
                 maxlength="500"
                 placeholder="Расскажите историю к фото..."
               />
@@ -160,7 +160,7 @@ async function refreshFeed() {
               </div>
               <textarea
                 v-model="newPostContent"
-                class="min-h-24 flex-1 resize-none bg-transparent py-1 text-sm text-gray-950 placeholder:text-gray-400 focus:outline-none dark:text-white dark:placeholder:text-white/40"
+                class="min-h-12 flex-1 resize-none bg-transparent py-1 text-sm text-gray-950 placeholder:text-gray-400 focus:outline-none md:min-h-24 dark:text-white dark:placeholder:text-white/40"
                 maxlength="500"
                 placeholder="Поделитесь историей к фото..."
               />
