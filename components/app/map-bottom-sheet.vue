@@ -47,7 +47,7 @@ const counterLabel = computed(() => {
         <button
           v-if="mapStore.mobileSheetState === 'peek'"
           type="button"
-          class="app-chrome-control rounded-md border p-1.5"
+          class="app-chrome-control flex h-8 w-8 items-center justify-center rounded-md border"
           aria-label="Развернуть карту на весь экран"
           @click.stop="expandFull"
         >
@@ -56,7 +56,7 @@ const counterLabel = computed(() => {
         <button
           v-if="mapStore.mobileSheetState === 'expanded'"
           type="button"
-          class="app-chrome-control rounded-md border p-1.5"
+          class="app-chrome-control flex h-8 w-8 items-center justify-center rounded-md border"
           aria-label="Уменьшить карту"
           @click.stop="shrinkToPeek"
         >
