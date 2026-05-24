@@ -9,10 +9,10 @@ watch(() => mapStore.mobileSheetState, (s) => {
 
 const heightClass = computed(() => {
   switch (mapStore.mobileSheetState) {
-    case "collapsed": return "h-16";
+    case "collapsed": return "h-12";
     case "peek": return "h-[60svh]";
-    case "expanded": return "h-[calc(100svh-4rem)]";
-    default: return "h-16";
+    case "expanded": return "h-[calc(100svh-8rem-env(safe-area-inset-bottom))]";
+    default: return "h-12";
   }
 });
 
@@ -28,7 +28,7 @@ const counterLabel = computed(() => {
 
 <template>
   <aside
-    class="app-chrome-strong fixed inset-x-0 bottom-0 z-40 border-t shadow-2xl motion-safe:transition-[height] motion-safe:duration-250 md:hidden"
+    class="app-chrome-strong fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-40 border-y shadow-2xl motion-safe:transition-[height] motion-safe:duration-250 md:hidden"
     :class="heightClass"
     aria-label="Карта мест"
   >
