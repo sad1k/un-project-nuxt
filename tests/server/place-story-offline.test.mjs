@@ -49,6 +49,7 @@ test("app service worker keeps story audio out of broad runtime caching", () => 
   assert.match(serviceWorkerSource, /push/);
   assert.match(serviceWorkerSource, /notificationclick/);
   assert.match(serviceWorkerSource, /\/api\/explore\/place-story\/audio/);
-  assert.match(serviceWorkerSource, /shouldBypassRequest/);
+  // The Workbox /api/ NetworkFirst route predicate must explicitly exclude the audio endpoint.
+  assert.match(serviceWorkerSource, /!url\.pathname\.startsWith\("\/api\/explore\/place-story\/audio"\)/);
   assert.doesNotMatch(serviceWorkerSource, /PLACE_STORY_AUDIO_CACHE_NAME/);
 });

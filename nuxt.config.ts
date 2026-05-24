@@ -99,7 +99,6 @@ export default defineNuxtConfig({
       globIgnores: [
         "**/sw.js",
         "**/wanderlog-sw.js",
-        "**/route-generation-sw.js",
       ],
       maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
     },

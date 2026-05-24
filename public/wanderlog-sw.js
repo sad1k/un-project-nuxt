@@ -1,70 +1,134 @@
-const APP_SHELL_CACHE = "wanderlog-app-shell-v1";
+import { BackgroundSyncPlugin } from "workbox-background-sync";
+import { ExpirationPlugin } from "workbox-expiration";
+import { precacheAndRoute } from "workbox-precaching";
+import { registerRoute } from "workbox-routing";
+import { CacheFirst, NetworkFirst, StaleWhileRevalidate } from "workbox-strategies";
+
 const OFFLINE_URL = "/offline.html";
-const APP_SHELL_ASSETS = [
-  OFFLINE_URL,
-  "/manifest.webmanifest",
-  "/favicon.ico",
-  "/icons/wanderlog-icon-192.png",
-  "/icons/wanderlog-maskable-512.png",
-];
 
-const BYPASS_PATH_PREFIXES = [
-  "/api/",
-  "/auth/",
-  "/api/auth",
-  "/api/explore/place-story/audio",
-  "/_nuxt/",
-];
+// 1) Precache app shell (manifest injected by vite-pwa injectManifest build)
+precacheAndRoute(self.__WB_MANIFEST || []);
 
-const BYPASS_HOST_PATTERNS = [
-  "api.mapbox.com",
-  "events.mapbox.com",
-  "tiles.mapbox.com",
-  "api.open-meteo.com",
-  "nominatim.openstreetmap.org",
-];
+// 2) Runtime caches
+// 2a) Nuxt static assets: SWR with no expiration limits (build-time hashed)
+registerRoute(
+  ({ url }) => url.pathname.startsWith("/_nuxt/")
+    || url.pathname.startsWith("/icons/")
+    || url.pathname.startsWith("/screenshots/"),
+  new StaleWhileRevalidate({ cacheName: "wl-static-v1" }),
+);
 
-self.addEventListener("install", (event) => {
-  event.waitUntil((async () => {
-    const cache = await caches.open(APP_SHELL_CACHE);
-    await cache.addAll(APP_SHELL_ASSETS);
-    await self.skipWaiting();
-  })());
+// 2b) Images: CacheFirst with LRU
+registerRoute(
+  ({ request, url }) => request.destination === "image"
+    || /\.(?:png|jpe?g|gif|webp|avif|svg)$/i.test(url.pathname),
+  new CacheFirst({
+    cacheName: "wl-images-v1",
+    plugins: [
+      new ExpirationPlugin({
+        maxEntries: 200,
+        maxAgeSeconds: 30 * 24 * 60 * 60,
+        purgeOnQuotaError: true,
+      }),
+    ],
+  }),
+);
+
+// 2c) API GET: NetworkFirst with cache fallback + LRU
+registerRoute(
+  ({ url, request }) => request.method === "GET"
+    && url.pathname.startsWith("/api/")
+    && !url.pathname.startsWith("/api/auth")
+    && !url.pathname.startsWith("/api/explore/place-story/audio")
+    && !url.pathname.startsWith("/api/health"),
+  new NetworkFirst({
+    cacheName: "wl-api-v1",
+    networkTimeoutSeconds: 4,
+    plugins: [
+      new ExpirationPlugin({
+        maxEntries: 100,
+        maxAgeSeconds: 7 * 24 * 60 * 60,
+        purgeOnQuotaError: true,
+      }),
+    ],
+  }),
+);
+
+// 3) Write queue: BackgroundSyncPlugin for non-photo mutations
+const writeQueuePlugin = new BackgroundSyncPlugin("wl-writes", {
+  maxRetentionTime: 24 * 60,
+  onSync: async ({ queue }) => {
+    let entry;
+    while ((entry = await queue.shiftRequest())) {
+      try {
+        const response = await fetch(entry.request.clone());
+        if (!response.ok) {
+          if (response.status === 401) {
+            await queue.unshiftRequest(entry);
+            broadcastSync({ status: "auth_required", opId: entry.metadata?.opId });
+            break;
+          }
+          if (response.status === 409) {
+            broadcastSync({ status: "conflict", opId: entry.metadata?.opId });
+            continue;
+          }
+          if (response.status === 422) {
+            broadcastSync({ status: "invalid", opId: entry.metadata?.opId });
+            continue;
+          }
+          throw new Error(`HTTP ${response.status}`);
+        }
+        broadcastSync({ status: "success", opId: entry.metadata?.opId });
+      }
+      catch (err) {
+        await queue.unshiftRequest(entry);
+        throw err;
+      }
+    }
+  },
 });
 
-self.addEventListener("activate", (event) => {
-  event.waitUntil((async () => {
-    const keys = await caches.keys();
-    await Promise.all(keys
-      .filter(key => key.startsWith("wanderlog-app-shell-") && key !== APP_SHELL_CACHE)
-      .map(key => caches.delete(key)));
-    await self.clients.claim();
-  })());
-});
-
-self.addEventListener("fetch", (event) => {
-  const request = event.request;
-  if (request.method !== "GET" || shouldBypassRequest(request))
-    return;
-
-  const acceptsHtml = request.headers.get("accept")?.includes("text/html");
-  if (request.mode !== "navigate" && !acceptsHtml)
-    return;
-
-  event.respondWith((async () => {
+// Match mutating /api/ requests EXCEPT photo sign-images (custom queue handles photos)
+registerRoute(
+  ({ url, request }) => (request.method === "POST" || request.method === "PUT" || request.method === "DELETE")
+    && url.pathname.startsWith("/api/")
+    && !url.pathname.includes("/sign-images")
+    && !url.pathname.startsWith("/api/auth"),
+  async ({ event }) => {
     try {
-      return await fetch(request);
+      return await fetch(event.request.clone());
     }
     catch {
-      const cached = await caches.match(OFFLINE_URL);
+      await writeQueuePlugin.fetchDidFail({ request: event.request });
+      return new Response(JSON.stringify({ queued: true }), {
+        status: 202,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+  },
+  "POST",
+);
+registerRoute(/.*\/api\//, ({ event }) => fetch(event.request), "PUT");
+registerRoute(/.*\/api\//, ({ event }) => fetch(event.request), "DELETE");
+
+// 4) Navigation fallback to offline.html
+registerRoute(
+  ({ request }) => request.mode === "navigate",
+  async ({ event }) => {
+    try {
+      return await fetch(event.request);
+    }
+    catch {
+      const cache = await caches.open("wl-static-v1");
+      const cached = await cache.match(OFFLINE_URL);
       return cached || Response.error();
     }
-  })());
-});
+  },
+);
 
+// 5) Push handlers (preserved from original SW)
 self.addEventListener("push", (event) => {
   let payload = {};
-
   try {
     payload = event.data ? event.data.json() : {};
   }
@@ -72,42 +136,93 @@ self.addEventListener("push", (event) => {
     payload = {};
   }
 
-  const title = payload.title || "Генерация маршрута завершена";
+  const title = payload.title || "WanderLog";
+  const tag = payload.tag || (payload.type ? `${payload.type}:${payload.id || Date.now()}` : "wanderlog");
+
   const options = {
-    body: payload.body || "Ваш маршрут WanderLog готов.",
+    body: payload.body || "",
     data: {
-      sessionId: payload.sessionId,
-      url: payload.sessionId ? `/explore?sessionId=${payload.sessionId}` : "/explore",
+      type: payload.type,
+      url: payload.url || "/",
+      ...payload.data,
     },
     icon: "/icons/wanderlog-icon-192.png",
-    tag: payload.variantId ? `route-generation:${payload.variantId}` : "route-generation",
+    tag,
+    renotify: false,
   };
 
-  event.waitUntil(self.registration.showNotification(title, options));
+  event.waitUntil((async () => {
+    if (await shouldShowInAppToast(payload)) {
+      return;
+    }
+    return self.registration.showNotification(title, options);
+  })());
 });
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-
-  const targetUrl = new URL(event.notification.data?.url || "/explore", self.location.origin).href;
+  const targetUrl = new URL(event.notification.data?.url || "/", self.location.origin).href;
   event.waitUntil((async () => {
     const windows = await self.clients.matchAll({ includeUncontrolled: true, type: "window" });
     const existingClient = windows.find(client => client.url === targetUrl);
-
-    if (existingClient)
+    if (existingClient) {
       return existingClient.focus();
-
+    }
     return self.clients.openWindow(targetUrl);
   })());
 });
 
-function shouldBypassRequest(request) {
-  const url = new URL(request.url);
-  if (url.origin !== self.location.origin)
-    return BYPASS_HOST_PATTERNS.some(host => url.hostname === host || url.hostname.endsWith(`.${host}`));
+// 6) Manual sync trigger (Safari fallback) + cache invalidate from client
+self.addEventListener("message", async (event) => {
+  if (event.data?.type === "wl-manual-sync") {
+    try {
+      await self.registration.sync?.register("wl-writes");
+    }
+    catch {
+      // Background Sync not supported; no-op
+    }
+  }
+  if (event.data?.type === "wl-clear-user-cache") {
+    await caches.delete("wl-api-v1");
+  }
+  if (event.data?.type === "wl-invalidate-cache") {
+    const urls = event.data.urls || [];
+    const cache = await caches.open("wl-api-v1");
+    await Promise.all(urls.map(url => cache.delete(url, { ignoreSearch: false })));
+  }
+});
 
-  return BYPASS_PATH_PREFIXES.some(prefix => url.pathname.startsWith(prefix))
-    || url.pathname.includes("/locations/")
-    || url.pathname.includes("/image")
-    || url.pathname.includes("/place-story/audio");
+// 7) Activate: claim clients and clean old caches
+self.addEventListener("activate", (event) => {
+  event.waitUntil((async () => {
+    const expectedCaches = new Set(["wl-static-v1", "wl-images-v1", "wl-api-v1"]);
+    const keys = await caches.keys();
+    await Promise.all(keys
+      .filter(key => key.startsWith("wl-") && !expectedCaches.has(key))
+      .map(key => caches.delete(key)));
+    await self.clients.claim();
+  })());
+});
+
+function broadcastSync(message) {
+  const channel = new BroadcastChannel("wl-sync");
+  try {
+    channel.postMessage(message);
+  }
+  finally {
+    channel.close();
+  }
+}
+
+async function shouldShowInAppToast(payload) {
+  if (!payload?.type?.startsWith("social.")) {
+    return false;
+  }
+  const windows = await self.clients.matchAll({ includeUncontrolled: true, type: "window" });
+  const focused = windows.find(client => client.focused && client.url.includes("/feed"));
+  if (!focused) {
+    return false;
+  }
+  focused.postMessage({ type: "wl-in-app-toast", payload });
+  return true;
 }

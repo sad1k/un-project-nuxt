@@ -1,1 +1,0 @@
-importScripts("/wanderlog-sw.js");
