@@ -88,6 +88,6 @@
     }
   },
   "lint-staged": {
-    "*": "pnpm lint"
+    "*.{js,ts,mjs,cjs,vue}": "eslint --fix"
   }
 }
