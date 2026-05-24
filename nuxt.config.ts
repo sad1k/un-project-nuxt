@@ -20,6 +20,7 @@ export default defineNuxtConfig({
     "@sentry/nuxt/module",
     "nuxt-easy-lightbox",
     "vue-yandex-maps/nuxt",
+    "@vite-pwa/nuxt",
   ],
 
   routeRules: {
@@ -84,6 +85,31 @@ export default defineNuxtConfig({
     org: "kirillov",
     project: "javascript-nuxt",
     autoInjectServerSentry: "top-level-import",
+  },
+
+  pwa: {
+    registerType: "autoUpdate",
+    strategies: "injectManifest",
+    srcDir: "public",
+    filename: "wanderlog-sw.js",
+    injectManifest: {
+      globPatterns: [
+        "**/*.{js,css,html,svg,png,ico,webmanifest}",
+      ],
+      globIgnores: [
+        "**/sw.js",
+        "**/wanderlog-sw.js",
+        "**/route-generation-sw.js",
+      ],
+      maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+    },
+    manifest: false,
+    devOptions: {
+      enabled: false,
+    },
+    client: {
+      installPrompt: false,
+    },
   },
 
   sourcemap: {
