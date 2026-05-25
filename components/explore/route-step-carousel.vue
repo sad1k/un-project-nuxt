@@ -48,6 +48,63 @@ function setDay(day: number | null) {
   selectedDay.value = day;
 }
 
+const trackRef = ref<HTMLElement | null>(null);
+const cardRefs = ref<Record<string, HTMLElement>>({});
+let observer: IntersectionObserver | null = null;
+let lastIntersectFromScroll = false;
+
+function registerCard(point: RouteMapPoint, el: Element | null) {
+  if (!el) {
+    delete cardRefs.value[point.sourceId];
+    return;
+  }
+  cardRefs.value[point.sourceId] = el as HTMLElement;
+}
+
+function setupObserver() {
+  if (!import.meta.client)
+    return;
+  observer?.disconnect();
+  if (!trackRef.value)
+    return;
+
+  observer = new IntersectionObserver(
+    (entries) => {
+      if (!lastIntersectFromScroll)
+        return;
+      const top = entries
+        .filter(entry => entry.isIntersecting)
+        .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+      if (!top)
+        return;
+      const sourceId = (top.target as HTMLElement).dataset.sourceId;
+      if (sourceId && sourceId !== selectedStoryRoutePointId.value)
+        selectedStoryRoutePointId.value = sourceId;
+    },
+    { root: trackRef.value, threshold: [0.6, 0.9] },
+  );
+
+  Object.values(cardRefs.value).forEach(el => observer?.observe(el));
+}
+
+function onTrackScroll() {
+  lastIntersectFromScroll = true;
+}
+
+onMounted(() => {
+  setupObserver();
+});
+
+watch(selectedRoutePoints, async () => {
+  await nextTick();
+  setupObserver();
+});
+
+onBeforeUnmount(() => {
+  observer?.disconnect();
+  observer = null;
+});
+
 const showCarousel = computed(() => Boolean(
   aiRouteSession.sessionId.value
   || aiRouteSession.isGenerating.value
@@ -81,6 +138,17 @@ watch(
   },
   { immediate: true },
 );
+
+watch(selectedStoryRoutePointId, async (sourceId) => {
+  if (!sourceId)
+    return;
+  await nextTick();
+  const card = cardRefs.value[sourceId];
+  if (!card)
+    return;
+  lastIntersectFromScroll = false;
+  card.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+});
 
 function legDistanceLabel(index: number): string {
   const leg = routeLegs.value[index];
@@ -155,12 +223,16 @@ function openCard(point: RouteMapPoint) {
     </header>
 
     <ol
+      ref="trackRef"
       class="route-step-track flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain px-[10vw] pb-3 pt-2"
       data-testid="explore-route-step-track"
+      @scroll.passive="onTrackScroll"
     >
       <li
         v-for="(point, index) in selectedRoutePoints"
         :key="point.id"
+        :ref="(el) => registerCard(point, el as Element | null)"
+        :data-source-id="point.sourceId"
         class="route-step-card-slot snap-center shrink-0 px-1.5"
         style="flex-basis: 84%;"
       >
