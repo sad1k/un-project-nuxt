@@ -35,6 +35,7 @@ const showMobileMap = computed(() =>
     </div>
     <ClientOnly>
       <AppRequestErrorNotifications />
+      <OfflineIosA2hsBanner />
     </ClientOnly>
   </div>
 </template>
