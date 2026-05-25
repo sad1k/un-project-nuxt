@@ -241,7 +241,7 @@ function openCard(point: RouteMapPoint) {
     </header>
 
     <div
-      v-if="aiRouteSession.lastWarning.value"
+      v-if="aiRouteSession.lastWarning.value && selectedRoutePoints.length"
       class="route-step-warning explore-status-warning mx-3 mb-1 flex items-center gap-2 rounded-lg border px-3 py-1.5 text-[11px]"
     >
       <Icon name="tabler:alert-triangle" size="13" />
@@ -267,6 +267,8 @@ function openCard(point: RouteMapPoint) {
       ref="trackRef"
       class="route-step-track flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain px-[10vw] pb-3 pt-2"
       data-testid="explore-route-step-track"
+      :aria-busy="aiRouteSession.isGenerating.value && !selectedRoutePoints.length"
+      role="list"
       @scroll.passive="onTrackScroll"
     >
       <template v-if="aiRouteSession.isGenerating.value && !selectedRoutePoints.length">
@@ -417,6 +419,12 @@ function openCard(point: RouteMapPoint) {
   }
   100% {
     background-position: -200% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .route-step-skeleton-bar,
+  .route-step-skeleton .route-step-thumb {
+    animation: none;
   }
 }
 </style>
