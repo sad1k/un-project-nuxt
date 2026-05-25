@@ -12,7 +12,8 @@ import {
 definePageMeta({ layout: false });
 
 const mapbox = useMapbox();
-const { activePoints, activeVariantId, isGenerating, restoreRouteSession, saveRoutePointToDiary } = useAiRouteSession();
+const { activePoints, activeVariantId, generateRoute, isGenerating, restoreRouteSession, saveRoutePointToDiary } = useAiRouteSession();
+const { requestContext, selectedCity } = useExploreContext();
 const placeIntelligence = usePlaceIntelligence();
 const route = useRoute();
 const colorMode = useColorMode();
@@ -253,6 +254,12 @@ function onSheetStory(point: RouteMapPoint) {
   selectedStoryRoutePointId.value = point.sourceId;
   closePlaceSheet();
 }
+
+async function regenerateRoute() {
+  if (!selectedCity.value || isGenerating.value)
+    return;
+  await generateRoute(requestContext.value);
+}
 </script>
 
 <template>
@@ -351,6 +358,7 @@ function onSheetStory(point: RouteMapPoint) {
       @open-details="openPlaceSheet"
       @save="onSheetSave"
       @directions="onSheetDirections"
+      @retry="regenerateRoute"
     />
   </div>
 </template>

@@ -12,6 +12,7 @@ const emit = defineEmits<{
   openDetails: [point: RouteMapPoint];
   save: [point: RouteMapPoint];
   directions: [point: RouteMapPoint];
+  retry: [];
 }>();
 
 const aiRouteSession = useAiRouteSession();
@@ -239,12 +240,53 @@ function openCard(point: RouteMapPoint) {
       </div>
     </header>
 
+    <div
+      v-if="aiRouteSession.lastWarning.value"
+      class="route-step-warning explore-status-warning mx-3 mb-1 flex items-center gap-2 rounded-lg border px-3 py-1.5 text-[11px]"
+    >
+      <Icon name="tabler:alert-triangle" size="13" />
+      <span class="truncate">{{ aiRouteSession.lastWarning.value }}</span>
+    </div>
+
+    <div
+      v-if="aiRouteSession.error.value"
+      class="route-step-error explore-status-danger mx-3 my-2 flex items-center justify-between gap-2 rounded-2xl border px-3 py-3 text-sm"
+    >
+      <span class="truncate">{{ aiRouteSession.error.value }}</span>
+      <button
+        class="explore-primary-button h-8 shrink-0 rounded-full px-3 text-xs font-bold"
+        type="button"
+        @click="emit('retry')"
+      >
+        Повторить
+      </button>
+    </div>
+
     <ol
+      v-else
       ref="trackRef"
       class="route-step-track flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain px-[10vw] pb-3 pt-2"
       data-testid="explore-route-step-track"
       @scroll.passive="onTrackScroll"
     >
+      <template v-if="aiRouteSession.isGenerating.value && !selectedRoutePoints.length">
+        <li
+          v-for="i in 3"
+          :key="`skeleton-${i}`"
+          class="route-step-card-slot snap-center shrink-0 px-1.5"
+          style="flex-basis: 84%;"
+        >
+          <div class="route-step-card route-step-skeleton flex w-full items-stretch gap-3 rounded-2xl border p-3">
+            <div class="route-step-thumb h-16 w-16 shrink-0 rounded-xl" />
+            <div class="min-w-0 flex-1 space-y-2">
+              <div class="route-step-skeleton-bar h-3 w-2/3 rounded-full" />
+              <div class="route-step-skeleton-bar h-2 w-1/2 rounded-full" />
+              <div class="route-step-skeleton-bar h-6 w-3/4 rounded-full" />
+            </div>
+          </div>
+        </li>
+      </template>
+
       <li
         v-for="(point, index) in selectedRoutePoints"
         :key="point.id"
@@ -357,5 +399,24 @@ function openCard(point: RouteMapPoint) {
 }
 .no-scrollbar {
   scrollbar-width: none;
+}
+.route-step-skeleton-bar,
+.route-step-skeleton .route-step-thumb {
+  background: linear-gradient(
+    90deg,
+    var(--explore-surface) 0%,
+    var(--explore-surface-strong) 50%,
+    var(--explore-surface) 100%
+  );
+  background-size: 200% 100%;
+  animation: route-step-shimmer 1.4s ease-in-out infinite;
+}
+@keyframes route-step-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 </style>
