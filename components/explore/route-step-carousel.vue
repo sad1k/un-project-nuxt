@@ -194,6 +194,7 @@ function openCard(point: RouteMapPoint) {
     v-if="showCarousel"
     class="route-step-carousel pointer-events-auto fixed inset-x-0 bottom-[80px] z-30 md:hidden"
     data-testid="explore-route-step-carousel"
+    aria-label="Шаги маршрута"
   >
     <header class="route-step-header flex flex-col gap-1.5 px-3 pt-1">
       <div class="route-step-handle mx-auto h-1.5 w-10 rounded-full" />
