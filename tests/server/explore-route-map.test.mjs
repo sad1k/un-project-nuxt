@@ -93,8 +93,8 @@ test("Explore route panel exposes day selection and distance summary UI", () => 
   assert.match(routePanelSource, /ExploreRouteDistanceSummary/);
   assert.match(routePanelSource, /selectedRoutePoints/);
   assert.match(routePanelSource, /selectedRouteLegs/);
-  assert.match(routeDaySelectorSource, /All/);
-  assert.match(routeDaySelectorSource, /Day \{\{ group\.day \}\}/);
+  assert.match(routeDaySelectorSource, /Все/);
+  assert.match(routeDaySelectorSource, /День \{\{ group\.day \}\}/);
   assert.match(routeDistanceSummarySource, /summarizeRouteDistance/);
-  assert.match(routeDistanceSummarySource, /missing distance estimates/);
+  assert.match(routeDistanceSummarySource, /Нет оценки расстояния/);
 });

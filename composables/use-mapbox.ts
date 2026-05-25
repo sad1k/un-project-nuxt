@@ -56,6 +56,9 @@ function isTouchDevice() {
 
 async function getMapboxGL() {
   if (!mapboxModule) {
+    // Co-load CSS with JS so importers of this composable don't drag
+    // mapbox-gl.css into their initial compile graph.
+    await import("mapbox-gl/dist/mapbox-gl.css");
     mapboxModule = await import("mapbox-gl");
   }
   return mapboxModule.default || mapboxModule;
@@ -625,6 +628,24 @@ export function useMapbox() {
     });
   }
 
+  function flyToPoint(point: { lat: number; lng: number }, options?: { zoom?: number; duration?: number }) {
+    const map = mapInstance.value;
+    if (!map)
+      return;
+
+    spinning = false;
+    if (animationFrameId) {
+      cancelAnimationFrame(animationFrameId);
+      animationFrameId = null;
+    }
+
+    map.flyTo({
+      center: [point.lng, point.lat],
+      zoom: options?.zoom ?? Math.max(map.getZoom(), 14),
+      duration: options?.duration ?? 600,
+    });
+  }
+
   function toggleMapStyle() {
     const map = mapInstance.value;
     if (!map)
@@ -740,6 +761,7 @@ export function useMapbox() {
     zoomIn,
     zoomOut,
     centerMap,
+    flyToPoint,
     toggleMapStyle,
     setMapTheme,
     destroy,

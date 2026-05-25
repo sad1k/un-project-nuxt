@@ -1,4 +1,4 @@
-const CSRF_COOKIE_NAME = "csrf";
+const CSRF_COOKIE_CANDIDATES = ["__Host-csrf", "__Secure-csrf", "csrf"];
 const CSRF_HEADER_NAME = "csrf-token";
 
 function parseSetCookies(headers) {
@@ -15,7 +15,7 @@ function parseSetCookies(headers) {
   return result;
 }
 
-function findCookieValue(setCookies, name) {
+function findCsrfCookie(setCookies) {
   for (const cookie of setCookies) {
     const [head] = cookie.split(";");
     if (!head)
@@ -24,8 +24,8 @@ function findCookieValue(setCookies, name) {
     if (eq === -1)
       continue;
     const cookieName = head.slice(0, eq).trim();
-    if (cookieName === name)
-      return decodeURIComponent(head.slice(eq + 1).trim());
+    if (CSRF_COOKIE_CANDIDATES.includes(cookieName))
+      return { name: cookieName, value: decodeURIComponent(head.slice(eq + 1).trim()) };
   }
   return null;
 }
@@ -48,22 +48,23 @@ export async function bootstrapCsrfForSession({ baseUrl, fetchImpl = fetch, sess
       signal: controller.signal,
     });
     const setCookies = parseSetCookies(response.headers);
-    const csrfSecret = findCookieValue(setCookies, CSRF_COOKIE_NAME);
+    const csrfCookie = findCsrfCookie(setCookies);
     const html = await response.text();
     const csrfToken = extractCsrfMetaToken(html);
-    if (!csrfSecret || !csrfToken) {
-      throw new Error(`CSRF bootstrap missing ${csrfSecret ? "token meta" : "csrf cookie"} (status ${response.status})`);
+    if (!csrfCookie || !csrfToken) {
+      const missing = csrfCookie ? "token meta" : `csrf cookie (looked for ${CSRF_COOKIE_CANDIDATES.join(", ")})`;
+      throw new Error(`CSRF bootstrap missing ${missing} (status ${response.status})`);
     }
-    return { csrfSecret, csrfToken };
+    return { csrfCookieName: csrfCookie.name, csrfSecret: csrfCookie.value, csrfToken };
   }
   finally {
     clearTimeout(timeout);
   }
 }
 
-export function buildAuthedWriteHeaders({ sessionCookieHeader, csrfSecret, csrfToken }) {
+export function buildAuthedWriteHeaders({ sessionCookieHeader, csrfCookieName = "csrf", csrfSecret, csrfToken }) {
   return {
     [CSRF_HEADER_NAME]: csrfToken,
-    cookie: `${sessionCookieHeader}; ${CSRF_COOKIE_NAME}=${encodeURIComponent(csrfSecret)}`,
+    cookie: `${sessionCookieHeader}; ${csrfCookieName}=${encodeURIComponent(csrfSecret)}`,
   };
 }

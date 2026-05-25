@@ -95,6 +95,9 @@ const scenarios = {
   "e2e-social-photo": {
     defaults: {
       durationSeconds: E2E_SOCIAL_PHOTO_TARGETS.durationSeconds,
+      postDelayMs: E2E_SOCIAL_PHOTO_TARGETS.postDelayMs,
+      targetComments: E2E_SOCIAL_PHOTO_TARGETS.targetComments,
+      targetLikes: E2E_SOCIAL_PHOTO_TARGETS.targetLikes,
       targetPhotos: E2E_SOCIAL_PHOTO_TARGETS.targetPhotos,
       targetPosts: E2E_SOCIAL_PHOTO_TARGETS.targetPosts,
       users: E2E_SOCIAL_PHOTO_TARGETS.users,
@@ -181,8 +184,11 @@ function parseCli(argv) {
     maxTimeoutRate: parseFloatOption(process.env.LOAD_MAX_TIMEOUT_RATE),
     maxWriteP95Ms: parseInteger(process.env.LOAD_MAX_WRITE_P95_MS),
     outputDir: process.env.LOAD_OUTPUT_DIR || DEFAULT_LOAD_OUTPUT_DIR,
+    postDelayMs: parseInteger(process.env.LOAD_POST_DELAY_MS),
     runId: process.env.LOAD_RUN_ID,
     scenarioName: "smoke",
+    targetComments: parseInteger(process.env.LOAD_TARGET_COMMENTS),
+    targetLikes: parseInteger(process.env.LOAD_TARGET_LIKES),
     targetPhotos: parseInteger(process.env.LOAD_TARGET_PHOTOS),
     targetPosts: parseInteger(process.env.LOAD_TARGET_POSTS),
     timeoutMs: parseInteger(process.env.LOAD_TIMEOUT_MS),
@@ -245,8 +251,17 @@ function parseCli(argv) {
       case "--output-dir":
         options.outputDir = requireValue(arg, args.shift());
         break;
+      case "--post-delay-ms":
+        options.postDelayMs = parseInteger(requireValue(arg, args.shift()));
+        break;
       case "--run-id":
         options.runId = requireValue(arg, args.shift());
+        break;
+      case "--target-comments":
+        options.targetComments = parseInteger(requireValue(arg, args.shift()));
+        break;
+      case "--target-likes":
+        options.targetLikes = parseInteger(requireValue(arg, args.shift()));
         break;
       case "--target-photos":
         options.targetPhotos = parseInteger(requireValue(arg, args.shift()));
@@ -336,6 +351,9 @@ Options:
   --timeout 15s              Per-request timeout
   --target-photos N          Target uploaded photos for e2e-social-photo
   --target-posts N           Target published posts for e2e-social-photo
+  --target-likes N           Target post likes for e2e-social-photo
+  --target-comments N        Target post comments for e2e-social-photo
+  --post-delay-ms N          Sleep N ms after each post-publish journey (sequential pacing for live globe demo)
   --max-error-rate 0.01      Fail when error rate exceeds threshold
   --max-timeout-rate 0.005   Fail when timeout rate exceeds threshold
   --max-p95 750              Fail when overall p95 latency exceeds threshold in ms
@@ -460,6 +478,8 @@ async function runScenario(name, scenario, options) {
     });
 
     created = {
+      comments: counters.comments,
+      likes: counters.likes,
       photos: counters.uploadedPhotos,
       places: counters.places,
       posts: counters.posts,
@@ -511,6 +531,9 @@ function resolveScenarioOptions(scenario, options) {
   return {
     allowStorageUpload: options.allowStorageUpload,
     durationSeconds: options.durationSeconds || scenario.defaults?.durationSeconds || DEFAULT_DURATION_SECONDS,
+    postDelayMs: options.postDelayMs ?? scenario.defaults?.postDelayMs ?? 0,
+    targetComments: options.targetComments || scenario.defaults?.targetComments,
+    targetLikes: options.targetLikes || scenario.defaults?.targetLikes,
     targetPhotos: options.targetPhotos || scenario.defaults?.targetPhotos,
     targetPosts: options.targetPosts || scenario.defaults?.targetPosts,
     timeoutMs: options.timeoutMs || scenario.defaults?.timeoutMs || DEFAULT_TIMEOUT_MS,
@@ -645,7 +668,7 @@ function printSummary(summary, json) {
     console.log(`[load] ${summary.scenario} dry run`);
     console.log(`runId=${summary.runId} baseUrl=${summary.baseUrl} vus=${summary.vus} duration=${summary.durationSeconds}s`);
     if (summary.users)
-      console.log(`users=${summary.users} targetPhotos=${summary.targetPhotos} targetPosts=${summary.targetPosts} storageUploadOptIn=${summary.storageUploadOptIn}`);
+      console.log(`users=${summary.users} targetPhotos=${summary.targetPhotos} targetPosts=${summary.targetPosts} targetLikes=${summary.targetLikes ?? "-"} targetComments=${summary.targetComments ?? "-"} postDelayMs=${summary.postDelayMs ?? 0} storageUploadOptIn=${summary.storageUploadOptIn}`);
     for (const step of summary.steps) {
       console.log(`- ${step.className} ${step.method} ${step.path} (${step.name})`);
     }
@@ -656,7 +679,7 @@ function printSummary(summary, json) {
   console.log(`[load] requests=${summary.requests} rps=${summary.requestsPerSecond} failures=${summary.failures} errorRate=${summary.errorRate} timeouts=${summary.timeouts} timeoutRate=${summary.timeoutRate}`);
   console.log(`[load] latency min=${summary.latencyMs.minMs}ms p50=${summary.latencyMs.p50Ms}ms p95=${summary.latencyMs.p95Ms}ms p99=${summary.latencyMs.p99Ms}ms max=${summary.latencyMs.maxMs}ms`);
   if (summary.created)
-    console.log(`[load] created users=${summary.created.users ?? 0} photos=${summary.created.photos ?? 0} posts=${summary.created.posts ?? 0} places=${summary.created.places ?? 0} s3Objects=${summary.created.s3Objects ?? 0}`);
+    console.log(`[load] created users=${summary.created.users ?? 0} photos=${summary.created.photos ?? 0} posts=${summary.created.posts ?? 0} places=${summary.created.places ?? 0} likes=${summary.created.likes ?? 0} comments=${summary.created.comments ?? 0} s3Objects=${summary.created.s3Objects ?? 0}`);
   console.log("[load] by step:");
 
   for (const [name, step] of Object.entries(summary.byStep)) {

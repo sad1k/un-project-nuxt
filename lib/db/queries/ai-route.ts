@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
 
 import type { RouteEventEnvelope, RoutePoint } from "~/lib/ai/route-contract";
 import type { ExploreRequestContext } from "~/lib/explore/context";
@@ -22,6 +22,15 @@ type RouteNotificationStatus = "pending" | "delivered" | "failed" | "dismissed";
 export type AiRouteFailureStage = "validation" | "provider" | "parsing" | "persistence" | "diary_save" | "notification" | "unknown";
 
 const STALE_GENERATION_MS = 15 * 60 * 1000;
+
+export async function countAiRouteVariantsForUserSince(userId: number, sinceMs: number) {
+  const [row] = await db
+    .select({ value: sql<number>`count(*)` })
+    .from(aiRouteVariant)
+    .where(and(eq(aiRouteVariant.userId, userId), gte(aiRouteVariant.createdAt, sinceMs)));
+
+  return Number(row?.value ?? 0);
+}
 
 export async function createAiRouteSession(
   userId: number,

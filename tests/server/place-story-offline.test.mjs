@@ -31,11 +31,11 @@ test("offline playback only uses cached generated story audio and never queues g
 
 test("story card exposes simple save remove and unavailable offline states", () => {
   for (const label of [
-    "Not saved offline",
-    "Saving",
-    "Available offline",
-    "Remove",
-    "Story not saved offline",
+    "Не сохранено офлайн",
+    "Сохраняем",
+    "Доступно офлайн",
+    "Удалить",
+    "История не сохранена офлайн",
   ]) {
     assert.match(cardSource, new RegExp(label));
   }

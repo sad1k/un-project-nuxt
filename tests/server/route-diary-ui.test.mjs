@@ -33,12 +33,12 @@ test("client route state carries diary save summaries after restore and status p
 
 test("Explore history and route panel display explicit diary save status", () => {
   assert.match(historySource, /getDiarySaveLabel/);
-  assert.match(historySource, /Diary saved/);
-  assert.match(historySource, /No route stops saved/);
+  assert.match(historySource, /В дневнике/);
+  assert.match(historySource, /Точки маршрута не сохранены/);
   assert.match(historySource, /routeSession\.diarySave/);
 
   assert.match(panelSource, /activeVariantDiarySave/);
   assert.match(panelSource, /diarySaveLabel/);
-  assert.match(panelSource, /Saved to diary/);
-  assert.match(panelSource, /Save route stops from the map/);
+  assert.match(panelSource, /Сохранено в дневник/);
+  assert.match(panelSource, /Сохраните точки маршрута с карты/);
 });

@@ -34,7 +34,7 @@ const EnvSchema = z.object({
   SENTRY_DSN: z.string(),
   MAPBOX_TOKEN: z.string(),
   YANDEX_MAPS_API_KEY: z.string(),
-  GOOGLE_PLACES_API_KEY: z.string().optional(),
+  GOOGLE_PLACES_API_KEY: z.string(),
   AI_ROUTE_PROVIDER: z.enum(["openai_compatible", "cerebras", "mistral", "openrouter"]).default("openai_compatible"),
   OPENAI_API_KEY: z.string().optional(),
   OPENAI_BASE_URL: z.string().url().optional(),

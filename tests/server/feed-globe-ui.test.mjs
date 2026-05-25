@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 import { test } from "node:test";
 
 const feedPageSource = await readFile("pages/feed.vue", "utf8");
+const viewSwitcherSource = await readFile("components/feed/view-switcher.vue", "utf8");
 const globeComponentSource = await readFile("components/feed/feed-globe.client.vue", "utf8");
 const globeComposableSource = await readFile("composables/use-feed-globe.ts", "utf8");
 const postCardSource = await readFile("components/feed/post-card.vue", "utf8");
@@ -11,10 +12,9 @@ const feedStoreSource = await readFile("stores/feed.ts", "utf8");
 
 test("feed page has a real globe tab while preserving the feed list", () => {
   assert.match(feedPageSource, /route\.query\.tab === "globe" \? "globe" : "feed"/);
-  assert.match(feedPageSource, /watch\(\(\) => route\.query\.tab/);
-  assert.match(feedPageSource, /activeTab === 'feed'/);
+  assert.match(feedPageSource, /activeTab\.value === "feed"/);
   assert.match(feedPageSource, /activeTab === 'globe'/);
-  assert.match(feedPageSource, /import FeedGlobe from "~\/components\/feed\/feed-globe\.client\.vue"/);
+  assert.match(feedPageSource, /defineAsyncComponent\(\(\) => import\("~\/components\/feed\/feed-globe\.client\.vue"\)\)/);
   assert.match(feedPageSource, /<FeedGlobe \/>/);
   assert.match(feedPageSource, /publishTarget/);
   assert.match(feedPageSource, /path:\s*"\/dashboard\/publish"/);
@@ -22,13 +22,14 @@ test("feed page has a real globe tab while preserving the feed list", () => {
 
 test("feed page removes search and uses an expanding icon tab switcher", () => {
   assert.doesNotMatch(feedPageSource, /tabler:search|placeholder="Поиск/);
-  assert.match(feedPageSource, /feed-tab-switcher/);
-  assert.match(feedPageSource, /feed-tab-button/);
-  assert.match(feedPageSource, /feed-tab-label/);
-  assert.match(feedPageSource, /tabler:list-details/);
-  assert.match(feedPageSource, /tabler:world/);
-  assert.match(feedPageSource, /Лайф глобус/);
-  assert.match(feedPageSource, /\.feed-tab-button:hover \.feed-tab-label/);
+  assert.match(feedPageSource, /<FeedViewSwitcher \/>/);
+  assert.match(viewSwitcherSource, /feed-tab-switcher/);
+  assert.match(viewSwitcherSource, /feed-tab-button/);
+  assert.match(viewSwitcherSource, /feed-tab-label/);
+  assert.match(viewSwitcherSource, /tabler:list-details/);
+  assert.match(viewSwitcherSource, /tabler:world/);
+  assert.match(viewSwitcherSource, /Лайф глобус/);
+  assert.match(viewSwitcherSource, /\.feed-tab-button:hover \.feed-tab-label/);
 });
 
 test("feed globe tab uses the globe as a background behind the post composer", () => {

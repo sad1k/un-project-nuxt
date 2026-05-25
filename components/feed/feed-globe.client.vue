@@ -2,6 +2,18 @@
 import type { PublicFeedGlobePost } from "~/composables/use-feed-globe";
 import type { FeedGlobeOverflowIndicator } from "~/lib/feed/globe-density";
 
+const props = withDefaults(defineProps<{
+  realistic?: boolean;
+  hideChrome?: boolean;
+  zoom?: number;
+  spinSpeed?: number;
+}>(), {
+  realistic: false,
+  hideChrome: false,
+  zoom: 1.35,
+  spinSpeed: 0.004,
+});
+
 const config = useRuntimeConfig();
 const colorMode = useColorMode();
 const globe = useFeedGlobe();
@@ -32,7 +44,12 @@ const hiddenCount = computed(() => globe.hiddenPointIds.value.length);
 const loading = computed(() => globe.loading.value);
 const error = computed(() => globe.error.value);
 const isDarkTheme = computed(() => colorMode.value === "dark");
-const mapStyle = computed(() => isDarkTheme.value ? "mapbox://styles/mapbox/dark-v11" : "mapbox://styles/mapbox/light-v11");
+const mapStyle = computed(() => {
+  if (props.realistic)
+    return "mapbox://styles/mapbox/satellite-streets-v12";
+
+  return isDarkTheme.value ? "mapbox://styles/mapbox/dark-v11" : "mapbox://styles/mapbox/light-v11";
+});
 const themeClass = computed(() => isDarkTheme.value ? "feed-globe--dark" : "feed-globe--light");
 const showFallbackGlobe = computed(() => !hasMapboxToken.value || !mapLoaded.value || Boolean(mapError.value));
 const fallbackPoints = computed(() => globe.visiblePoints.value.map(point => ({
@@ -98,9 +115,10 @@ onBeforeUnmount(() => {
 });
 
 async function getMapboxGL() {
-  if (!mapboxModule)
+  if (!mapboxModule) {
+    await import("mapbox-gl/dist/mapbox-gl.css");
     mapboxModule = await import("mapbox-gl");
-
+  }
   return mapboxModule.default || mapboxModule;
 }
 
@@ -117,13 +135,16 @@ async function initMap() {
       style: mapStyle.value,
       projection: "globe",
       center: [30, 15],
-      zoom: 1.35,
+      zoom: props.zoom,
       pitch: 28,
       bearing: -18,
+      attributionControl: !props.hideChrome,
     });
 
     const markReady = () => {
       applyThemeFog();
+      if (props.hideChrome)
+        hideLabels();
       mapError.value = "";
       mapLoaded.value = true;
       resizeMap();
@@ -132,7 +153,19 @@ async function initMap() {
       startSpin();
     };
 
-    map.addControl(new mb.NavigationControl(), "bottom-right");
+    if (props.hideChrome) {
+      // decorative hero globe — disable interaction so the spin never gets interrupted
+      map.scrollZoom.disable();
+      map.dragPan.disable();
+      map.dragRotate.disable();
+      map.keyboard.disable();
+      map.doubleClickZoom.disable();
+      map.touchZoomRotate.disable();
+    }
+    else {
+      map.addControl(new mb.NavigationControl(), "bottom-right");
+    }
+
     map.once("load", markReady);
     map.on("style.load", markReady);
     map.on("error", () => {
@@ -141,11 +174,13 @@ async function initMap() {
       stopSpin();
     });
 
-    const pauseSpin = () => stopSpin();
-    map.on("mousedown", pauseSpin);
-    map.on("touchstart", pauseSpin);
-    map.on("wheel", pauseSpin);
-    map.on("click", closeSelectedPhotoPopup);
+    if (!props.hideChrome) {
+      const pauseSpin = () => stopSpin();
+      map.on("mousedown", pauseSpin);
+      map.on("touchstart", pauseSpin);
+      map.on("wheel", pauseSpin);
+      map.on("click", closeSelectedPhotoPopup);
+    }
     map.on("move", updateMarkerVisibility);
     map.on("rotate", updateMarkerVisibility);
     map.on("zoom", updateMarkerVisibility);
@@ -167,6 +202,26 @@ function applyThemeFog() {
   if (!map)
     return;
 
+  if (props.realistic) {
+    map.setFog(props.hideChrome
+      ? {
+          // hero usage — transparent space so the page's cosmic backdrop shows through
+          "color": "rgba(36, 92, 156, 0)",
+          "high-color": "rgba(80, 130, 210, 0.35)",
+          "horizon-blend": 0.04,
+          "space-color": "rgba(0, 0, 0, 0)",
+          "star-intensity": 0,
+        }
+      : {
+          "color": "rgb(8, 12, 22)",
+          "high-color": "rgb(36, 92, 156)",
+          "horizon-blend": 0.06,
+          "space-color": "rgb(2, 6, 23)",
+          "star-intensity": 0.55,
+        });
+    return;
+  }
+
   map.setFog(isDarkTheme.value
     ? {
         "color": "rgb(5, 8, 15)",
@@ -184,12 +239,35 @@ function applyThemeFog() {
       });
 }
 
+function hideLabels() {
+  if (!map)
+    return;
+
+  const layers = map.getStyle()?.layers;
+  if (!layers)
+    return;
+
+  for (const layer of layers) {
+    if (layer.type === "symbol") {
+      try {
+        map.setLayoutProperty(layer.id, "visibility", "none");
+      }
+      catch {
+        // some layers (e.g. terrain) can't be toggled — skip silently
+      }
+    }
+  }
+}
+
 async function renderMarkers() {
   if (!map || !mapLoaded.value)
     return;
 
   resizeMap();
   clearMarkers();
+
+  if (props.hideChrome)
+    return;
   const mb = await getMapboxGL();
 
   for (const point of globe.visiblePoints.value) {
@@ -287,6 +365,8 @@ function resizeMap() {
 }
 
 function focusMapOnPoints() {
+  if (props.hideChrome) // hero mode — never re-center, keep spinning freely
+    return;
   if (!map || globe.visiblePoints.value.length === 0)
     return;
 
@@ -311,7 +391,7 @@ function startSpin() {
       return;
 
     const center = map.getCenter();
-    center.lng += 0.004;
+    center.lng += props.spinSpeed;
     map.setCenter(center);
     updateMarkerVisibility();
     spinFrame = requestAnimationFrame(spin);
@@ -394,8 +474,13 @@ function degreesToRadians(value: number) {
 
 <template>
   <section
-    class="relative h-[calc(100vh-12rem)] min-h-[520px] overflow-hidden rounded-lg border border-gray-200 bg-slate-50 dark:border-white/10 dark:bg-[#050505]"
-    :class="themeClass"
+    class="relative overflow-hidden"
+    :class="[
+      themeClass,
+      hideChrome
+        ? 'feed-globe--hero h-full w-full bg-transparent'
+        : 'h-[calc(100vh-12rem)] min-h-[520px] rounded-lg border border-gray-200 bg-slate-50 dark:border-white/10 dark:bg-[#050505]',
+    ]"
   >
     <div
       ref="mapContainer"
@@ -444,7 +529,7 @@ function degreesToRadians(value: number) {
       </p>
     </div>
 
-    <div class="pointer-events-none absolute left-4 top-4 rounded-lg border border-slate-900/10 bg-white/70 px-3 py-2 text-xs text-slate-700 shadow-sm backdrop-blur dark:border-white/10 dark:bg-black/45 dark:text-white/75">
+    <div v-if="!hideChrome" class="pointer-events-none absolute left-4 top-4 rounded-lg border border-slate-900/10 bg-white/70 px-3 py-2 text-xs text-slate-700 shadow-sm backdrop-blur dark:border-white/10 dark:bg-black/45 dark:text-white/75">
       {{ visibleCount }} · +{{ hiddenCount }}
     </div>
 
@@ -650,6 +735,11 @@ function degreesToRadians(value: number) {
   border-color: rgba(15, 23, 42, 0.18);
   background: rgba(255, 255, 255, 0.88);
   color: #0f172a;
+}
+
+:global(.feed-globe--hero .mapboxgl-ctrl-bottom-left),
+:global(.feed-globe--hero .mapboxgl-ctrl-bottom-right) {
+  display: none !important;
 }
 
 :global(.feed-globe-point) {

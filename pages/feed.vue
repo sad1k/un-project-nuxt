@@ -1,5 +1,7 @@
 <script lang="ts" setup>
-import FeedGlobe from "~/components/feed/feed-globe.client.vue";
+// Lazy chunk: globe is only rendered when activeTab === 'globe', so don't
+// drag mapbox-gl into the /feed page's compile graph by default.
+const FeedGlobe = defineAsyncComponent(() => import("~/components/feed/feed-globe.client.vue"));
 
 const feedStore = useFeedStore();
 const authStore = useAuthStore();
@@ -85,10 +87,10 @@ async function refreshFeed() {
       <div class="pointer-events-none relative z-10 flex min-h-[calc(100vh-4rem)] flex-col justify-end px-4 py-5 md:px-6">
         <div class="pointer-events-auto mx-auto w-full max-w-2xl pb-8">
           <div v-if="authStore.user" class="feed-composer feed-composer--floating">
-            <div class="flex items-start gap-3">
+            <div class="flex items-center gap-2">
               <div
                 v-if="authStore.user.image"
-                class="h-11 w-11 shrink-0 overflow-hidden rounded-full"
+                class="h-9 w-9 shrink-0 overflow-hidden rounded-full"
               >
                 <img
                   :src="authStore.user.image"
@@ -98,25 +100,24 @@ async function refreshFeed() {
               </div>
               <div
                 v-else
-                class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-violet to-brand-emerald"
+                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-violet to-brand-emerald"
               >
                 <span class="text-sm font-bold text-white">{{ authStore.user.name?.charAt(0).toUpperCase() }}</span>
               </div>
               <textarea
                 v-model="newPostContent"
-                class="min-h-12 flex-1 resize-none bg-transparent text-sm text-[var(--app-chrome-text)] placeholder:text-[var(--app-chrome-text-muted)] focus:outline-none md:min-h-24"
+                class="min-h-8 flex-1 resize-none bg-transparent text-sm text-[var(--app-chrome-text)] placeholder:text-[var(--app-chrome-text-muted)] focus:outline-none"
                 maxlength="500"
                 placeholder="Расскажите историю к фото..."
               />
-            </div>
-            <div class="mt-4 flex items-center justify-between border-t border-[var(--app-chrome-border)] pt-3">
-              <span class="text-xs text-[var(--app-chrome-text-faint)]">{{ newPostContent.length }}/500</span>
               <NuxtLink
                 :to="publishTarget"
-                class="flex items-center gap-2 rounded-full border border-brand-gold/40 bg-brand-gold px-5 py-2 text-sm font-semibold text-black transition-colors hover:bg-brand-gold/90"
+                class="flex h-9 shrink-0 items-center justify-center gap-2 rounded-full border border-brand-gold/40 bg-brand-gold px-2.5 text-sm font-semibold text-black shadow-sm transition-colors hover:bg-brand-gold/90 md:px-4"
+                aria-label="Добавить фото"
+                title="Добавить фото"
               >
-                <Icon name="tabler:photo-plus" size="17" />
-                Добавить фото
+                <Icon name="tabler:photo-plus" size="18" />
+                <span class="hidden md:inline">Добавить фото</span>
               </NuxtLink>
             </div>
           </div>
@@ -294,11 +295,18 @@ async function refreshFeed() {
 
 .feed-composer {
   border: 1px solid var(--app-chrome-border);
-  border-radius: 1.25rem;
+  border-radius: 1rem;
   background: var(--app-chrome-bg);
-  padding: 1rem;
+  padding: 0.625rem 0.75rem;
   box-shadow: 0 20px 60px var(--app-chrome-shadow);
   backdrop-filter: blur(18px);
+}
+
+@media (min-width: 768px) {
+  .feed-composer {
+    border-radius: 1.25rem;
+    padding: 1rem;
+  }
 }
 
 .feed-composer--floating {

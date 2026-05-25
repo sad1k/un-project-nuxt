@@ -130,7 +130,7 @@ test("stream endpoint authenticates, validates, persists, and emits app route ev
   assert.match(runnerSource, /getRouteFailureMessage/);
   assert.match(runnerSource, /invalidProviderEventCount/);
   assert.match(runnerSource, /ai\.route_generation\.no_valid_route_points/);
-  assert.match(runnerSource, /The route AI is busy right now/);
+  assert.match(runnerSource, /AI маршрутов сейчас занят/);
   assert.match(endpointSource, /text\/event-stream/);
 });
 

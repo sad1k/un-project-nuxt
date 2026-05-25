@@ -133,7 +133,10 @@ const MISSING_SOURCE: PlaceDataSource = {
 
 export function buildPlaceIntelligence(input: PlaceIntelligenceInput): PlaceIntelligence {
   const rating = input.provider?.rating ?? null;
-  const reviews = input.provider?.reviews?.slice(0, 3) ?? [];
+  const reviews = (input.provider?.reviews?.slice(0, 3) ?? []).map(review => ({
+    ...review,
+    text: review.text.length > 500 ? `${review.text.slice(0, 497).trimEnd()}…` : review.text,
+  }));
   const cost = input.provider?.cost ?? buildRouteCostSignal(input.route);
   const community = input.community && input.community.visitCount > 0 ? input.community : null;
   const aiSummary = input.aiSummary ?? input.provider?.aiSummary ?? null;

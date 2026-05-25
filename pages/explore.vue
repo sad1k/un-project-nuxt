@@ -12,7 +12,8 @@ import {
 definePageMeta({ layout: false });
 
 const mapbox = useMapbox();
-const { activePoints, activeVariantId, isGenerating, restoreRouteSession, saveRoutePointToDiary } = useAiRouteSession();
+const { activePoints, activeVariantId, generateRoute, isGenerating, restoreRouteSession, saveRoutePointToDiary } = useAiRouteSession();
+const { requestContext, selectedCity } = useExploreContext();
 const placeIntelligence = usePlaceIntelligence();
 const route = useRoute();
 const colorMode = useColorMode();
@@ -22,6 +23,9 @@ const selectedDay = useState<number | null>("explore-selected-route-day", () => 
 const selectedStoryRoutePointId = useState<string | null>("explore-selected-story-route-point-id", () => null);
 const lastFittedScope = ref("");
 const lastCompletedFitKey = ref("");
+const CAROUSEL_FLYTO_SUPPRESSION_MS = 800;
+const isCarouselDriven = ref(false);
+let carouselFlyToTimer: ReturnType<typeof setTimeout> | null = null;
 const routeMapPoints = computed(() => toRouteMapPoints(activePoints.value));
 const selectedRoutePoints = computed(() => filterRoutePointsByDay(routeMapPoints.value, selectedDay.value));
 const selectedRouteLegs = computed(() => buildRouteLegs(selectedRoutePoints.value));
@@ -115,6 +119,13 @@ watch(
     if (!shouldFitInitialScope && !shouldFitCompletedRoute)
       return;
 
+    if (isCarouselDriven.value) {
+      lastFittedScope.value = scope;
+      if (!isGenerating.value)
+        lastCompletedFitKey.value = completedFitKey;
+      return;
+    }
+
     await mapbox.fitToRoute(pts);
     lastFittedScope.value = scope;
 
@@ -122,6 +133,28 @@ watch(
       lastCompletedFitKey.value = completedFitKey;
   },
 );
+
+watch(selectedStoryRoutePointId, (sourceId) => {
+  if (!sourceId || !mapbox.mapLoaded.value)
+    return;
+  const point = selectedRoutePoints.value.find(p => p.sourceId === sourceId);
+  if (!point)
+    return;
+
+  isCarouselDriven.value = true;
+  if (carouselFlyToTimer)
+    clearTimeout(carouselFlyToTimer);
+  carouselFlyToTimer = setTimeout(() => {
+    isCarouselDriven.value = false;
+  }, CAROUSEL_FLYTO_SUPPRESSION_MS);
+
+  mapbox.flyToPoint({ lat: point.lat, lng: point.lng });
+});
+
+onBeforeUnmount(() => {
+  if (carouselFlyToTimer)
+    clearTimeout(carouselFlyToTimer);
+});
 
 watch(routeMapPoints, (points) => {
   if (!selectedDay.value)
@@ -221,6 +254,12 @@ function onSheetStory(point: RouteMapPoint) {
   selectedStoryRoutePointId.value = point.sourceId;
   closePlaceSheet();
 }
+
+async function regenerateRoute() {
+  if (!selectedCity.value || isGenerating.value)
+    return;
+  await generateRoute(requestContext.value);
+}
 </script>
 
 <template>
@@ -313,6 +352,13 @@ function onSheetStory(point: RouteMapPoint) {
       @save="onSheetSave"
       @directions="onSheetDirections"
       @story="onSheetStory"
+    />
+
+    <ExploreRouteStepCarousel
+      @open-details="openPlaceSheet"
+      @save="onSheetSave"
+      @directions="onSheetDirections"
+      @retry="regenerateRoute"
     />
   </div>
 </template>

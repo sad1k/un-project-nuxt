@@ -47,6 +47,13 @@ const interestsSummary = computed(() => {
     .join(", ");
 });
 
+const firstInterestLabel = computed(() => {
+  const first = selectedInterests.value[0];
+  if (!first)
+    return null;
+  return INTERESTS.find(item => item.value === first)?.label ?? null;
+});
+
 watch(showRouteSession, (next) => {
   if (next)
     editing.value = false;
@@ -238,12 +245,16 @@ function onTouchEnd(event: TouchEvent) {
 
 <template>
   <div
-    class="pointer-events-none absolute bottom-[88px] left-1/2 z-[60] w-[min(96vw,520px)] -translate-x-1/2 md:bottom-6"
+    class="pointer-events-none absolute z-[60] transition-all"
+    :class="collapsed && showRouteSession
+      ? 'left-3 right-3 top-[120px] md:bottom-6 md:left-1/2 md:right-auto md:top-auto md:w-[min(96vw,520px)] md:-translate-x-1/2'
+      : 'bottom-[88px] left-1/2 w-[min(96vw,520px)] -translate-x-1/2 md:bottom-6'"
   >
     <Transition name="badge" mode="out-in">
       <button
         v-if="collapsed"
         key="badge"
+        aria-label="Изменить параметры маршрута"
         class="explore-wizard-badge pointer-events-auto flex w-full items-center justify-center gap-2 rounded-full border px-4 py-2.5 text-sm font-medium backdrop-blur-md transition"
         type="button"
         @click="expand"
@@ -256,8 +267,12 @@ function onTouchEnd(event: TouchEvent) {
         <span class="explore-text truncate">{{ selectedCity?.label || "Выберите город" }}</span>
         <span class="explore-text-faint">·</span>
         <span class="explore-text whitespace-nowrap">{{ selectedDays }} дн.</span>
-        <span class="explore-text-faint">·</span>
-        <span class="explore-text-soft truncate">{{ interestsSummary }}</span>
+        <template v-if="firstInterestLabel">
+          <span class="explore-text-faint">·</span>
+          <span class="explore-text-soft truncate max-md:max-w-[20vw]">{{ firstInterestLabel }}</span>
+        </template>
+        <span class="explore-text-faint max-md:hidden">·</span>
+        <span class="explore-text-soft truncate max-md:hidden">{{ interestsSummary }}</span>
         <Icon
           class="explore-text-faint ml-1"
           name="tabler:pencil"

@@ -20,8 +20,8 @@ test("install prompt composable captures browser install event and persists dism
 });
 
 test("install prompt UI is compact dismissible and mobile-shell focused", () => {
-  assert.match(promptComponentSource, /Install WanderLog/);
-  assert.match(promptComponentSource, /Add the travel shell to your home screen/);
+  assert.match(promptComponentSource, /Установить WanderLog/);
+  assert.match(promptComponentSource, /Добавьте приложение на главный экран/);
   assert.match(promptComponentSource, /@click="install\(\)"/);
   assert.match(promptComponentSource, /@click="dismiss\(\)"/);
   assert.match(promptComponentSource, /tabler:device-mobile/);
@@ -30,8 +30,8 @@ test("install prompt UI is compact dismissible and mobile-shell focused", () => 
 test("PWA status UI reports offline shell honestly without unsupported claims", () => {
   assert.match(statusSource, /navigator\.onLine/);
   assert.match(statusSource, /serviceWorker/);
-  assert.match(statusSource, /Offline shell available/);
-  assert.match(statusSource, /Routes, maps, diary changes, and AI need network/);
+  assert.match(statusSource, /Офлайн-оболочка доступна/);
+  assert.match(statusSource, /Для маршрутов, карт, дневника и AI нужна сеть/);
   assert.doesNotMatch(statusSource, /offline generation|edit offline|sync later/i);
 });
 

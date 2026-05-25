@@ -1,6 +1,7 @@
 import { performance } from "node:perf_hooks";
 
 import { preflightSeededAuth, seedSyntheticAuthUsers } from "./load-auth-seed.mjs";
+import { pickCityCoordinates } from "./load-cities.mjs";
 import { bootstrapCsrfForSession, buildAuthedWriteHeaders } from "./load-csrf.mjs";
 import { createDeterministicImageFixture } from "./load-image-fixture.mjs";
 import { createMetricRecord } from "./load-metrics.mjs";
@@ -9,6 +10,9 @@ import { performSignedS3Upload, timedJsonRequest } from "./load-s3-upload.mjs";
 
 export const E2E_SOCIAL_PHOTO_TARGETS = Object.freeze({
   durationSeconds: 600,
+  postDelayMs: 0,
+  targetComments: 2000,
+  targetLikes: 5000,
   targetPhotos: 1000,
   targetPosts: 1000,
   users: 100,
@@ -16,10 +20,12 @@ export const E2E_SOCIAL_PHOTO_TARGETS = Object.freeze({
 });
 
 export const E2E_SOCIAL_PHOTO_MIX = Object.freeze({
+  comments: 0.10,
   customPlaceCreates: 0.10,
-  feedReads: 0.40,
-  photoUploads: 0.25,
-  postPublishes: 0.20,
+  feedReads: 0.30,
+  likes: 0.20,
+  photoUploads: 0.20,
+  postPublishes: 0.15,
   publicGlobeReads: 0.05,
 });
 
@@ -31,9 +37,24 @@ export const E2E_SOCIAL_PHOTO_STEPS = Object.freeze([
   { className: "write", method: "POST", name: "photo_metadata_write", path: "/api/locations/:slug/:id/image" },
   { className: "write", method: "PATCH", name: "photo_visibility_public", path: "/api/locations/:slug/:id/images/:image-id/visibility" },
   { className: "write", method: "POST", name: "feed_post_publish", path: "/api/posts" },
+  { className: "write", method: "POST", name: "post_like_create", path: "/api/posts/:id/like" },
+  { className: "write", method: "POST", name: "post_comment_create", path: "/api/posts/:id/comments" },
   { className: "read", method: "GET", name: "feed_read", path: "/api/feed?limit=20" },
   { className: "read", method: "GET", name: "public_place_photos_read", path: "/api/public/place-photos?limit=25" },
   { className: "read", method: "GET", name: "public_feed_globe_read", path: "/api/public/feed-globe?limit=100" },
+]);
+
+const COMMENT_TEMPLATES = Object.freeze([
+  "Love this place!",
+  "Looks amazing — adding to my bucket list",
+  "Great shot, what time of day was this?",
+  "I was here last year, brings back memories",
+  "Where exactly is this?",
+  "Stunning view!",
+  "On my route next month",
+  "How was the weather?",
+  "Reminds me of a similar spot",
+  "Beautiful, thanks for sharing",
 ]);
 
 export function describeE2eSocialPhotoDryRun({ baseUrl, options, outputDir, runId, thresholds }) {
@@ -49,8 +70,11 @@ export function describeE2eSocialPhotoDryRun({ baseUrl, options, outputDir, runI
     },
     runId,
     scenario: "e2e-social-photo",
+    postDelayMs: options.postDelayMs,
     storageUploadOptIn: options.allowStorageUpload,
     steps: E2E_SOCIAL_PHOTO_STEPS,
+    targetComments: options.targetComments,
+    targetLikes: options.targetLikes,
     targetPhotos: options.targetPhotos,
     targetPosts: options.targetPosts,
     thresholds,
@@ -89,6 +113,7 @@ export async function runE2eSocialPhotoScenario({
       timeoutMs,
     });
     user.writeHeaders = buildAuthedWriteHeaders({
+      csrfCookieName: csrf.csrfCookieName,
       csrfSecret: csrf.csrfSecret,
       csrfToken: csrf.csrfToken,
       sessionCookieHeader: user.cookieHeader,
@@ -97,12 +122,17 @@ export async function runE2eSocialPhotoScenario({
 
   const fixture = createDeterministicImageFixture();
   const counters = {
+    comments: 0,
+    likes: 0,
     places: 0,
     posts: 0,
     publicReads: 0,
     readLoops: 0,
     s3Objects: 0,
     uploadedPhotos: 0,
+  };
+  const sharedState = {
+    postPool: manifest.records.postIds,
   };
   const startedAt = performance.now();
   const endAt = startedAt + options.durationSeconds * 1000;
@@ -117,8 +147,10 @@ export async function runE2eSocialPhotoScenario({
       manifest,
       options,
       record,
+      sharedState,
       timeoutMs,
       user: dbSeed.users[workerIndex % dbSeed.users.length],
+      users: dbSeed.users,
       workerIndex,
     })));
 
@@ -132,6 +164,20 @@ async function runE2eWorker(input) {
 
     if (writeQuotaAvailable && shouldRunWriteJourney(input.counters)) {
       await runJourney(input);
+      if (input.options.postDelayMs > 0 && performance.now() < input.endAt) {
+        const remainingMs = input.endAt - performance.now();
+        await new Promise(resolve => setTimeout(resolve, Math.min(input.options.postDelayMs, remainingMs)));
+      }
+      continue;
+    }
+
+    const social = pickSocialAction(input.counters, input.options, input.sharedState.postPool);
+    if (social === "like") {
+      await runLikeStep(input);
+      continue;
+    }
+    if (social === "comment") {
+      await runCommentStep(input);
       continue;
     }
 
@@ -139,8 +185,13 @@ async function runE2eWorker(input) {
   }
 }
 
+function totalOperations(counters) {
+  return counters.readLoops + counters.posts + counters.publicReads
+    + counters.uploadedPhotos + counters.likes + counters.comments;
+}
+
 function shouldRunWriteJourney(counters) {
-  const total = counters.readLoops + counters.posts + counters.publicReads + counters.uploadedPhotos;
+  const total = totalOperations(counters);
   if (total < 2)
     return true;
 
@@ -148,11 +199,32 @@ function shouldRunWriteJourney(counters) {
     || counters.posts / Math.max(1, total) < E2E_SOCIAL_PHOTO_MIX.postPublishes;
 }
 
+function pickSocialAction(counters, options, postPool) {
+  if (!postPool || postPool.length === 0)
+    return "read";
+
+  const total = Math.max(1, totalOperations(counters));
+  const likesUnderQuota = counters.likes < options.targetLikes
+    && counters.likes / total < E2E_SOCIAL_PHOTO_MIX.likes;
+  const commentsUnderQuota = counters.comments < options.targetComments
+    && counters.comments / total < E2E_SOCIAL_PHOTO_MIX.comments;
+
+  if (likesUnderQuota && commentsUnderQuota)
+    return counters.likes <= counters.comments * 2 ? "like" : "comment";
+  if (likesUnderQuota)
+    return "like";
+  if (commentsUnderQuota)
+    return "comment";
+
+  return "read";
+}
+
 async function runJourney(input) {
   const sequence = input.counters.uploadedPhotos + 1;
-  const placeName = `${input.manifest.runId} Place ${input.workerIndex}-${sequence}`;
-  const lat = 48.8566 + (sequence % 100) * 0.0001;
-  const long = 2.3522 + (sequence % 100) * 0.0001;
+  const location = pickCityCoordinates(input.workerIndex, sequence);
+  const placeName = `${input.manifest.runId} ${location.placeName}`;
+  const lat = location.lat;
+  const long = location.long;
   const authHeaders = input.user.writeHeaders ?? { cookie: input.user.cookieHeader };
 
   const created = await timedJsonRequest({
@@ -246,6 +318,78 @@ async function runJourney(input) {
   });
   input.counters.posts += 1;
   rememberCreated(input.manifest, "postIds", post?.id);
+}
+
+function pickPostFromPool(pool, workerIndex, sequence) {
+  if (pool.length === 0)
+    return null;
+
+  const index = (workerIndex * 13 + sequence * 17) % pool.length;
+  return pool[index];
+}
+
+async function runLikeStep(input) {
+  const postId = pickPostFromPool(input.sharedState.postPool, input.workerIndex, input.counters.likes + 1);
+  if (postId === null || postId === undefined)
+    return;
+
+  const authHeaders = input.user.writeHeaders ?? { cookie: input.user.cookieHeader };
+
+  try {
+    await timedJsonRequest({
+      authHeaders,
+      baseUrl: input.baseUrl,
+      className: "write",
+      fetchImpl: input.fetchImpl,
+      method: "POST",
+      name: "post_like_create",
+      path: `/api/posts/${postId}/like`,
+      record: input.record,
+      timeoutMs: input.timeoutMs,
+    });
+    rememberCreated(input.manifest, "likedPostIds", postId);
+  }
+  catch {
+    // Already recorded as a failed metric inside timedJsonRequest. A 4xx here
+    // is non-fatal: duplicate like, deleted post, or stale id from the pool.
+  }
+  finally {
+    input.counters.likes += 1;
+  }
+}
+
+async function runCommentStep(input) {
+  const sequence = input.counters.comments + 1;
+  const postId = pickPostFromPool(input.sharedState.postPool, input.workerIndex, sequence);
+  if (postId === null || postId === undefined)
+    return;
+
+  const authHeaders = input.user.writeHeaders ?? { cookie: input.user.cookieHeader };
+  const template = COMMENT_TEMPLATES[sequence % COMMENT_TEMPLATES.length];
+
+  try {
+    const comment = await timedJsonRequest({
+      authHeaders,
+      baseUrl: input.baseUrl,
+      body: {
+        content: `${template} ${input.manifest.runId} ${input.workerIndex}-${sequence}`,
+      },
+      className: "write",
+      fetchImpl: input.fetchImpl,
+      method: "POST",
+      name: "post_comment_create",
+      path: `/api/posts/${postId}/comments`,
+      record: input.record,
+      timeoutMs: input.timeoutMs,
+    });
+    rememberCreated(input.manifest, "commentIds", comment?.id);
+  }
+  catch {
+    // Non-fatal: stale post id, validation rejection, etc. Metric was recorded.
+  }
+  finally {
+    input.counters.comments += 1;
+  }
 }
 
 async function runReadStep(input) {

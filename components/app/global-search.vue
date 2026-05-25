@@ -215,23 +215,32 @@ function getResultIcon(item: GlobalSearchItem) {
         class="app-chrome-strong absolute left-0 right-0 top-12 z-50 max-h-[min(70vh,560px)] overflow-hidden rounded-lg border p-2 backdrop-blur-2xl"
       >
         <NuxtLink
-          :class="activeIndex === 0 ? 'border-brand-gold/45 bg-brand-gold/15' : 'border-brand-gold/20 bg-brand-gold/10 hover:border-brand-gold/45 hover:bg-brand-gold/15'"
+          :class="activeIndex === 0 ? 'is-active' : ''"
           :to="exploreCta.to"
-          class="mb-2 flex items-center gap-3 rounded-lg border p-3 text-left transition"
+          class="ai-cta group relative mb-2 flex items-center gap-3 overflow-hidden rounded-xl p-3 text-left transition-transform duration-200 active:scale-[0.99]"
           @click="closeSearch"
         >
-          <span class="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-brand-gold text-brand-dark shadow-lg shadow-brand-gold/20">
-            <Icon :name="exploreCta.icon" size="20" />
-          </span>
-          <span class="min-w-0 flex-1">
-            <span class="app-chrome-text block text-sm font-semibold">{{ exploreCta.title }}</span>
+          <span aria-hidden="true" class="ai-cta__border pointer-events-none absolute inset-0 rounded-xl" />
+          <span aria-hidden="true" class="ai-cta__glow pointer-events-none absolute inset-0 rounded-xl opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-[.is-active]:opacity-100" />
+
+          <span class="relative min-w-0 flex-1">
+            <span class="flex items-center gap-1.5">
+              <span class="app-chrome-text truncate text-sm font-semibold">{{ exploreCta.title }}</span>
+              <span class="ai-badge inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase leading-none tracking-[0.12em]">
+                <span aria-hidden="true" class="ai-badge__dot h-1 w-1 rounded-full" />
+                AI
+              </span>
+            </span>
             <span class="app-chrome-muted mt-0.5 block text-xs leading-5">{{ exploreCta.description }}</span>
           </span>
-          <Icon
-            class="app-chrome-faint shrink-0"
-            name="tabler:arrow-up-right"
-            size="17"
-          />
+
+          <span class="ai-cta__arrow relative grid h-7 w-7 shrink-0 place-items-center rounded-full border transition duration-200">
+            <Icon
+              class="transition-transform duration-200 group-hover:translate-x-px group-hover:-translate-y-px"
+              name="tabler:arrow-up-right"
+              size="14"
+            />
+          </span>
         </NuxtLink>
 
         <div class="max-h-[calc(min(70vh,560px)-88px)] overflow-y-auto pr-1">
@@ -307,3 +316,164 @@ function getResultIcon(item: GlobalSearchItem) {
     </Transition>
   </div>
 </template>
+
+<style scoped>
+.ai-cta {
+  background: linear-gradient(
+    135deg,
+    rgba(243, 209, 158, 0.07) 0%,
+    rgba(243, 209, 158, 0.03) 45%,
+    rgba(146, 103, 184, 0.06) 100%
+  );
+  transition: background 200ms ease, transform 200ms ease;
+}
+
+.ai-cta:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(243, 209, 158, 0.14) 0%,
+    rgba(243, 209, 158, 0.07) 45%,
+    rgba(146, 103, 184, 0.1) 100%
+  );
+}
+
+.ai-cta.is-active {
+  background: linear-gradient(
+    135deg,
+    rgba(243, 209, 158, 0.18) 0%,
+    rgba(243, 209, 158, 0.09) 45%,
+    rgba(146, 103, 184, 0.14) 100%
+  );
+}
+
+.ai-cta:focus-visible {
+  outline: 2px solid var(--color-brand-gold);
+  outline-offset: 2px;
+}
+
+.ai-cta__border {
+  padding: 1px;
+  background: linear-gradient(
+    120deg,
+    rgba(243, 209, 158, 0.55) 0%,
+    rgba(243, 209, 158, 0.1) 25%,
+    rgba(146, 103, 184, 0.4) 50%,
+    rgba(243, 209, 158, 0.1) 75%,
+    rgba(243, 209, 158, 0.55) 100%
+  );
+  background-size: 280% 280%;
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+          mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  animation: ai-cta-shimmer 7s ease-in-out infinite;
+}
+
+.ai-cta:hover .ai-cta__border,
+.ai-cta.is-active .ai-cta__border {
+  background-image: linear-gradient(
+    120deg,
+    rgba(243, 209, 158, 0.9) 0%,
+    rgba(243, 209, 158, 0.25) 25%,
+    rgba(146, 103, 184, 0.6) 50%,
+    rgba(243, 209, 158, 0.25) 75%,
+    rgba(243, 209, 158, 0.9) 100%
+  );
+}
+
+.ai-cta__glow {
+  background: radial-gradient(
+    circle at 14% 30%,
+    rgba(243, 209, 158, 0.22),
+    transparent 55%
+  );
+}
+
+.ai-badge {
+  background: linear-gradient(
+    135deg,
+    rgba(243, 209, 158, 0.2),
+    rgba(146, 103, 184, 0.2)
+  );
+  color: var(--color-brand-gold);
+  box-shadow: inset 0 0 0 1px rgba(243, 209, 158, 0.35);
+}
+
+html:not([data-theme="dark"]) .ai-badge {
+  color: #8a5a00;
+  box-shadow: inset 0 0 0 1px rgba(180, 120, 0, 0.3);
+}
+
+.ai-badge__dot {
+  background: var(--color-brand-gold);
+  box-shadow: 0 0 6px rgba(243, 209, 158, 0.8);
+  animation: ai-cta-pulse 2.4s ease-in-out infinite;
+}
+
+html:not([data-theme="dark"]) .ai-badge__dot {
+  background: #b07700;
+  box-shadow: 0 0 6px rgba(176, 119, 0, 0.55);
+}
+
+.ai-cta__arrow {
+  border-color: rgba(243, 209, 158, 0.28);
+  background: rgba(243, 209, 158, 0.1);
+  color: var(--app-active-accent);
+}
+
+html:not([data-theme="dark"]) .ai-cta__arrow {
+  border-color: rgba(180, 119, 0, 0.28);
+  background: rgba(180, 119, 0, 0.08);
+}
+
+.ai-cta:hover .ai-cta__arrow,
+.ai-cta.is-active .ai-cta__arrow {
+  border-color: rgba(243, 209, 158, 0.6);
+  background: rgba(243, 209, 158, 0.22);
+}
+
+html:not([data-theme="dark"]) .ai-cta:hover .ai-cta__arrow,
+html:not([data-theme="dark"]) .ai-cta.is-active .ai-cta__arrow {
+  border-color: rgba(180, 119, 0, 0.5);
+  background: rgba(180, 119, 0, 0.16);
+}
+
+@keyframes ai-cta-shimmer {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes ai-cta-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(0.85);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-cta__border {
+    animation: none;
+    background-position: 0% 50%;
+  }
+  .ai-badge__dot {
+    animation: none;
+  }
+  .ai-cta {
+    transition: none;
+  }
+}
+</style>

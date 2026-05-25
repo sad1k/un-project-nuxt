@@ -5,6 +5,10 @@
 import { DeleteObjectsCommand, S3Client } from "@aws-sdk/client-s3";
 import process from "node:process";
 
+import { loadDotEnv } from "./lib/load-env.mjs";
+
+loadDotEnv();
+
 import { createLoadDbClient, deleteRunMarkedRows, findRunMarkedRows } from "./lib/load-local-db.mjs";
 import { readManifest } from "./lib/load-run-manifest.mjs";
 
@@ -46,6 +50,8 @@ function requireValue(flag, value) {
   return value;
 }
 
+const S3_DELETE_BATCH_LIMIT = 1000;
+
 async function deleteS3Objects(keys) {
   if (keys.length === 0 || !process.env.S3_BUCKET)
     return { skipped: true, deleted: 0 };
@@ -62,19 +68,24 @@ async function deleteS3Objects(keys) {
     region: process.env.S3_REGION || "auto",
   });
 
-  const result = await client.send(new DeleteObjectsCommand({
-    Bucket: process.env.S3_BUCKET,
-    Delete: {
-      Objects: keys.map(Key => ({ Key })),
-      Quiet: true,
-    },
-  }));
+  let deleted = 0;
+  let errors = 0;
 
-  return {
-    deleted: keys.length - (result.Errors?.length ?? 0),
-    errors: result.Errors?.length ?? 0,
-    skipped: false,
-  };
+  for (let offset = 0; offset < keys.length; offset += S3_DELETE_BATCH_LIMIT) {
+    const batch = keys.slice(offset, offset + S3_DELETE_BATCH_LIMIT);
+    const result = await client.send(new DeleteObjectsCommand({
+      Bucket: process.env.S3_BUCKET,
+      Delete: {
+        Objects: batch.map(Key => ({ Key })),
+        Quiet: true,
+      },
+    }));
+    const batchErrors = result.Errors?.length ?? 0;
+    deleted += batch.length - batchErrors;
+    errors += batchErrors;
+  }
+
+  return { deleted, errors, skipped: false };
 }
 
 async function main() {

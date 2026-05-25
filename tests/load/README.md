@@ -28,10 +28,16 @@ npm run load:explore
 ## Phase 13 E2E Social Photo Load
 
 The `e2e-social-photo` scenario is the Phase 13 local performance baseline. It
-targets 100 synthetic users, 1000 uploaded public photos, 1000 feed posts, and a
-10 minute run. It exercises custom place creation, signed S3-compatible upload,
-image metadata write, public visibility, feed publishing, feed reads, public
-place-photo reads, and public feed-globe reads.
+targets 100 synthetic users, 1000 uploaded public photos, 1000 feed posts, 5000
+post likes, 2000 post comments, and a 10 minute run. It exercises custom place
+creation, signed S3-compatible upload, image metadata write, public visibility,
+feed publishing, post likes, post comments, feed reads, public place-photo
+reads, and public feed-globe reads.
+
+Photo locations are distributed across ~50 real cities on every populated
+continent (see `lib/load-cities.mjs`) with a per-city jitter radius, so the
+synthetic data exercises the same global lat/long range a real user base would
+produce instead of stacking on Paris.
 
 Dry-run the resolved profile without seeding users, touching the DB, or uploading:
 
@@ -141,6 +147,8 @@ LOAD_ENABLE_STORAGE_UPLOAD=1 npm run load:e2e
 | `LOAD_RUN_ID`                | Optional explicit run id.                                                 |
 | `LOAD_TARGET_PHOTOS`         | Uploaded photo target for `e2e-social-photo`.                             |
 | `LOAD_TARGET_POSTS`          | Published post target for `e2e-social-photo`.                             |
+| `LOAD_TARGET_LIKES`          | Post-like target for `e2e-social-photo`.                                  |
+| `LOAD_TARGET_COMMENTS`       | Post-comment target for `e2e-social-photo`.                               |
 | `LOAD_MAX_ERROR_RATE`        | Optional threshold from `0` to `1`.                                       |
 | `LOAD_MAX_TIMEOUT_RATE`      | Optional timeout threshold from `0` to `1`.                               |
 | `LOAD_MAX_P95_MS`            | Optional overall p95 latency threshold in milliseconds.                   |

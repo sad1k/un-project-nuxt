@@ -19,6 +19,25 @@ logs
 .idea
 /*.docx
 /*.png
+/*.jpg
+~*.tmp
+
+# AI tool configs
+.claude/
+.codex/
+.omc/
+
+# Local docs/scratch
+docs/audits/
+docx_example_images/
+docx_existing_images/
+docx_gantt/
+docx_placeholders/
+docx_work_extracts/
+
+# Local SQLite
+local.db
+local.db-*
 
 # Local env files
 .env

@@ -169,7 +169,7 @@ async function share() {
       <Transition name="pop">
         <div
           v-if="openPopover === 'weather'"
-          class="explore-popover z-40 rounded-xl border p-3 max-md:fixed max-md:inset-x-3 max-md:bottom-[96px] max-md:top-auto max-md:right-auto max-md:left-3 max-md:w-auto max-md:max-w-none max-md:max-h-[60vh] max-md:overflow-y-auto md:absolute md:right-0 md:top-full md:mt-2 md:w-80"
+          class="explore-popover scroll-thin z-40 overflow-y-auto overscroll-contain rounded-xl border p-3 max-md:fixed max-md:inset-x-3 max-md:bottom-[96px] max-md:left-3 max-md:right-auto max-md:top-auto max-md:max-h-[60vh] max-md:w-auto max-md:max-w-none md:absolute md:right-0 md:top-full md:mt-2 md:max-h-[calc(100vh-8rem)] md:w-80"
         >
           <ExploreRouteWeatherTips
             :error="routeWeatherTips.error.value"

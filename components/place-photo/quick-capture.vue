@@ -29,7 +29,18 @@ const {
 const publishLoading = ref(false);
 const publishError = ref("");
 const publishedPostId = ref<number | null>(null);
-const canPublishSavedPhoto = computed(() => Boolean(saved.value?.image.id && !publishLoading.value && !publishedPostId.value));
+const caption = ref("");
+const CAPTION_MAX = 500;
+const captionCharsLeft = computed(() => CAPTION_MAX - caption.value.length);
+const canPublishSavedPhoto = computed(() => Boolean(
+  saved.value?.image.id
+  && !publishLoading.value
+  && !publishedPostId.value
+  && caption.value.length <= CAPTION_MAX,
+));
+
+const hasPhoto = computed(() => Boolean(previewUrl.value));
+const hasPoint = computed(() => Boolean(confirmedPoint.value));
 
 function openCamera() {
   fileInput.value?.click();
@@ -46,11 +57,12 @@ async function onMarkerChanged() {
   await capture.loadNearbyPlaces();
 }
 
-async function onSearchResult(result: SearchLocation) {
+async function onSearchSelected(result: SearchLocation) {
   const lat = Number.parseFloat(result.lat);
   const lon = Number.parseFloat(result.lon);
   if (Number.isNaN(lat) || Number.isNaN(lon))
     return;
+
   capture.setManualPoint(lat, lon);
   placeName.value = result.display_name;
   await capture.loadNearbyPlaces();
@@ -83,10 +95,12 @@ async function publishSavedPhotoToFeed() {
       },
     });
 
+    const trimmedCaption = caption.value.trim();
     const post = await $csrfFetch<{ id: number }>("/api/posts", {
       method: "POST",
       body: {
         locationLogImageId: saved.value.image.id,
+        ...(trimmedCaption ? { caption: trimmedCaption } : {}),
       },
     });
 
@@ -104,43 +118,77 @@ function openSavedDiary() {
   if (saved.value)
     emit("saved", saved.value);
 }
+
+function startAnotherCapture() {
+  publishLoading.value = false;
+  publishError.value = "";
+  publishedPostId.value = null;
+  caption.value = "";
+  capture.resetForNewCapture();
+}
 </script>
 
 <template>
-  <section class="relative flex h-[calc(100vh-4rem)] w-full flex-col overflow-hidden">
-    <!-- Sticky header -->
-    <header class="flex shrink-0 items-center gap-3 border-b border-gray-200 bg-white/95 px-4 py-3 backdrop-blur dark:border-white/10 dark:bg-[#050505]/95">
+  <section class="relative h-[calc(100dvh-4rem)] w-full overflow-hidden bg-[#050505]">
+    <!-- Background full-screen map -->
+    <PlacePhotoLocationConfirmationMap
+      v-model:point="confirmedPoint"
+      :place-name="placeName"
+      :accuracy-label="accuracyLabel"
+      class="absolute inset-0 h-full w-full"
+      @changed="onMarkerChanged"
+    />
+
+    <!-- Subtle gradient to keep cards readable over light map areas -->
+    <div class="pointer-events-none absolute inset-x-0 top-0 z-[1] h-40 bg-gradient-to-b from-black/55 via-black/20 to-transparent" />
+    <div class="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-72 bg-gradient-to-t from-black/65 via-black/35 to-transparent" />
+
+    <!-- Floating header -->
+    <header class="absolute inset-x-0 top-0 z-20 flex items-start gap-2 p-3 sm:p-4">
       <NuxtLink
-        class="app-chrome-control flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border"
+        class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/15 bg-black/55 text-white/90 shadow-lg shadow-black/40 backdrop-blur-md transition hover:border-white/25 hover:bg-black/70 hover:text-white"
         to="/dashboard"
         aria-label="Закрыть"
         title="Закрыть и вернуться в дашборд"
       >
         <Icon name="tabler:x" size="18" />
       </NuxtLink>
-      <div class="min-w-0 flex-1">
-        <p class="font-mono text-[10px] uppercase tracking-[0.24em] text-brand-gold/70">
+
+      <div class="min-w-0 flex-1 rounded-2xl border border-white/12 bg-black/55 px-4 py-2 shadow-lg shadow-black/40 backdrop-blur-md">
+        <p class="font-mono text-[10px] uppercase tracking-[0.24em] text-brand-gold/75">
           Фото места
         </p>
-        <h1 class="truncate text-base font-bold tracking-tight text-gray-950 sm:text-lg dark:text-white">
+        <h1 class="truncate text-base font-bold tracking-tight text-white sm:text-lg">
           Добавить фото из поездки
         </h1>
       </div>
+
       <button
-        v-if="previewUrl"
+        v-if="hasPhoto"
         type="button"
-        class="h-10 w-10 shrink-0 overflow-hidden rounded-xl border border-gray-200 dark:border-white/10"
+        class="relative h-11 w-11 shrink-0 overflow-hidden rounded-2xl border border-brand-gold/40 shadow-lg shadow-black/40 transition hover:scale-[1.03] hover:border-brand-gold/70"
         :disabled="Boolean(saved)"
         :title="saved ? 'Фото сохранено' : 'Поменять фото'"
         aria-label="Поменять фото"
         @click="openCamera"
       >
-        <img :src="previewUrl" alt="Текущее фото" class="h-full w-full object-cover">
+        <img
+          :src="previewUrl!"
+          alt="Текущее фото"
+          class="h-full w-full object-cover"
+        >
+        <span class="absolute inset-x-0 bottom-0 flex items-center justify-center bg-gradient-to-t from-black/75 to-transparent py-0.5">
+          <Icon
+            name="tabler:edit"
+            size="12"
+            class="text-white"
+          />
+        </span>
       </button>
       <button
         v-else
         type="button"
-        class="btn shrink-0 border-none bg-brand-gold text-brand-dark hover:bg-white"
+        class="inline-flex h-11 shrink-0 items-center gap-2 rounded-2xl border border-brand-gold/45 bg-brand-gold/95 px-3 text-sm font-semibold text-brand-dark shadow-lg shadow-brand-gold/20 transition hover:bg-brand-gold sm:px-4"
         title="Сделать или выбрать фото"
         @click="openCamera"
       >
@@ -158,173 +206,235 @@ function openSavedDiary() {
       @change="onFileChange"
     >
 
-    <div v-if="errorMessage" class="alert alert-error m-4 shrink-0">
-      <span>{{ errorMessage }}</span>
+    <!-- Floating search autocomplete -->
+    <div class="pointer-events-none absolute inset-x-0 top-[5.25rem] z-20 flex justify-center px-3 sm:top-24 sm:px-4">
+      <div class="pointer-events-auto w-full max-w-md">
+        <PlacePhotoPlaceAutocomplete @selected="onSearchSelected" />
+      </div>
     </div>
 
-    <!-- Map area takes remaining vertical space -->
-    <div class="relative min-h-0 flex-1 overflow-hidden">
-      <PlacePhotoLocationConfirmationMap
-        v-if="confirmedPoint && !saved"
-        v-model:point="confirmedPoint"
-        :place-name="placeName"
-        :accuracy-label="accuracyLabel"
-        class="absolute inset-0 h-full w-full"
-        @changed="onMarkerChanged"
-      />
+    <!-- Error toast -->
+    <div
+      v-if="errorMessage"
+      class="absolute inset-x-3 top-44 z-30 mx-auto max-w-md rounded-xl border border-rose-500/40 bg-rose-950/85 px-4 py-2.5 text-sm text-rose-100 shadow-lg shadow-rose-950/40 backdrop-blur-md sm:inset-x-4"
+      role="alert"
+    >
+      <div class="flex items-start gap-2">
+        <Icon
+          name="tabler:alert-triangle"
+          size="18"
+          class="mt-0.5 shrink-0"
+        />
+        <span>{{ errorMessage }}</span>
+      </div>
+    </div>
 
-      <!-- Empty state: no marker yet -->
-      <div
-        v-else-if="!saved"
-        class="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-brand-emerald/10 via-transparent to-brand-sangria/10 p-6 text-center"
-      >
-        <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-emerald/15 text-brand-emerald">
-          <Icon name="tabler:map-pin-plus" size="32" />
+    <!-- Bottom action card: pre-save flow -->
+    <div
+      v-if="!saved"
+      class="absolute inset-x-0 bottom-20 z-20 flex justify-center px-3 pb-[env(safe-area-inset-bottom)] sm:bottom-4 sm:px-4"
+    >
+      <div class="w-full max-w-2xl rounded-3xl border border-white/12 bg-black/72 p-3.5 shadow-2xl shadow-black/60 backdrop-blur-xl sm:p-4">
+        <!-- Status row -->
+        <div class="mb-3 flex flex-wrap items-center gap-2 text-xs">
+          <span
+            class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-medium"
+            :class="hasPhoto
+              ? 'border-brand-gold/45 bg-brand-gold/15 text-brand-gold'
+              : 'border-white/15 bg-white/5 text-white/55'"
+          >
+            <Icon :name="hasPhoto ? 'tabler:photo-check' : 'tabler:photo-plus'" size="14" />
+            {{ hasPhoto ? "Фото готово" : "Фото не выбрано" }}
+          </span>
+          <span
+            class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-medium"
+            :class="hasPoint
+              ? 'border-emerald-400/40 bg-emerald-400/12 text-emerald-200'
+              : 'border-white/15 bg-white/5 text-white/55'"
+          >
+            <Icon :name="hasPoint ? 'tabler:map-pin-check' : 'tabler:map-pin-plus'" size="14" />
+            {{ hasPoint ? accuracyLabel : "Метка не задана" }}
+          </span>
         </div>
-        <div>
-          <p class="text-base font-semibold text-gray-900 dark:text-white">
-            Где было сделано фото?
+
+        <!-- Step 1: place a marker (when no point) -->
+        <div v-if="!hasPoint" class="flex flex-col gap-2">
+          <p class="text-xs text-white/65 sm:text-sm">
+            Найдите место поиском, по GPS или поставьте метку двойным кликом по карте.
           </p>
-          <p class="mt-1 text-sm text-gray-600 dark:text-white/60">
-            Используйте GPS, найдите место по названию или поставьте метку вручную.
-          </p>
+          <div class="grid grid-cols-2 gap-2">
+            <button
+              class="inline-flex h-11 items-center justify-center gap-2 rounded-xl border-none bg-brand-emerald px-3 text-sm font-semibold text-white shadow-md shadow-brand-emerald/25 transition hover:bg-teal-500 disabled:opacity-60"
+              type="button"
+              :disabled="loading"
+              title="Определить местоположение по GPS устройства"
+              @click="capture.requestCurrentPosition"
+            >
+              <span v-if="loading" class="loading loading-spinner loading-sm" />
+              <Icon
+                v-else
+                name="tabler:current-location"
+                size="18"
+              />
+              GPS
+            </button>
+            <button
+              class="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/8 px-3 text-sm font-semibold text-white shadow-md shadow-black/30 transition hover:border-brand-gold/45 hover:bg-white/12 hover:text-brand-gold disabled:opacity-60"
+              type="button"
+              :disabled="loading"
+              title="Поставить маркер в центре карты — потом можно перетащить"
+              @click="capture.setManualPoint(55.755819, 37.617644)"
+            >
+              <Icon name="tabler:map-pin-plus" size="18" />
+              Вручную
+            </button>
+          </div>
         </div>
-        <div class="flex w-full max-w-sm flex-col gap-2">
+
+        <!-- Step 2: confirm and save (when point set) -->
+        <div v-else class="flex flex-col gap-2.5">
+          <label class="form-control w-full">
+            <span class="mb-1 block text-xs font-medium uppercase tracking-wide text-white/55">
+              Название места
+            </span>
+            <input
+              v-model="placeName"
+              class="input h-11 w-full rounded-xl border-white/15 bg-white/8 text-white placeholder:text-white/35 focus:border-brand-gold/60 focus:ring-2 focus:ring-brand-gold/20"
+              placeholder="Например: Эрмитаж, кафе на берегу..."
+              title="Название места — будет показано на карте и в ленте"
+            >
+          </label>
+
+          <div v-if="nearbyPlaces.length" class="flex flex-wrap gap-1.5">
+            <span class="self-center text-[11px] uppercase tracking-wider text-white/45">
+              Поблизости:
+            </span>
+            <button
+              v-for="place in nearbyPlaces"
+              :key="place.id"
+              type="button"
+              class="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/8 px-2.5 py-1 text-xs text-white transition hover:border-brand-gold/55 hover:bg-brand-gold/15 hover:text-brand-gold"
+              :title="`Применить: ${place.name}`"
+              @click="capture.applyNearbyPlace(place)"
+            >
+              <Icon name="tabler:map-search" size="12" />
+              {{ place.name }}
+            </button>
+          </div>
+
           <button
-            class="btn min-h-12 w-full border-none bg-brand-emerald text-white shadow-lg shadow-brand-emerald/20 hover:bg-teal-500"
+            class="btn mt-1 h-12 w-full border-none bg-brand-sangria text-white shadow-lg shadow-brand-sangria/25 hover:bg-rose-600 disabled:bg-white/10 disabled:text-white/40 disabled:shadow-none"
             type="button"
-            :disabled="loading"
-            title="Определить местоположение по GPS устройства"
-            @click="capture.requestCurrentPosition"
+            :disabled="!canSave"
+            :title="canSave ? 'Сохранить фото и метку' : !hasPhoto ? 'Сначала добавьте фото' : 'Введите название места'"
+            @click="savePrivatePhoto"
           >
             <span v-if="loading" class="loading loading-spinner loading-sm" />
-            <Icon v-else name="tabler:current-location" size="20" />
-            Использовать GPS
+            <Icon
+              v-else
+              name="tabler:device-floppy"
+              size="20"
+            />
+            Сохранить фото
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Saved success card -->
+    <div
+      v-else
+      class="absolute inset-x-0 bottom-20 z-20 flex justify-center px-3 pb-[env(safe-area-inset-bottom)] sm:bottom-4 sm:px-4"
+    >
+      <div class="w-full max-w-2xl rounded-3xl border border-brand-gold/30 bg-black/78 p-4 shadow-2xl shadow-brand-gold/10 backdrop-blur-xl">
+        <div class="mb-3 flex items-center gap-3">
+          <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-brand-gold/20 text-brand-gold">
+            <Icon name="tabler:circle-check" size="24" />
+          </div>
+          <div class="min-w-0">
+            <p class="text-base font-semibold text-white">
+              Фото загружено
+            </p>
+            <p class="truncate text-sm text-white/65">
+              Опубликуйте его в ленте или оставьте в дневнике
+            </p>
+          </div>
+        </div>
+
+        <label v-if="!publishedPostId" class="form-control mb-3 w-full">
+          <span class="mb-1 flex items-center justify-between text-xs font-medium uppercase tracking-wide text-white/55">
+            <span>Подпись для ленты</span>
+            <span
+              class="font-mono text-[10px] normal-case tracking-normal"
+              :class="captionCharsLeft < 0 ? 'text-rose-300' : 'text-white/40'"
+            >
+              {{ captionCharsLeft }}
+            </span>
+          </span>
+          <textarea
+            v-model="caption"
+            class="textarea h-20 w-full resize-none rounded-xl border-white/15 bg-white/8 text-white placeholder:text-white/35 focus:border-brand-gold/60 focus:ring-2 focus:ring-brand-gold/20"
+            :maxlength="CAPTION_MAX"
+            placeholder="Несколько слов о месте — необязательно"
+            title="Подпись появится под фото в ленте"
+          />
+        </label>
+
+        <div v-if="publishError" class="mb-3 rounded-xl border border-rose-500/40 bg-rose-950/60 px-3 py-2 text-sm text-rose-100">
+          {{ publishError }}
+        </div>
+
+        <div v-if="publishedPostId" class="mb-3 rounded-xl border border-emerald-400/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-200">
+          Фото опубликовано в ленте и появится на live-глобусе.
+        </div>
+
+        <div class="grid gap-2 sm:grid-cols-2">
           <button
-            class="btn min-h-12 w-full border-gray-300 bg-transparent text-gray-800 hover:border-gray-400 hover:bg-gray-100 dark:border-white/15 dark:text-white dark:hover:border-white/30 dark:hover:bg-white/10"
+            class="btn h-11 border-none bg-brand-gold text-brand-dark hover:bg-amber-100"
             type="button"
-            :disabled="loading"
-            title="Поставить маркер в центре карты — потом можно перетащить"
-            @click="capture.setManualPoint(55.755819, 37.617644)"
+            :disabled="!canPublishSavedPhoto"
+            title="Сделать фото публичным — оно попадёт в ленту и на live-глобус"
+            @click="publishSavedPhotoToFeed"
           >
-            <Icon name="tabler:map-pin-plus" size="20" />
-            Поставить вручную
+            <span v-if="publishLoading" class="loading loading-spinner loading-sm" />
+            <Icon
+              v-else
+              name="tabler:world-upload"
+              size="18"
+            />
+            В ленту
+          </button>
+
+          <NuxtLink
+            v-if="publishedPostId"
+            class="btn h-11 border-white/20 bg-white/8 text-white hover:border-white/35 hover:bg-white/15"
+            to="/feed?tab=globe"
+            title="Открыть live-глобус — увидите новую точку"
+          >
+            <Icon name="tabler:world" size="18" />
+            Глобус
+          </NuxtLink>
+
+          <button
+            v-else
+            class="btn h-11 border-white/20 bg-white/8 text-white hover:border-white/35 hover:bg-white/15"
+            type="button"
+            title="Оставить фото приватным в дневнике"
+            @click="openSavedDiary"
+          >
+            <Icon name="tabler:notebook" size="18" />
+            В дневник
           </button>
         </div>
-      </div>
-
-      <!-- Saved success state replaces map -->
-      <div
-        v-else
-        class="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-gradient-to-br from-brand-gold/15 via-transparent to-brand-emerald/15 p-6 text-center"
-      >
-        <div class="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-gold/20 text-brand-gold">
-          <Icon name="tabler:circle-check" size="32" />
-        </div>
-        <p class="text-base font-semibold text-gray-900 dark:text-white">
-          Фото загружено
-        </p>
-        <p class="max-w-xs text-sm text-gray-600 dark:text-white/60">
-          Теперь можно отправить его в ленту или оставить в дневнике.
-        </p>
-      </div>
-    </div>
-
-    <!-- Bottom panel: name + save (only when point exists and not saved) -->
-    <div
-      v-if="confirmedPoint && !saved"
-      class="shrink-0 border-t border-gray-200 bg-white/95 p-4 backdrop-blur dark:border-white/10 dark:bg-[#050505]/95"
-    >
-      <p class="mb-2 text-xs text-gray-500 dark:text-white/60">
-        {{ accuracyLabel }} — перетащите маркер на карте или найдите место ниже.
-      </p>
-
-      <div class="mb-3">
-        <AppSearchLocations @result-selected="onSearchResult" />
-      </div>
-
-      <label class="form-control w-full">
-        <input
-          v-model="placeName"
-          class="input input-bordered w-full border-gray-200 bg-white text-gray-950 dark:border-white/10 dark:bg-black/30 dark:text-white"
-          placeholder="Или впишите название места"
-          title="Название места — будет показано на карте и в ленте"
-        >
-      </label>
-
-      <div v-if="nearbyPlaces.length" class="mt-3 flex flex-wrap gap-2">
-        <button
-          v-for="place in nearbyPlaces"
-          :key="place.id"
-          type="button"
-          class="btn btn-sm border-gray-200 bg-gray-100 text-gray-900 hover:bg-gray-200 dark:border-white/10 dark:bg-white/10 dark:text-white dark:hover:bg-white/15"
-          :title="`Применить: ${place.name}`"
-          @click="capture.applyNearbyPlace(place)"
-        >
-          <Icon name="tabler:map-search" size="14" />
-          {{ place.name }}
-        </button>
-      </div>
-
-      <button
-        class="btn mt-3 min-h-12 w-full border-none bg-brand-sangria text-white shadow-lg shadow-brand-sangria/25 hover:bg-rose-600"
-        type="button"
-        :disabled="!canSave"
-        :title="canSave ? 'Сохранить фото и метку' : 'Сначала выберите фото и место'"
-        @click="savePrivatePhoto"
-      >
-        <span v-if="loading" class="loading loading-spinner loading-sm" />
-        <Icon v-else name="tabler:device-floppy" size="20" />
-        Сохранить фото
-      </button>
-    </div>
-
-    <!-- Saved success actions -->
-    <div
-      v-else-if="saved"
-      class="shrink-0 border-t border-gray-200 bg-white/95 p-4 backdrop-blur dark:border-white/10 dark:bg-[#050505]/95"
-    >
-      <div v-if="publishError" class="alert alert-error mb-3">
-        <span>{{ publishError }}</span>
-      </div>
-
-      <div v-if="publishedPostId" class="mb-3 rounded-lg border border-emerald-400/30 bg-emerald-500/10 p-3 text-sm text-emerald-700 dark:text-emerald-200">
-        Фото опубликовано в ленте и появится на live-глобусе.
-      </div>
-
-      <div class="grid gap-2 sm:grid-cols-2">
-        <button
-          class="btn min-h-12 border-none bg-brand-gold text-brand-dark hover:bg-white"
-          type="button"
-          :disabled="!canPublishSavedPhoto"
-          title="Сделать фото публичным — оно попадёт в ленту и на live-глобус"
-          @click="publishSavedPhotoToFeed"
-        >
-          <span v-if="publishLoading" class="loading loading-spinner loading-sm" />
-          <Icon v-else name="tabler:world-upload" size="20" />
-          В ленту
-        </button>
-
-        <NuxtLink
-          v-if="publishedPostId"
-          class="btn min-h-12 border-gray-300 bg-transparent text-gray-800 hover:border-gray-400 hover:bg-gray-100 dark:border-white/15 dark:text-white dark:hover:border-white/30 dark:hover:bg-white/10"
-          to="/feed?tab=globe"
-          title="Открыть live-глобус — увидите новую точку"
-        >
-          <Icon name="tabler:world" size="20" />
-          Глобус
-        </NuxtLink>
 
         <button
-          v-else
-          class="btn min-h-12 border-gray-300 bg-transparent text-gray-800 hover:border-gray-400 hover:bg-gray-100 dark:border-white/15 dark:text-white dark:hover:border-white/30 dark:hover:bg-white/10"
+          class="btn mt-2 h-11 w-full border border-brand-emerald/55 bg-brand-emerald/15 text-brand-emerald hover:border-brand-emerald hover:bg-brand-emerald/25 hover:text-white"
           type="button"
-          title="Оставить фото приватным в дневнике"
-          @click="openSavedDiary"
+          title="Сразу загрузить ещё одно место"
+          @click="startAnotherCapture"
         >
-          <Icon name="tabler:notebook" size="20" />
-          В дневник
+          <Icon name="tabler:camera-plus" size="18" />
+          Загрузить ещё
         </button>
       </div>
     </div>

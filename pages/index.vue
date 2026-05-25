@@ -1,647 +1,613 @@
 <script lang="ts" setup>
+// Lazy chunk: keeps mapbox-gl out of the index page's Vite compile graph.
+// The globe is decorative + client-only, so paying its cost on demand is fine.
+const FeedGlobe = defineAsyncComponent(() => import("~/components/feed/feed-globe.client.vue"));
+
 const authStore = useAuthStore();
+
+const isSigningIn = ref(false);
+const activeProvider = ref<"github" | "google" | null>(null);
+const authError = ref("");
+
+async function handleProviderSignIn(provider: "github" | "google") {
+  if (isSigningIn.value)
+    return;
+  isSigningIn.value = true;
+  activeProvider.value = provider;
+  authError.value = "";
+
+  try {
+    if (provider === "github")
+      await authStore.signInWithGithub();
+    else
+      await authStore.signInWithGoogle();
+  }
+  catch {
+    authError.value = "Не удалось войти. Проверьте подключение и попробуйте ещё раз.";
+  }
+  finally {
+    isSigningIn.value = false;
+    activeProvider.value = null;
+  }
+}
 </script>
 
 <template>
-  <div class="home-shell font-body selection:bg-brand-gold selection:text-brand-dark">
-    <!-- Background ambience -->
-    <div class="home-shell__bg" />
-    <div class="home-shell__grid" />
+  <div class="cosmos font-body selection:bg-white selection:text-black">
+    <!-- Cosmic background layers -->
+    <div class="cosmos__sky" aria-hidden="true" />
+    <div class="cosmos__stars cosmos__stars--far" aria-hidden="true" />
+    <div class="cosmos__stars cosmos__stars--near" aria-hidden="true" />
+    <div class="cosmos__nebula cosmos__nebula--violet" aria-hidden="true" />
+    <div class="cosmos__nebula cosmos__nebula--cyan" aria-hidden="true" />
+    <div class="cosmos__grid" aria-hidden="true" />
 
-    <!-- ============================================== -->
-    <!-- DESKTOP HERO: text left, globe right (md+)     -->
-    <!-- ============================================== -->
-    <section class="hidden md:block relative w-full">
-      <div class="relative mx-auto grid min-h-[calc(100svh-4rem)] max-w-7xl grid-cols-12 items-center gap-8 px-8 py-16 lg:px-12">
-        <!-- Left: Text content + CTAs -->
-        <div class="col-span-12 lg:col-span-6 z-10">
-          <span class="home-eyebrow">
-            <span class="home-eyebrow__dot" />
-            Live · {{ "путешествия по всему миру" }}
-          </span>
+    <!-- Toast (auth error) -->
+    <div v-if="authError" class="cosmos__toast" role="alert" aria-live="assertive">
+      <Icon name="tabler:alert-circle" class="text-lg" />
+      <span>{{ authError }}</span>
+    </div>
 
-          <h1 class="home-headline mt-6">
-            Где мир
-            <br>
-            <span class="home-headline__accent">делится</span>
-            <br>
-            путешествиями
-          </h1>
-
-          <p class="home-lede mt-6 max-w-xl">
-            Миллионы путешественников по всему миру делятся приключениями,
-            открывают новые места и вдохновляют друг друга на WanderLog —
-            крупнейшей платформе для логирования путешествий.
-          </p>
-
-          <div class="mt-10 flex flex-wrap items-center gap-3">
-            <NuxtLink
-              v-if="!authStore.user"
-              to="/sign-in"
-              class="home-cta-primary"
-            >
-              <span>Начать делиться</span>
-              <Icon name="tabler:arrow-right" class="text-xl transition-transform group-hover:translate-x-0.5" />
-            </NuxtLink>
-            <NuxtLink
-              v-else
-              to="/feed"
-              class="home-cta-primary"
-            >
-              <span>Перейти в ленту</span>
-              <Icon name="tabler:arrow-right" class="text-xl transition-transform group-hover:translate-x-0.5" />
-            </NuxtLink>
-
-            <a href="#features" class="home-cta-secondary">
-              Узнать больше
-            </a>
-          </div>
-
-          <!-- Stats row -->
-          <dl class="home-stats mt-12 grid max-w-lg grid-cols-3 gap-6">
-            <div>
-              <dt class="home-stats__value">
-                73M+
-              </dt>
-              <dd class="home-stats__label">
-                путешественников
-              </dd>
-            </div>
-            <div>
-              <dt class="home-stats__value">
-                200M+
-              </dt>
-              <dd class="home-stats__label">
-                публикаций
-              </dd>
-            </div>
-            <div>
-              <dt class="home-stats__value">
-                190+
-              </dt>
-              <dd class="home-stats__label">
-                стран
-              </dd>
-            </div>
-          </dl>
-        </div>
-
-        <!-- Right: Realistic rotating globe -->
-        <div class="col-span-12 lg:col-span-6 relative h-[420px] md:h-[560px] lg:h-[680px] xl:h-[760px]">
-          <HomeHeroGlobe class="absolute inset-0" />
-        </div>
+    <!-- Globe: single mapbox instance. Position/size swap between mobile (peek
+         from the bottom) and desktop (giant arc on the right) via media queries. -->
+    <div class="cosmos__globe" aria-hidden="true">
+      <div class="cosmos__globe-canvas">
+        <ClientOnly>
+          <FeedGlobe :realistic="true" :hide-chrome="true" :zoom="2.6" :spin-speed="0.02" />
+        </ClientOnly>
       </div>
-    </section>
+      <div class="cosmos__globe-fade" />
+    </div>
 
-    <!-- ============================================== -->
-    <!-- MOBILE HERO: CTAs top, globe peeks below       -->
-    <!-- ============================================== -->
-    <section class="md:hidden relative flex min-h-[100svh] flex-col overflow-hidden">
-      <!-- Top content: auth call-to-action -->
-      <div class="relative z-20 flex flex-col items-center px-6 pt-12 pb-8 text-center">
-        <span class="home-eyebrow">
-          <span class="home-eyebrow__dot" />
-          Live путешествия
-        </span>
+    <!-- Auth shell: stacked-centered on mobile, left column on desktop -->
+    <section class="cosmos__shell">
+      <div class="cosmos__auth">
+        <div class="cosmos__brand">
+          <span class="cosmos__brand-dot" />
+          <span class="cosmos__brand-text">WanderLog</span>
+        </div>
 
-        <h1 class="home-headline home-headline--mobile mt-5">
-          Где мир
-          <span class="home-headline__accent">делится</span>
-          путешествиями
+        <h1 class="cosmos__headline">
+          В курсе<br>
+          <span class="cosmos__headline-accent">путешествий</span>
+          <br>
+          всего мира.
         </h1>
 
-        <p class="home-lede home-lede--mobile mt-4 max-w-md">
-          Делитесь моментами, открывайте новые места и находите единомышленников по всему миру.
+        <p class="cosmos__sub">
+          Присоединяйтесь сегодня.
         </p>
 
-        <div class="mt-7 flex w-full max-w-sm flex-col gap-3">
-          <NuxtLink
-            v-if="!authStore.user"
-            to="/sign-in"
-            class="home-cta-primary w-full justify-center"
+        <div class="cosmos__buttons">
+          <button
+            :disabled="isSigningIn"
+            class="cosmos__btn cosmos__btn--light"
+            @click="handleProviderSignIn('google')"
           >
-            <span>Создать аккаунт</span>
-            <Icon name="tabler:arrow-right" class="text-xl" />
-          </NuxtLink>
-          <NuxtLink
-            v-else
-            to="/feed"
-            class="home-cta-primary w-full justify-center"
-          >
-            <span>Перейти в ленту</span>
-            <Icon name="tabler:arrow-right" class="text-xl" />
-          </NuxtLink>
+            <span v-if="isSigningIn && activeProvider === 'google'" class="cosmos__spinner" />
+            <Icon v-else name="logos:google-icon" class="text-xl" />
+            <span>Продолжить с Google</span>
+          </button>
 
-          <NuxtLink
-            v-if="!authStore.user"
-            to="/sign-in"
-            class="home-cta-secondary w-full justify-center"
+          <button
+            :disabled="isSigningIn"
+            class="cosmos__btn cosmos__btn--dark"
+            @click="handleProviderSignIn('github')"
           >
-            Войти
-          </NuxtLink>
-          <a
-            v-else
-            href="#features"
-            class="home-cta-secondary w-full justify-center"
-          >
-            Узнать больше
-          </a>
-        </div>
-      </div>
+            <span v-if="isSigningIn && activeProvider === 'github'" class="cosmos__spinner cosmos__spinner--light" />
+            <Icon v-else name="tabler:brand-github" class="text-xl" />
+            <span>Продолжить с GitHub</span>
+          </button>
 
-      <!-- Bottom: a slice of the globe peeking up -->
-      <div class="home-mobile-globe relative mt-auto h-[46svh] w-full overflow-hidden">
-        <div class="home-mobile-globe__inner">
-          <HomeHeroGlobe class="h-full w-full" />
-        </div>
-        <!-- Soft fade between text and globe top to create horizon -->
-        <div class="home-mobile-globe__fade" />
-      </div>
-    </section>
+          <div class="cosmos__divider" role="separator">
+            <span class="cosmos__divider-line" />
+            <span class="cosmos__divider-text">или</span>
+            <span class="cosmos__divider-line" />
+          </div>
 
-    <!-- ============================================== -->
-    <!-- Features Section                                -->
-    <!-- ============================================== -->
-    <section id="features" class="home-features relative py-20 md:py-24">
-      <div class="container mx-auto px-6 lg:px-12">
-        <div class="mb-12 text-center md:mb-16">
-          <h2 class="home-section-title">
-            Всё для ваших путешествий
-          </h2>
-          <p class="home-section-lede mt-3">
-            Делитесь моментами, отмечайте места и находите единомышленников со всего мира
+          <p class="cosmos__small">
+            Уже есть аккаунт?
+            <NuxtLink to="/sign-in" class="cosmos__link">
+              Войти
+            </NuxtLink>
           </p>
         </div>
 
-        <div class="grid grid-cols-1 gap-6 md:grid-cols-3 md:gap-8">
-          <div class="home-feature-card group">
-            <div class="home-feature-card__icon home-feature-card__icon--amber">
-              <Icon name="tabler:photo" class="text-3xl" />
-            </div>
-            <h3 class="home-feature-card__title">
-              Публикуйте фото
-            </h3>
-            <p class="home-feature-card__text">
-              Создавайте потрясающие галереи ваших приключений и делитесь ими с сообществом.
-            </p>
-          </div>
-
-          <div class="home-feature-card group">
-            <div class="home-feature-card__icon home-feature-card__icon--blue">
-              <Icon name="tabler:map-pin" class="text-3xl" />
-            </div>
-            <h3 class="home-feature-card__title">
-              Отмечайте места
-            </h3>
-            <p class="home-feature-card__text">
-              Логируйте каждую страну и город на интерактивной карте.
-            </p>
-          </div>
-
-          <div class="home-feature-card group">
-            <div class="home-feature-card__icon home-feature-card__icon--violet">
-              <Icon name="tabler:users" class="text-3xl" />
-            </div>
-            <h3 class="home-feature-card__title">
-              Находите друзей
-            </h3>
-            <p class="home-feature-card__text">
-              Подписывайтесь на путешественников со всего мира и вдохновляйтесь.
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ============================================== -->
-    <!-- Final CTA                                       -->
-    <!-- ============================================== -->
-    <section class="home-cta-section relative py-20 md:py-24">
-      <div class="container mx-auto px-6 text-center lg:px-12">
-        <h2 class="home-section-title">
-          Готовы начать?
-        </h2>
-        <p class="home-section-lede mt-3 mx-auto max-w-xl">
-          Присоединяйтесь к глобальному сообществу путешественников
+        <p class="cosmos__legal">
+          Продолжая, вы соглашаетесь с
+          <a href="#" class="cosmos__legal-link">Условиями использования</a>,
+          <a href="#" class="cosmos__legal-link">Политикой конфиденциальности</a>
+          и
+          <a href="#" class="cosmos__legal-link">Использованием cookie</a>.
         </p>
-
-        <NuxtLink
-          v-if="!authStore.user"
-          to="/sign-in"
-          class="home-cta-primary mt-10 inline-flex"
-        >
-          <span>Создать аккаунт бесплатно</span>
-          <Icon name="tabler:arrow-right" class="text-xl" />
-        </NuxtLink>
-        <NuxtLink
-          v-else
-          to="/feed"
-          class="home-cta-primary mt-10 inline-flex"
-        >
-          <span>Перейти в ленту</span>
-          <Icon name="tabler:arrow-right" class="text-xl" />
-        </NuxtLink>
       </div>
     </section>
   </div>
 </template>
 
 <style scoped>
-.home-shell {
+/* =================================
+   Cosmic shell — deep-space backdrop
+   ================================= */
+.cosmos {
   position: relative;
-  min-height: 100vh;
+  min-height: 100svh;
   overflow: hidden;
-  color: #0f172a;
-  background: #f8fafc;
-  transition:
-    background-color 300ms ease,
-    color 300ms ease;
+  color: #f5f5f7;
+  background: #05060a;
+  isolation: isolate;
 }
 
-:global(html[data-theme="dark"]) .home-shell {
-  background: #050505;
-  color: #ffffff;
-}
-
-.home-shell__bg {
+.cosmos__sky {
   position: absolute;
   inset: 0;
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(ellipse at 20% 0%, rgba(56, 189, 248, 0.22), transparent 55%),
-    radial-gradient(ellipse at 80% 20%, rgba(245, 158, 11, 0.18), transparent 55%),
-    linear-gradient(180deg, #f0f9ff 0%, #f8fafc 50%, #fef3c7 100%);
+    radial-gradient(ellipse 60% 50% at 70% 50%, rgba(124, 58, 237, 0.18), transparent 70%),
+    radial-gradient(ellipse 70% 60% at 30% 100%, rgba(14, 165, 233, 0.14), transparent 70%),
+    radial-gradient(ellipse 50% 40% at 50% 0%, rgba(244, 114, 182, 0.06), transparent 70%),
+    linear-gradient(180deg, #05060a 0%, #07081a 60%, #05060a 100%);
 }
 
-:global(html[data-theme="dark"]) .home-shell__bg {
-  background:
-    radial-gradient(ellipse at 20% 0%, rgba(124, 58, 237, 0.32), transparent 55%),
-    radial-gradient(ellipse at 80% 20%, rgba(236, 72, 153, 0.18), transparent 55%),
-    linear-gradient(180deg, #0d0717 0%, #050505 60%, #050505 100%);
-}
-
-.home-shell__grid {
+.cosmos__stars {
   position: absolute;
   inset: 0;
   z-index: 0;
+  pointer-events: none;
+  background-repeat: repeat;
+}
+
+.cosmos__stars--far {
+  background-image:
+    radial-gradient(1px 1px at 20px 30px, rgba(255, 255, 255, 0.55), transparent),
+    radial-gradient(1px 1px at 60px 120px, rgba(255, 255, 255, 0.38), transparent),
+    radial-gradient(1px 1px at 130px 80px, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(1px 1px at 200px 200px, rgba(255, 255, 255, 0.3), transparent),
+    radial-gradient(1px 1px at 280px 60px, rgba(255, 255, 255, 0.45), transparent),
+    radial-gradient(1px 1px at 320px 240px, rgba(255, 255, 255, 0.4), transparent);
+  background-size: 380px 280px;
+  opacity: 0.7;
+  animation: cosmos-twinkle 6s ease-in-out infinite;
+}
+
+.cosmos__stars--near {
+  background-image:
+    radial-gradient(1.5px 1.5px at 40px 90px, rgba(255, 255, 255, 0.85), transparent),
+    radial-gradient(1.5px 1.5px at 180px 40px, rgba(190, 220, 255, 0.7), transparent),
+    radial-gradient(2px 2px at 240px 180px, rgba(255, 255, 255, 0.9), transparent),
+    radial-gradient(1.5px 1.5px at 350px 110px, rgba(220, 200, 255, 0.7), transparent);
+  background-size: 520px 360px;
+  opacity: 0.9;
+  animation: cosmos-twinkle 4s ease-in-out infinite reverse;
+}
+
+.cosmos__nebula {
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: 9999px;
+  filter: blur(120px);
+}
+
+.cosmos__nebula--violet {
+  width: 38vw;
+  height: 38vw;
+  top: -10vw;
+  right: 5vw;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.35), transparent 70%);
+}
+
+.cosmos__nebula--cyan {
+  width: 32vw;
+  height: 32vw;
+  bottom: -10vw;
+  left: -5vw;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.22), transparent 70%);
+}
+
+.cosmos__grid {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
   opacity: 0.18;
-  background-image: radial-gradient(circle at 1px 1px, rgba(99, 102, 241, 0.4) 1px, transparent 0);
-  background-size: 40px 40px;
-  pointer-events: none;
-  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.35) 70%, transparent 100%);
+  background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.18) 1px, transparent 0);
+  background-size: 36px 36px;
+  mask-image: radial-gradient(ellipse 70% 60% at 30% 50%, rgba(0, 0, 0, 1) 0%, transparent 70%);
 }
 
-:global(html[data-theme="dark"]) .home-shell__grid {
-  background-image: radial-gradient(circle at 1px 1px, rgba(167, 139, 250, 0.35) 1px, transparent 0);
-  opacity: 0.22;
-}
-
-/* Eyebrow chip */
-.home-eyebrow {
+/* Toast */
+.cosmos__toast {
+  position: fixed;
+  top: 1.25rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.375rem 0.875rem;
-  border-radius: 9999px;
-  border: 1px solid rgba(15, 23, 42, 0.1);
-  background: rgba(255, 255, 255, 0.7);
-  color: rgba(15, 23, 42, 0.78);
-  font-size: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  background: rgba(239, 68, 68, 0.95);
+  color: #fff;
+  font-size: 0.9rem;
   font-weight: 600;
-  letter-spacing: 0.03em;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+}
+
+/* =================================
+   Globe layer — single instance, repositioned per viewport
+   Mobile: peeks from the bottom; desktop: giant arc on the right edge.
+   ================================= */
+.cosmos__globe {
+  position: absolute;
+  z-index: 5;
+  pointer-events: none;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 60svh;
+  min-height: 420px;
+}
+
+.cosmos__globe-canvas {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 200vw;
+  max-width: 760px;
+  aspect-ratio: 1 / 1;
+  transform: translate(-50%, 8%);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, transparent 10%, rgba(0, 0, 0, 0.55) 22%, #000 38%);
+  mask-image: linear-gradient(180deg, transparent 0%, transparent 10%, rgba(0, 0, 0, 0.55) 22%, #000 38%);
+}
+
+.cosmos__globe-fade {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .cosmos__globe {
+    /* Spans the full viewport so the oversized canvas can extend past every edge */
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .cosmos__globe-canvas {
+    /* Oversized sphere whose left silhouette traces a soft arc roughly down
+       the middle-right of the viewport. Oversized canvas → no glow cutoff. */
+    top: 50%;
+    left: auto;
+    right: -110vh;
+    width: 250vh;
+    height: 210vh;
+    max-width: none;
+    aspect-ratio: auto;
+    transform: translateY(-50%);
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
+  .cosmos__globe-fade {
+    display: none;
+  }
+}
+
+
+@media (min-width: 1280px) {
+  .cosmos__globe {
+    /* Spans the full viewport so the oversized canvas can extend past every edge */
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .cosmos__globe-canvas {
+    /* Oversized sphere whose left silhouette traces a soft arc roughly down
+       the middle-right of the viewport. Oversized canvas → no glow cutoff. */
+    top: 50%;
+    left: auto;
+    right: -90vh;
+    width: 250vh;
+    height: 210vh;
+    max-width: none;
+    aspect-ratio: auto;
+    transform: translateY(-50%);
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
+  .cosmos__globe-fade {
+    display: none;
+  }
+}
+
+/* =================================
+   Shell + auth
+   Mobile: stacked, centered, padding-bottom leaves room for the globe peek.
+   Desktop: column floats on the left, vertically centered.
+   ================================= */
+.cosmos__shell {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100svh;
+  padding: 1.5rem 1.5rem 38svh;
+  text-align: center;
+}
+
+.cosmos__auth {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  width: 100%;
+  max-width: 360px;
+}
+
+@media (min-width: 768px) {
+  .cosmos__shell {
+    align-items: flex-start;
+    justify-content: center;
+    text-align: left;
+    padding: 4rem 3rem;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .cosmos__auth {
+    align-items: flex-start;
+    gap: 1.5rem;
+    max-width: 460px;
+  }
+}
+
+/* Brand */
+.cosmos__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
-  backdrop-filter: blur(8px);
+  color: rgba(255, 255, 255, 0.78);
 }
 
-:global(html[data-theme="dark"]) .home-eyebrow {
-  border-color: rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.04);
-  color: rgba(255, 255, 255, 0.82);
-}
-
-.home-eyebrow__dot {
-  width: 7px;
-  height: 7px;
+.cosmos__brand-dot {
+  width: 9px;
+  height: 9px;
   border-radius: 9999px;
-  background: #10b981;
-  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.22);
-  animation: home-dot-pulse 1.8s ease-in-out infinite;
+  background: linear-gradient(135deg, #f59e0b, #ec4899);
+  box-shadow: 0 0 14px rgba(245, 158, 11, 0.7);
+}
+
+.cosmos__brand-text {
+  font-family: "Dela Gothic One", cursive;
+  letter-spacing: 0.02em;
 }
 
 /* Headline */
-.home-headline {
+.cosmos__headline {
   font-family: "Dela Gothic One", cursive;
-  font-size: clamp(2.5rem, 5.5vw, 5rem);
   font-weight: 400;
-  line-height: 1.05;
-  letter-spacing: -0.02em;
+  font-size: clamp(2rem, 8.5vw, 2.8rem);
+  line-height: 1.08;
+  letter-spacing: -0.025em;
+  color: #ffffff;
+  margin: 0;
 }
 
-.home-headline--mobile {
-  font-size: clamp(2.1rem, 9vw, 2.9rem);
-  line-height: 1.1;
+@media (min-width: 768px) {
+  .cosmos__headline {
+    font-size: clamp(2.5rem, 4.6vw, 4.4rem);
+    line-height: 1.02;
+  }
 }
 
-.home-headline__accent {
-  background: linear-gradient(120deg, #f59e0b 0%, #ef4444 50%, #ec4899 100%);
+.cosmos__headline-accent {
+  background: linear-gradient(120deg, #f59e0b 0%, #ec4899 50%, #8b5cf6 100%);
   background-clip: text;
   -webkit-background-clip: text;
   color: transparent;
   -webkit-text-fill-color: transparent;
 }
 
-/* Lede paragraph */
-.home-lede {
-  font-size: clamp(1rem, 1.1vw, 1.18rem);
-  line-height: 1.6;
-  color: rgba(15, 23, 42, 0.72);
+/* Sub */
+.cosmos__sub {
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.75);
+  margin: 0;
+  max-width: 22rem;
 }
 
-.home-lede--mobile {
-  font-size: 0.98rem;
-  line-height: 1.55;
+@media (min-width: 768px) {
+  .cosmos__sub {
+    font-size: 1.6rem;
+    font-weight: 700;
+    line-height: 1.3;
+    color: #ffffff;
+    max-width: none;
+  }
 }
 
-:global(html[data-theme="dark"]) .home-lede {
-  color: rgba(255, 255, 255, 0.7);
+/* Buttons */
+.cosmos__buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 360px;
 }
 
-/* Primary CTA */
-.home-cta-primary {
+@media (min-width: 768px) {
+  .cosmos__buttons {
+    max-width: 320px;
+  }
+}
+
+.cosmos__btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.95rem 1.5rem;
-  border-radius: 0.85rem;
-  font-size: 1rem;
+  justify-content: center;
+  gap: 0.6rem;
+  width: 100%;
+  height: 44px;
+  padding: 0 1rem;
+  border-radius: 9999px;
+  font-size: 0.95rem;
   font-weight: 700;
   letter-spacing: -0.005em;
-  background: linear-gradient(120deg, #f59e0b 0%, #f97316 50%, #ec4899 100%);
-  color: #1a0a00;
-  box-shadow: 0 12px 28px rgba(245, 158, 11, 0.28);
+  border: none;
+  cursor: pointer;
   transition:
-    transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1),
-    box-shadow 200ms ease;
-  text-decoration: none;
-  white-space: nowrap;
-}
-
-.home-cta-primary:hover {
-  transform: translateY(-1px) scale(1.02);
-  box-shadow: 0 18px 36px rgba(245, 158, 11, 0.4);
-}
-
-.home-cta-primary:active {
-  transform: translateY(0) scale(0.98);
-}
-
-.home-cta-primary:focus-visible {
-  outline: 2px solid #f59e0b;
-  outline-offset: 3px;
-}
-
-/* Secondary CTA */
-.home-cta-secondary {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.95rem 1.5rem;
-  border-radius: 0.85rem;
-  border: 1px solid rgba(15, 23, 42, 0.18);
-  background: rgba(255, 255, 255, 0.7);
-  color: rgba(15, 23, 42, 0.88);
-  font-size: 1rem;
-  font-weight: 600;
-  text-decoration: none;
-  backdrop-filter: blur(8px);
-  transition:
-    border-color 180ms ease,
+    transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1),
     background-color 180ms ease,
-    transform 180ms ease;
+    box-shadow 180ms ease,
+    opacity 180ms ease;
 }
 
-.home-cta-secondary:hover {
-  border-color: rgba(15, 23, 42, 0.32);
-  background: rgba(255, 255, 255, 0.92);
-  transform: translateY(-1px);
+.cosmos__btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
-.home-cta-secondary:focus-visible {
+.cosmos__btn:not(:disabled):active {
+  transform: scale(0.97);
+}
+
+.cosmos__btn--light {
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 8px 24px rgba(255, 255, 255, 0.08);
+}
+
+.cosmos__btn--light:not(:disabled):hover {
+  background: #e7e7ea;
+  box-shadow: 0 10px 28px rgba(255, 255, 255, 0.12);
+}
+
+.cosmos__btn--dark {
+  background: rgba(255, 255, 255, 0.06);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(10px);
+}
+
+.cosmos__btn--dark:not(:disabled):hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.cosmos__btn:focus-visible {
   outline: 2px solid #38bdf8;
   outline-offset: 3px;
 }
 
-:global(html[data-theme="dark"]) .home-cta-secondary {
-  border-color: rgba(255, 255, 255, 0.18);
-  background: rgba(255, 255, 255, 0.05);
-  color: rgba(255, 255, 255, 0.92);
+/* Spinner */
+.cosmos__spinner {
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  border: 2px solid rgba(15, 23, 42, 0.2);
+  border-top-color: rgba(15, 23, 42, 0.85);
+  animation: cosmos-spin 0.7s linear infinite;
 }
 
-:global(html[data-theme="dark"]) .home-cta-secondary:hover {
-  border-color: rgba(255, 255, 255, 0.32);
-  background: rgba(255, 255, 255, 0.1);
+.cosmos__spinner--light {
+  border-color: rgba(255, 255, 255, 0.2);
+  border-top-color: rgba(255, 255, 255, 0.9);
 }
 
-/* Stats */
-.home-stats__value {
-  font-family: "Dela Gothic One", cursive;
-  font-size: 1.5rem;
-  font-weight: 400;
-  letter-spacing: -0.01em;
-  color: rgba(15, 23, 42, 0.95);
+/* Divider */
+.cosmos__divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.5rem 0 0.25rem;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
-:global(html[data-theme="dark"]) .home-stats__value {
-  color: rgba(255, 255, 255, 0.96);
+.cosmos__divider-line {
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.12);
 }
 
-.home-stats__label {
-  margin-top: 0.25rem;
-  font-size: 0.8rem;
-  color: rgba(15, 23, 42, 0.58);
-  letter-spacing: 0.01em;
+/* Links */
+.cosmos__small {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.72);
+  margin: 0;
 }
 
-:global(html[data-theme="dark"]) .home-stats__label {
-  color: rgba(255, 255, 255, 0.5);
+.cosmos__link {
+  color: #38bdf8;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 160ms ease;
 }
 
-/* Mobile globe peeking */
-.home-mobile-globe {
-  position: relative;
+.cosmos__link:hover {
+  color: #7dd3fc;
 }
 
-.home-mobile-globe__inner {
-  position: absolute;
-  left: 50%;
-  top: 0;
-  width: 220vw;
-  max-width: 900px;
-  aspect-ratio: 1 / 1;
-  transform: translateX(-50%);
+.cosmos__legal {
+  font-size: 0.72rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.4);
+  max-width: 320px;
+  margin: 0;
 }
 
-.home-mobile-globe__fade {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: linear-gradient(180deg, var(--home-fade-color, #f8fafc) 0%, transparent 18%, transparent 100%);
+.cosmos__legal-link {
+  color: #38bdf8;
+  text-decoration: none;
 }
 
-:global(html[data-theme="dark"]) .home-mobile-globe__fade {
-  background: linear-gradient(180deg, #050505 0%, transparent 18%, transparent 100%);
+.cosmos__legal-link:hover {
+  color: #7dd3fc;
 }
 
-/* Sections */
-.home-features {
-  background: #ffffff;
-  transition: background-color 300ms ease;
-}
-
-:global(html[data-theme="dark"]) .home-features {
-  background: #0a0a0f;
-}
-
-.home-cta-section {
-  background: linear-gradient(180deg, #fef3c7 0%, #fef9e7 100%);
-}
-
-:global(html[data-theme="dark"]) .home-cta-section {
-  background: linear-gradient(180deg, #0a0a0f 0%, #050505 100%);
-}
-
-.home-section-title {
-  font-family: "Dela Gothic One", cursive;
-  font-weight: 400;
-  font-size: clamp(1.85rem, 3.5vw, 2.8rem);
-  letter-spacing: -0.02em;
-  line-height: 1.1;
-  color: rgba(15, 23, 42, 0.98);
-}
-
-:global(html[data-theme="dark"]) .home-section-title {
-  color: #ffffff;
-}
-
-.home-section-lede {
-  font-size: 1rem;
-  color: rgba(15, 23, 42, 0.64);
-  line-height: 1.6;
-}
-
-:global(html[data-theme="dark"]) .home-section-lede {
-  color: rgba(255, 255, 255, 0.6);
-}
-
-/* Feature cards */
-.home-feature-card {
-  position: relative;
-  padding: 1.75rem;
-  border-radius: 1rem;
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  background: #ffffff;
-  box-shadow: 0 10px 32px rgba(15, 23, 42, 0.06);
-  transition:
-    transform 200ms ease,
-    border-color 200ms ease,
-    box-shadow 200ms ease;
-}
-
-.home-feature-card:hover {
-  transform: translateY(-3px);
-  border-color: rgba(245, 158, 11, 0.32);
-  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.1);
-}
-
-:global(html[data-theme="dark"]) .home-feature-card {
-  border-color: rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.03);
-  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.4);
-}
-
-:global(html[data-theme="dark"]) .home-feature-card:hover {
-  border-color: rgba(245, 158, 11, 0.4);
-  background: rgba(255, 255, 255, 0.06);
-}
-
-.home-feature-card__icon {
-  display: grid;
-  place-items: center;
-  width: 3rem;
-  height: 3rem;
-  border-radius: 0.75rem;
-  margin-bottom: 1.25rem;
-  transition: transform 200ms ease;
-}
-
-.home-feature-card:hover .home-feature-card__icon {
-  transform: scale(1.08);
-}
-
-.home-feature-card__icon--amber {
-  background: linear-gradient(135deg, rgba(245, 158, 11, 0.18), rgba(249, 115, 22, 0.18));
-  color: #d97706;
-}
-
-.home-feature-card__icon--blue {
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.18), rgba(99, 102, 241, 0.18));
-  color: #2563eb;
-}
-
-.home-feature-card__icon--violet {
-  background: linear-gradient(135deg, rgba(168, 85, 247, 0.18), rgba(236, 72, 153, 0.18));
-  color: #9333ea;
-}
-
-:global(html[data-theme="dark"]) .home-feature-card__icon--amber {
-  color: #fbbf24;
-}
-
-:global(html[data-theme="dark"]) .home-feature-card__icon--blue {
-  color: #60a5fa;
-}
-
-:global(html[data-theme="dark"]) .home-feature-card__icon--violet {
-  color: #c084fc;
-}
-
-.home-feature-card__title {
-  font-size: 1.15rem;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  margin-bottom: 0.5rem;
-  color: rgba(15, 23, 42, 0.95);
-}
-
-:global(html[data-theme="dark"]) .home-feature-card__title {
-  color: #ffffff;
-}
-
-.home-feature-card__text {
-  font-size: 0.92rem;
-  line-height: 1.55;
-  color: rgba(15, 23, 42, 0.62);
-}
-
-:global(html[data-theme="dark"]) .home-feature-card__text {
-  color: rgba(255, 255, 255, 0.58);
-}
-
-@keyframes home-dot-pulse {
+/* =================================
+   Animations
+   ================================= */
+@keyframes cosmos-twinkle {
   0%,
   100% {
-    opacity: 1;
-    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.22);
+    opacity: 0.55;
   }
   50% {
-    opacity: 0.85;
-    box-shadow: 0 0 0 7px rgba(16, 185, 129, 0.08);
+    opacity: 0.95;
+  }
+}
+
+@keyframes cosmos-spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .home-eyebrow__dot {
+  .cosmos__stars,
+  .cosmos__spinner {
     animation: none;
   }
 }

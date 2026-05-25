@@ -32,10 +32,29 @@ const filteredLocations = computed(() => {
 const stats = computed(() => {
   const list = locations.value ?? [];
   const now = Date.now();
-  const sevenDays = 7 * 24 * 60 * 60 * 1000;
+  const day = 86400000;
+
+  const monthStart = new Date();
+  monthStart.setDate(1);
+  monthStart.setHours(0, 0, 0, 0);
+
+  const dayKey = (ts: number) => Math.floor((ts - new Date(ts).getTimezoneOffset() * 60000) / day);
+  const uniqueDays = new Set(
+    list.map(l => l.createdAt ?? 0).filter(t => t > 0).map(dayKey),
+  );
+  const today = dayKey(now);
+
+  let streak = 0;
+  let cursor = uniqueDays.has(today) ? today : (uniqueDays.has(today - 1) ? today - 1 : null);
+  while (cursor !== null && uniqueDays.has(cursor)) {
+    streak++;
+    cursor--;
+  }
+
   return {
     total: list.length,
-    recent: list.filter(l => (l.createdAt ?? 0) >= now - sevenDays).length,
+    streak,
+    thisMonth: list.filter(l => (l.createdAt ?? 0) >= monthStart.getTime()).length,
     latest: list.reduce((acc, l) => Math.max(acc, l.createdAt ?? 0), 0),
   };
 });
@@ -84,54 +103,73 @@ onBeforeRouteLeave((to) => {
 
 <template>
   <div class="page-content-top px-4 py-6 sm:px-6 lg:px-8">
-    <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between sm:mb-5">
-      <div>
-        <p class="mb-2 font-mono text-xs uppercase tracking-[0.28em] text-brand-gold/70">
-          WanderLog
-        </p>
-        <h2 class="text-2xl font-display tracking-tight text-gray-950 sm:text-3xl dark:text-white">
-          Твои сохранённые места
-        </h2>
-        <div
-          v-if="hasLocations"
-          class="mt-3 flex flex-wrap items-center gap-2 text-sm"
-        >
-          <span class="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white/70 px-3 py-1 text-gray-700 dark:border-white/10 dark:bg-white/5 dark:text-gray-200">
-            <Icon
-              name="tabler:map-pin"
-              size="14"
-              class="text-brand-gold"
-            />
-            <span class="font-semibold">{{ stats.total }}</span>
-            <span class="opacity-70">{{ pluralizeRu(stats.total, "место", "места", "мест") }}</span>
-          </span>
-          <span
-            v-if="stats.recent > 0"
-            class="inline-flex items-center gap-1.5 rounded-full border border-brand-emerald/30 bg-brand-emerald/10 px-3 py-1 text-brand-emerald dark:text-emerald-300"
-          >
-            <Icon name="tabler:sparkles" size="14" />
-            <span>+{{ stats.recent }} за неделю</span>
-          </span>
-          <span
-            v-if="stats.latest"
-            class="inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-white/70 px-3 py-1 text-gray-700 dark:border-white/10 dark:bg-white/5 dark:text-gray-200"
-          >
-            <Icon
-              name="tabler:clock"
-              size="14"
-              class="text-brand-gold"
-            />
-            <span>{{ formatRelative(stats.latest) }}</span>
-          </span>
+    <div class="dashboard-hero mb-5 sm:mb-6">
+      <div class="dashboard-hero__glow" aria-hidden="true" />
+      <div class="relative flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div class="min-w-0 flex-1">
+          <p class="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.32em] text-brand-gold/70">
+            <Icon name="tabler:compass" size="12" />
+            <span>WanderLog · твой журнал</span>
+          </p>
+          <h2 class="mt-2 text-2xl font-display tracking-tight text-gray-950 sm:text-[34px] sm:leading-[1.1] dark:text-white">
+            Твои сохранённые места
+          </h2>
         </div>
+        <NuxtLink
+          class="btn w-full self-stretch border-none bg-brand-emerald text-white shadow-lg shadow-brand-emerald/20 transition active:scale-[0.98] hover:bg-teal-500 sm:w-auto sm:self-start"
+          to="/dashboard/place-photo/new"
+        >
+          <Icon name="tabler:camera-plus" size="20" />
+          Быстрое фото
+        </NuxtLink>
       </div>
-      <NuxtLink
-        class="btn w-full border-none bg-brand-emerald text-white shadow-lg shadow-brand-emerald/20 transition active:scale-[0.98] hover:bg-teal-500 sm:w-auto"
-        to="/dashboard/place-photo/new"
+
+      <dl
+        v-if="hasLocations"
+        class="dashboard-hero__stats relative mt-4 flex flex-nowrap items-center gap-x-3 sm:mt-5 sm:gap-x-5"
       >
-        <Icon name="tabler:camera-plus" size="20" />
-        Быстрое фото
-      </NuxtLink>
+        <div
+          class="stat stat--gold"
+          :title="`${stats.total} ${pluralizeRu(stats.total, 'место', 'места', 'мест')}`"
+        >
+          <Icon name="tabler:map-pin" size="14" class="stat__icon" />
+          <dt class="sr-only">Всего мест</dt>
+          <dd class="stat__body">
+            <span class="stat__value">{{ stats.total }}</span>
+          </dd>
+        </div>
+        <div
+          class="stat stat--sangria"
+          :class="{ 'stat--muted': stats.streak === 0 }"
+          :title="stats.streak === 0 ? 'Нет серии добавлений' : `${stats.streak} ${pluralizeRu(stats.streak, 'день', 'дня', 'дней')} подряд`"
+        >
+          <Icon name="tabler:flame" size="14" class="stat__icon" />
+          <dt class="sr-only">Серия дней подряд</dt>
+          <dd class="stat__body">
+            <span class="stat__value">{{ stats.streak }}</span>
+            <span class="stat__label">дн</span>
+          </dd>
+        </div>
+        <div
+          class="stat stat--emerald"
+          :class="{ 'stat--muted': stats.thisMonth === 0 }"
+          title="Добавлено в этом месяце"
+        >
+          <Icon name="tabler:sparkles" size="14" class="stat__icon" />
+          <dt class="sr-only">Добавлено в этом месяце</dt>
+          <dd class="stat__body">
+            <span class="stat__value">{{ stats.thisMonth }}</span>
+            <span class="stat__label">/мес</span>
+          </dd>
+        </div>
+        <div class="stat stat--violet" title="Последнее добавление">
+          <Icon name="tabler:clock" size="14" class="stat__icon" />
+          <dt class="sr-only">Последнее добавление</dt>
+          <dd class="stat__body">
+            <span class="stat__value stat__value--text">{{ formatRelative(stats.latest) }}</span>
+          </dd>
+        </div>
+      </dl>
     </div>
 
     <div
@@ -257,3 +295,99 @@ onBeforeRouteLeave((to) => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.dashboard-hero {
+  position: relative;
+  isolation: isolate;
+}
+
+.dashboard-hero__glow {
+  position: absolute;
+  inset: -8% -4% auto auto;
+  width: 320px;
+  height: 220px;
+  pointer-events: none;
+  z-index: -1;
+  background: radial-gradient(circle at 70% 30%, rgba(243, 209, 158, 0.18), transparent 62%);
+  filter: blur(8px);
+}
+
+:where(html[data-theme="dark"]) .dashboard-hero__glow {
+  background: radial-gradient(circle at 70% 30%, rgba(243, 209, 158, 0.12), transparent 62%);
+}
+
+.dashboard-hero__stats {
+  scrollbar-width: none;
+}
+.dashboard-hero__stats::-webkit-scrollbar {
+  display: none;
+}
+
+.stat {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  flex-shrink: 0;
+  white-space: nowrap;
+  cursor: default;
+}
+
+.stat__icon {
+  flex-shrink: 0;
+  color: var(--stat-color, var(--color-brand-gold));
+}
+
+.stat__body {
+  margin: 0;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+  line-height: 1;
+}
+
+.stat__value {
+  font-family: var(--font-headline);
+  font-size: 16px;
+  color: #0f172a;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+:where(html[data-theme="dark"]) .stat__value {
+  color: #ffffff;
+}
+
+.stat__value--text {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.stat__label {
+  font-size: 12px;
+  color: rgba(15, 23, 42, 0.55);
+}
+
+:where(html[data-theme="dark"]) .stat__label {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.stat--gold {
+  --stat-color: var(--color-brand-gold);
+}
+.stat--sangria {
+  --stat-color: #d6678c;
+}
+.stat--emerald {
+  --stat-color: #2a9d9b;
+}
+.stat--violet {
+  --stat-color: #b58be0;
+}
+
+.stat--muted {
+  opacity: 0.55;
+}
+</style>
