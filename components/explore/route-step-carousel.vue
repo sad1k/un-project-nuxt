@@ -62,16 +62,16 @@ function heroImageFor(point: RouteMapPoint): string | null {
 
 watch(
   [selectedStoryRoutePointId, selectedRoutePoints],
-  ([activeId, points]) => {
-    const activeIndex = points.findIndex(p => p.sourceId === activeId);
-    if (activeIndex < 0)
+  () => {
+    if (activeIndex.value < 0)
       return;
+    const points = selectedRoutePoints.value;
     const slice = [
-      points[activeIndex - 2],
-      points[activeIndex - 1],
-      points[activeIndex],
-      points[activeIndex + 1],
-      points[activeIndex + 2],
+      points[activeIndex.value - 2],
+      points[activeIndex.value - 1],
+      points[activeIndex.value],
+      points[activeIndex.value + 1],
+      points[activeIndex.value + 2],
     ].filter((p): p is RouteMapPoint => Boolean(p));
     slice.forEach((point) => {
       if (point.markerKind !== "generated")
@@ -119,6 +119,7 @@ function openCard(point: RouteMapPoint) {
         <button
           class="route-step-day-chip explore-chip flex h-7 shrink-0 items-center rounded-full border px-3 text-[11px] font-semibold transition"
           :class="selectedDay === null ? 'explore-chip-active' : ''"
+          :aria-pressed="selectedDay === null"
           type="button"
           @click="setDay(null)"
         >
@@ -129,6 +130,8 @@ function openCard(point: RouteMapPoint) {
           :key="group.day"
           class="route-step-day-chip explore-chip flex h-7 shrink-0 items-center rounded-full border px-3 text-[11px] font-semibold transition"
           :class="selectedDay === group.day ? 'explore-chip-active' : ''"
+          :aria-pressed="selectedDay === group.day"
+          :aria-label="`День ${group.day}`"
           type="button"
           @click="setDay(group.day)"
         >
