@@ -2,12 +2,14 @@ import { nanoid } from "nanoid";
 
 import {
   deletePhotoBlob,
+  estimateStorageUsage,
   getPhotoBlob,
   getPushSettings,
   listOperations,
   putOperation,
   putPhotoBlob,
   removeOperation,
+  requestPersistentStorage,
   updateOperationStatus,
 } from "~/lib/offline/idb";
 import type { PendingOp, PendingOpKind, PhotoUploadOp } from "~/lib/offline/operation-types";
@@ -113,6 +115,14 @@ export function useOfflineQueue() {
   }
 
   async function enqueuePhoto(blob: Blob, meta: { locationSlug: string; logId: number }): Promise<{ opId: string }> {
+    // Ask for persistent storage on first enqueue so OS doesn't evict the IDB blob under pressure
+    await requestPersistentStorage();
+
+    // Quota guard: refuse new enqueue above 80% to leave headroom for the resize buffer
+    const { ratio } = await estimateStorageUsage();
+    if (ratio > 0.8)
+      throw new Error("Хранилище заполнено — удалите старые pending загрузки");
+
     const opId = nanoid();
     await putPhotoBlob(opId, blob);
     const checksum = await computeChecksum(blob);
@@ -220,7 +230,27 @@ export function useOfflineQueue() {
     return listOperations();
   }
 
-  return { enqueue, enqueuePhoto, drop, retry, peek };
+  async function resumeSyncAfterLogin() {
+    if (typeof navigator === "undefined" || !("serviceWorker" in navigator))
+      return;
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      reg.active?.postMessage({ type: "wl-manual-sync" });
+      // Also re-process any photo ops that were stuck in `auth_required`
+      const all = await listOperations();
+      for (const op of all) {
+        if (op.type === "photo.upload" && op.status === "auth_required") {
+          await updateOperationStatus(op.opId, { status: "pending", retries: 0, lastError: undefined });
+          void processPhotoOp({ ...op, status: "pending", retries: 0, lastError: undefined });
+        }
+      }
+    }
+    catch {
+      // best effort
+    }
+  }
+
+  return { enqueue, enqueuePhoto, drop, retry, peek, resumeSyncAfterLogin };
 }
 
 function broadcastSuccess(opId: string) {
