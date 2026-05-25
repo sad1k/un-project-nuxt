@@ -14,6 +14,7 @@ const emit = defineEmits<{
 }>();
 
 const aiRouteSession = useAiRouteSession();
+const placeIntelligence = usePlaceIntelligence();
 const selectedDay = useState<number | null>("explore-selected-route-day", () => null);
 const selectedStoryRoutePointId = useState<string | null>("explore-selected-story-route-point-id", () => null);
 
@@ -26,6 +27,48 @@ const showCarousel = computed(() => Boolean(
   || aiRouteSession.isGenerating.value
   || aiRouteSession.activePoints.value.length,
 ));
+
+const intelligenceCache = ref<Record<string, { heroImage?: string | null }>>({});
+
+async function ensureIntelligenceFor(point: RouteMapPoint) {
+  if (intelligenceCache.value[point.sourceId])
+    return;
+  if (point.markerKind !== "generated")
+    return;
+  try {
+    const intelligence = await placeIntelligence.loadForRoutePoint(point, aiRouteSession.activeVariantId.value);
+    intelligenceCache.value = {
+      ...intelligenceCache.value,
+      [point.sourceId]: { heroImage: intelligence?.photo?.url ?? null },
+    };
+  }
+  catch {
+    intelligenceCache.value = {
+      ...intelligenceCache.value,
+      [point.sourceId]: { heroImage: null },
+    };
+  }
+}
+
+function heroImageFor(point: RouteMapPoint): string | null {
+  return intelligenceCache.value[point.sourceId]?.heroImage ?? null;
+}
+
+watch(
+  [selectedStoryRoutePointId, selectedRoutePoints],
+  ([activeId, points]) => {
+    const activeIndex = points.findIndex(p => p.sourceId === activeId);
+    if (activeIndex < 0)
+      return;
+    const slice = [
+      points[activeIndex - 1],
+      points[activeIndex],
+      points[activeIndex + 1],
+    ].filter((p): p is RouteMapPoint => Boolean(p));
+    slice.forEach(point => void ensureIntelligenceFor(point));
+  },
+  { immediate: true },
+);
 
 function legDistanceLabel(index: number): string {
   const leg = routeLegs.value[index];
@@ -74,7 +117,15 @@ function openCard(point: RouteMapPoint) {
           @keydown.space.prevent="openCard(point)"
         >
           <div class="route-step-thumb flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl">
+            <img
+              v-if="heroImageFor(point)"
+              :alt="point.name"
+              class="h-full w-full object-cover"
+              loading="lazy"
+              :src="heroImageFor(point) ?? ''"
+            >
             <Icon
+              v-else
               class="explore-text-faint"
               name="tabler:photo"
               size="22"
