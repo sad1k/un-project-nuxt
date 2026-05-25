@@ -22,6 +22,7 @@ const selectedDay = useState<number | null>("explore-selected-route-day", () => 
 const selectedStoryRoutePointId = useState<string | null>("explore-selected-story-route-point-id", () => null);
 const lastFittedScope = ref("");
 const lastCompletedFitKey = ref("");
+const CAROUSEL_FLYTO_SUPPRESSION_MS = 800;
 const isCarouselDriven = ref(false);
 let carouselFlyToTimer: ReturnType<typeof setTimeout> | null = null;
 const routeMapPoints = computed(() => toRouteMapPoints(activePoints.value));
@@ -117,8 +118,12 @@ watch(
     if (!shouldFitInitialScope && !shouldFitCompletedRoute)
       return;
 
-    if (isCarouselDriven.value)
+    if (isCarouselDriven.value) {
+      lastFittedScope.value = scope;
+      if (!isGenerating.value)
+        lastCompletedFitKey.value = completedFitKey;
       return;
+    }
 
     await mapbox.fitToRoute(pts);
     lastFittedScope.value = scope;
@@ -140,9 +145,14 @@ watch(selectedStoryRoutePointId, (sourceId) => {
     clearTimeout(carouselFlyToTimer);
   carouselFlyToTimer = setTimeout(() => {
     isCarouselDriven.value = false;
-  }, 800);
+  }, CAROUSEL_FLYTO_SUPPRESSION_MS);
 
   mapbox.flyToPoint({ lat: point.lat, lng: point.lng });
+});
+
+onBeforeUnmount(() => {
+  if (carouselFlyToTimer)
+    clearTimeout(carouselFlyToTimer);
 });
 
 watch(routeMapPoints, (points) => {
