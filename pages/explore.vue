@@ -314,5 +314,7 @@ function onSheetStory(point: RouteMapPoint) {
       @directions="onSheetDirections"
       @story="onSheetStory"
     />
+
+    <ExploreRouteStepCarousel />
   </div>
 </template>
