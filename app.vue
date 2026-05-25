@@ -12,6 +12,11 @@ useHead({
     { content: "default", name: "apple-mobile-web-app-status-bar-style" },
   ],
 });
+
+const pendingOperations = usePendingOperationsStore();
+onMounted(() => {
+  void pendingOperations.init();
+});
 </script>
 
 <template>

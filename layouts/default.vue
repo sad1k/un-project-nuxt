@@ -13,6 +13,9 @@ const showMobileMap = computed(() =>
 
 <template>
   <div class="app-shell min-h-screen">
+    <ClientOnly>
+      <OfflineOfflineBanner />
+    </ClientOnly>
     <AppNavBar v-if="showNavBar" />
     <div class="flex min-h-screen md:pb-0" :class="{ 'pt-16': showNavBar, 'pb-20': showMobileToolbar }">
       <AppSideRail v-if="showSideRail" />
