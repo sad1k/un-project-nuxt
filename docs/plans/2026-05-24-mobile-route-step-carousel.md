@@ -4,7 +4,7 @@
 
 **Goal:** Add a mobile-only swipeable carousel of route-step cards under the map on `/explore`, synced with map camera and existing place-bottom-sheet, and relocate the wizard collapsed chip into the top context row so the carousel claims the bottom space.
 
-**Architecture:** New `components/explore/route-step-carousel.client.vue` mounted in `pages/explore.vue`. Active step is the pre-existing `useState("explore-selected-story-route-point-id")`. Swipe drives `selectedStoryRoutePointId` via native CSS scroll-snap + `IntersectionObserver`; a new watcher in `pages/explore.vue` translates that into `mapbox.flyToPoint(point)`. The collapsed wizard badge gets a mobile breakpoint variant via Tailwind classes on the existing `components/explore/wizard.vue` — no new component.
+**Architecture:** New `components/explore/route-step-carousel.vue` mounted in `pages/explore.vue`. Active step is the pre-existing `useState("explore-selected-story-route-point-id")`. Swipe drives `selectedStoryRoutePointId` via native CSS scroll-snap + `IntersectionObserver`; a new watcher in `pages/explore.vue` translates that into `mapbox.flyToPoint(point)`. The collapsed wizard badge gets a mobile breakpoint variant via Tailwind classes on the existing `components/explore/wizard.vue` — no new component.
 
 **Tech Stack:** Vue 3 + Nuxt 3, Tailwind CSS v4, Mapbox GL JS, `@nuxt/icon` (tabler). No new dependencies.
 
@@ -69,7 +69,7 @@ git commit -m "feat(explore): add flyToPoint helper to mapbox composable"
 ## Task 2: Scaffold the carousel component + mount it
 
 **Files:**
-- Create: `components/explore/route-step-carousel.client.vue`
+- Create: `components/explore/route-step-carousel.vue`
 - Modify: `pages/explore.vue` (add `<ExploreRouteStepCarousel />` near the existing `<ExplorePlaceBottomSheet />`)
 
 **Step 1: Create the empty scaffold**
@@ -132,7 +132,7 @@ Expected: PASS
 **Step 4: Commit**
 
 ```bash
-git add components/explore/route-step-carousel.client.vue pages/explore.vue
+git add components/explore/route-step-carousel.vue pages/explore.vue
 git commit -m "feat(explore): scaffold mobile route step carousel"
 ```
 
@@ -141,7 +141,7 @@ git commit -m "feat(explore): scaffold mobile route step carousel"
 ## Task 3: Render step cards with content
 
 **Files:**
-- Modify: `components/explore/route-step-carousel.client.vue`
+- Modify: `components/explore/route-step-carousel.vue`
 
 **Step 1: Extend the script setup**
 
@@ -323,7 +323,7 @@ Expected: PASS
 **Step 5: Commit**
 
 ```bash
-git add components/explore/route-step-carousel.client.vue pages/explore.vue
+git add components/explore/route-step-carousel.vue pages/explore.vue
 git commit -m "feat(explore): render route step cards in mobile carousel"
 ```
 
@@ -332,7 +332,7 @@ git commit -m "feat(explore): render route step cards in mobile carousel"
 ## Task 4: Lazy-load card photos via placeIntelligence
 
 **Files:**
-- Modify: `components/explore/route-step-carousel.client.vue`
+- Modify: `components/explore/route-step-carousel.vue`
 
 **Step 1: Cache intelligence per source id**
 
@@ -421,7 +421,7 @@ Expected: PASS
 **Step 5: Commit**
 
 ```bash
-git add components/explore/route-step-carousel.client.vue
+git add components/explore/route-step-carousel.vue
 git commit -m "feat(explore): lazy-load photos for active carousel step + neighbours"
 ```
 
@@ -430,7 +430,7 @@ git commit -m "feat(explore): lazy-load photos for active carousel step + neighb
 ## Task 5: Header chrome — handle, day-chips, progress
 
 **Files:**
-- Modify: `components/explore/route-step-carousel.client.vue`
+- Modify: `components/explore/route-step-carousel.vue`
 
 **Step 1: Compute header state**
 
@@ -539,7 +539,7 @@ Expected: PASS
 **Step 5: Commit**
 
 ```bash
-git add components/explore/route-step-carousel.client.vue
+git add components/explore/route-step-carousel.vue
 git commit -m "feat(explore): carousel header with handle, day chips, progress"
 ```
 
@@ -548,7 +548,7 @@ git commit -m "feat(explore): carousel header with handle, day chips, progress"
 ## Task 6: Scroll-snap detection + reverse-sync
 
 **Files:**
-- Modify: `components/explore/route-step-carousel.client.vue`
+- Modify: `components/explore/route-step-carousel.vue`
 
 **Step 1: Add the track ref and IntersectionObserver**
 
@@ -643,7 +643,7 @@ Expected: PASS
 **Step 5: Commit**
 
 ```bash
-git add components/explore/route-step-carousel.client.vue
+git add components/explore/route-step-carousel.vue
 git commit -m "feat(explore): swipe-to-select + reverse-sync for carousel"
 ```
 
@@ -801,7 +801,7 @@ git commit -m "feat(explore): relocate wizard chip to top row on mobile after ge
 ## Task 9: Skeleton + error + warning states
 
 **Files:**
-- Modify: `components/explore/route-step-carousel.client.vue`
+- Modify: `components/explore/route-step-carousel.vue`
 
 **Step 1: Conditional rendering in the template**
 
@@ -924,7 +924,7 @@ Expected: PASS
 **Step 6: Commit**
 
 ```bash
-git add components/explore/route-step-carousel.client.vue pages/explore.vue
+git add components/explore/route-step-carousel.vue pages/explore.vue
 git commit -m "feat(explore): skeleton, error, warning states for carousel"
 ```
 

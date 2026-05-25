@@ -33,7 +33,7 @@ A **swipeable card carousel** anchored to the bottom of the map. Each card = one
 
 ## Components
 
-### New: `components/explore/route-step-carousel.client.vue`
+### New: `components/explore/route-step-carousel.vue`
 
 Mobile-only (`md:hidden`). Mounts in `pages/explore.vue` alongside `<ExplorePlaceBottomSheet />`. Renders only when `aiRouteSession.activePoints.length > 0 || aiRouteSession.isGenerating`.
 
@@ -178,7 +178,7 @@ At 320px the chip shortens to `[📍 Paris ✎]` (~70px) so the row still fits.
 
 ## Testing approach
 
-- Component test for `route-step-carousel.client.vue`: renders skeleton when generating, renders N cards when active points present, emits `setActive` on IntersectionObserver fire.
+- Component test for `route-step-carousel.vue`: renders skeleton when generating, renders N cards when active points present, emits `setActive` on IntersectionObserver fire.
 - Integration test in `pages/explore.vue`: swiping the carousel updates `selectedStoryRoutePointId` and triggers `mapbox.flyTo`. Marker click reverse-scrolls the carousel.
 - Visual: snapshot at 320 / 375 / 414 widths to confirm chip truncation.
 - Manual: regen mid-walk doesn't lose user's currently-viewed step.
