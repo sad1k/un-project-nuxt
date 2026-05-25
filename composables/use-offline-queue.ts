@@ -3,6 +3,7 @@ import { nanoid } from "nanoid";
 import {
   deletePhotoBlob,
   getPhotoBlob,
+  getPushSettings,
   listOperations,
   putOperation,
   putPhotoBlob,
@@ -189,6 +190,7 @@ export function useOfflineQueue() {
       await deletePhotoBlob(op.opId);
       await removeOperation(op.opId);
       broadcastSuccess(op.opId);
+      void showUploadSuccessNotification();
     }
     catch (err) {
       const nextRetries = (op.retries || 0) + 1;
@@ -230,5 +232,28 @@ function broadcastSuccess(opId: string) {
   }
   finally {
     channel.close();
+  }
+}
+
+async function showUploadSuccessNotification() {
+  if (typeof window === "undefined" || typeof Notification === "undefined")
+    return;
+  if (Notification.permission !== "granted")
+    return;
+  const settings = await getPushSettings();
+  if (settings && !settings.upload)
+    return;
+  try {
+    if ("serviceWorker" in navigator) {
+      const reg = await navigator.serviceWorker.ready;
+      await reg.showNotification("Фото загружено", {
+        body: "Очередная загрузка успешно отправилась на сервер",
+        tag: "upload-success",
+        icon: "/icons/wanderlog-icon-192.png",
+      });
+    }
+  }
+  catch {
+    // Best-effort; ignore notification failures
   }
 }
