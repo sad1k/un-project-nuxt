@@ -49,6 +49,8 @@ const EnvSchema = z.object({
   OPENROUTER_ROUTE_MODEL: z.string().optional(),
   AI_ROUTE_MOCK_ENABLED: EnvBooleanSchema,
   ROUTE_NOTIFICATION_VAPID_PUBLIC_KEY: z.string().optional(),
+  ROUTE_NOTIFICATION_VAPID_PRIVATE_KEY: z.string().optional(),
+  ROUTE_NOTIFICATION_VAPID_MAILTO: z.string().optional(),
 });
 
 export type EnvSchema = z.infer<typeof EnvSchema>;
