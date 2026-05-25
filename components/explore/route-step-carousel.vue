@@ -51,7 +51,8 @@ function setDay(day: number | null) {
 const trackRef = ref<HTMLElement | null>(null);
 const cardRefs = ref<Record<string, HTMLElement>>({});
 let observer: IntersectionObserver | null = null;
-let lastIntersectFromScroll = false;
+const USER_SCROLL_WINDOW_MS = 300;
+let lastUserScrollAt = 0;
 
 function registerCard(point: RouteMapPoint, el: Element | null) {
   if (!el) {
@@ -70,7 +71,7 @@ function setupObserver() {
 
   observer = new IntersectionObserver(
     (entries) => {
-      if (!lastIntersectFromScroll)
+      if (performance.now() - lastUserScrollAt > USER_SCROLL_WINDOW_MS)
         return;
       const top = entries
         .filter(entry => entry.isIntersecting)
@@ -88,7 +89,7 @@ function setupObserver() {
 }
 
 function onTrackScroll() {
-  lastIntersectFromScroll = true;
+  lastUserScrollAt = performance.now();
 }
 
 onMounted(() => {
@@ -144,10 +145,26 @@ watch(selectedStoryRoutePointId, async (sourceId) => {
     return;
   await nextTick();
   const card = cardRefs.value[sourceId];
-  if (!card)
+  const track = trackRef.value;
+  if (!card || !track)
     return;
-  lastIntersectFromScroll = false;
-  card.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+
+  const trackRect = track.getBoundingClientRect();
+  const cardRect = card.getBoundingClientRect();
+  const trackCenter = trackRect.left + trackRect.width / 2;
+  const cardCenter = cardRect.left + cardRect.width / 2;
+  if (Math.abs(trackCenter - cardCenter) < 8)
+    return;
+
+  const reduced = import.meta.client
+    && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
+  lastUserScrollAt = 0;
+  card.scrollIntoView({
+    behavior: reduced ? "auto" : "smooth",
+    block: "nearest",
+    inline: "center",
+  });
 });
 
 function legDistanceLabel(index: number): string {
