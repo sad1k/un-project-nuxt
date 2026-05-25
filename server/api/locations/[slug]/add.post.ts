@@ -1,6 +1,7 @@
 import { findLocationBySlug } from "~/lib/db/queries/location";
 import { insertLocationLog } from "~/lib/db/queries/location-log";
 import { InsertLocationLogSchema } from "~/lib/db/schema";
+import { recordIdempotentResponse } from "~/server/middleware/idempotency";
 import defineAuthenticatedHandler from "~/utils/define-authenticated-handler";
 
 export default defineAuthenticatedHandler(async (event) => {
@@ -43,5 +44,7 @@ export default defineAuthenticatedHandler(async (event) => {
     );
   }
 
-  return insertLocationLog(body.data, location.id, event.context.user.id);
+  const inserted = await insertLocationLog(body.data, location.id, event.context.user.id);
+  await recordIdempotentResponse(event, 200, inserted);
+  return inserted;
 });

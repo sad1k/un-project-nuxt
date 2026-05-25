@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { likePost } from "~/lib/db/queries/post-like";
+import { recordIdempotentResponse } from "~/server/middleware/idempotency";
 import defineAuthenticatedHandler from "~/utils/define-authenticated-handler";
 
 export default defineAuthenticatedHandler(async (event) => {
@@ -18,5 +19,7 @@ export default defineAuthenticatedHandler(async (event) => {
 
   await likePost(Number(id), event.context.user.id);
 
-  return { success: true, liked: true };
+  const result = { success: true, liked: true };
+  await recordIdempotentResponse(event, 200, result);
+  return result;
 });

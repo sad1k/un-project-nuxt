@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { createComment, getCommentById } from "~/lib/db/queries/post-comment";
+import { recordIdempotentResponse } from "~/server/middleware/idempotency";
 import defineAuthenticatedHandler from "~/utils/define-authenticated-handler";
 
 const bodySchema = z.object({
@@ -57,5 +58,6 @@ export default defineAuthenticatedHandler(async (event) => {
     replyToUserId,
   );
 
+  await recordIdempotentResponse(event, 200, comment);
   return comment;
 });
