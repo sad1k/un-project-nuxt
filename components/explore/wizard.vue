@@ -254,6 +254,7 @@ function onTouchEnd(event: TouchEvent) {
       <button
         v-if="collapsed"
         key="badge"
+        aria-label="Изменить параметры маршрута"
         class="explore-wizard-badge pointer-events-auto flex w-full items-center justify-center gap-2 rounded-full border px-4 py-2.5 text-sm font-medium backdrop-blur-md transition"
         type="button"
         @click="expand"
