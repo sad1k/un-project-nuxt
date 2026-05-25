@@ -28,30 +28,10 @@ const showCarousel = computed(() => Boolean(
   || aiRouteSession.activePoints.value.length,
 ));
 
-const intelligenceCache = ref<Record<string, { heroImage?: string | null }>>({});
-
-async function ensureIntelligenceFor(point: RouteMapPoint) {
-  if (intelligenceCache.value[point.sourceId])
-    return;
-  if (point.markerKind !== "generated")
-    return;
-  try {
-    const intelligence = await placeIntelligence.loadForRoutePoint(point, aiRouteSession.activeVariantId.value);
-    intelligenceCache.value = {
-      ...intelligenceCache.value,
-      [point.sourceId]: { heroImage: intelligence?.photo?.url ?? null },
-    };
-  }
-  catch {
-    intelligenceCache.value = {
-      ...intelligenceCache.value,
-      [point.sourceId]: { heroImage: null },
-    };
-  }
-}
-
 function heroImageFor(point: RouteMapPoint): string | null {
-  return intelligenceCache.value[point.sourceId]?.heroImage ?? null;
+  if (point.markerKind !== "generated")
+    return null;
+  return placeIntelligence.getState(point, aiRouteSession.activeVariantId.value).data?.photo?.url ?? null;
 }
 
 watch(
@@ -61,11 +41,17 @@ watch(
     if (activeIndex < 0)
       return;
     const slice = [
+      points[activeIndex - 2],
       points[activeIndex - 1],
       points[activeIndex],
       points[activeIndex + 1],
+      points[activeIndex + 2],
     ].filter((p): p is RouteMapPoint => Boolean(p));
-    slice.forEach(point => void ensureIntelligenceFor(point));
+    slice.forEach((point) => {
+      if (point.markerKind !== "generated")
+        return;
+      void placeIntelligence.loadForRoutePoint(point, aiRouteSession.activeVariantId.value);
+    });
   },
   { immediate: true },
 );
