@@ -49,10 +49,10 @@ const activeTab = computed(() => route.query.tab === "globe" ? "globe" : "feed")
   backdrop-filter: blur(18px);
 }
 
-.dark .feed-tab-switcher {
-  border-color: rgba(255, 255, 255, 0.1);
-  background: rgba(5, 5, 5, 0.54);
-  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.28);
+:where([data-theme="dark"]) .feed-tab-switcher {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(10, 10, 12, 0.72);
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.45);
 }
 
 .feed-tab-button {
@@ -73,8 +73,8 @@ const activeTab = computed(() => route.query.tab === "globe" ? "globe" : "feed")
     box-shadow 180ms ease;
 }
 
-.dark .feed-tab-button {
-  color: rgba(255, 255, 255, 0.62);
+:where([data-theme="dark"]) .feed-tab-button {
+  color: rgba(255, 255, 255, 0.72);
 }
 
 .feed-tab-button:hover,
@@ -83,15 +83,26 @@ const activeTab = computed(() => route.query.tab === "globe" ? "globe" : "feed")
   color: #0f172a;
 }
 
-.dark .feed-tab-button:hover,
-.dark .feed-tab-button:focus-visible {
+:where([data-theme="dark"]) .feed-tab-button:hover,
+:where([data-theme="dark"]) .feed-tab-button:focus-visible {
+  background: rgba(255, 255, 255, 0.08);
   color: white;
 }
 
-.feed-tab-button--active {
+.feed-tab-button--active,
+.feed-tab-button--active:hover,
+.feed-tab-button--active:focus-visible {
   background: #f6c453;
   color: #111827;
   box-shadow: 0 10px 28px rgba(246, 196, 83, 0.25);
+}
+
+:where([data-theme="dark"]) .feed-tab-button--active,
+:where([data-theme="dark"]) .feed-tab-button--active:hover,
+:where([data-theme="dark"]) .feed-tab-button--active:focus-visible {
+  background: #f6c453;
+  color: #111827;
+  box-shadow: 0 10px 28px rgba(246, 196, 83, 0.35);
 }
 
 .feed-tab-label {

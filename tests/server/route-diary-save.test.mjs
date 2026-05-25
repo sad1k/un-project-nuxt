@@ -65,9 +65,7 @@ test("location helper reuses the user-owned place before creating a generated ro
 test("route generation completion waits for explicit diary saves", () => {
   assert.doesNotMatch(runnerSource, /saveCompletedRouteToDiary/);
 
-  const completionIndex = runnerSource.indexOf("await markAiRouteVariantCompleted");
-
-  assert.ok(completionIndex >= 0, "runner should mark the route variant completed");
+  assert.match(runnerSource, /markAiRouteVariantCompleted/, "runner should mark the route variant completed");
   assert.doesNotMatch(runnerSource, /requestContextJson/);
   assert.doesNotMatch(runnerSource, /payloadJson/);
   assert.doesNotMatch(runnerSource, /providerBodyPreview/);

@@ -165,7 +165,7 @@ function handleDrop(e: DragEvent) {
                 "
               >
                 <Icon
-                  name="heroicons:arrow-up-tray-20-solid"
+                  name="tabler:cloud-upload"
                   class="text-neutral-600 dark:text-neutral-400"
                   size="20"
                 />

@@ -31,13 +31,13 @@ test("admin overview keeps route contents behind intentional detail navigation",
 test("admin detail page renders sanitized route snapshot and safe timeline fields", () => {
   assert.match(detailPageSource, /\/api\/admin\/route-generations\/\$\{sessionId\.value\}/);
   assert.match(detailPageSource, /route\.query\.sessionId/);
-  assert.match(detailPageSource, /Sanitized route snapshot/);
+  assert.match(detailPageSource, /Очищенный снимок маршрута/);
   assert.match(detailPageSource, /point\.name/);
   assert.match(detailPageSource, /point\.coordinates\.lat/);
   assert.match(detailPageSource, /point\.coordinates\.long/);
   assert.match(detailPageSource, /point\.confidence/);
   assert.match(detailPageSource, /point\.approximateDistanceMeters/);
-  assert.match(detailPageSource, /Safe event timeline/);
+  assert.match(detailPageSource, /Безопасная лента событий/);
   assert.match(detailPageSource, /validationStatus/);
 });
 

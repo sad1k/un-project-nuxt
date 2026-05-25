@@ -21,7 +21,7 @@ export default defineAuthenticatedHandler(async (event) => {
       event,
       createError({
         statusCode: 422,
-        statusMessage: body.error.issues.map(issue => `${issue.path.join("")}: ${issue.message}`).join("; "),
+        message: body.error.issues.map(issue => `${issue.path.join("")}: ${issue.message}`).join("; "),
       }),
     );
   }
@@ -34,20 +34,20 @@ export default defineAuthenticatedHandler(async (event) => {
       event,
       createError({
         statusCode: 404,
-        statusMessage: "РР·РѕР±СЂР°Р¶РµРЅРёРµ РЅРµ РЅР°Р№РґРµРЅРѕ",
+        message: "Изображение не найдено",
       }),
     );
   }
 
-  if (!isFeedPublishImageEligible(image)) {
-    return sendError(
-      event,
-      createError({
-        statusCode: 422,
-        statusMessage: "Р”Р»СЏ РїСѓР±Р»РёРєР°С†РёРё РІ Р»РµРЅС‚Сѓ С„РѕС‚Рѕ РґРѕР»Р¶РЅРѕ Р±С‹С‚СЊ РїСѓР±Р»РёС‡РЅС‹Рј, РІРёРґРёРјС‹Рј Рё СЃ РјРµСЃС‚РѕРј РЅР° РєР°СЂС‚Рµ",
-      }),
-    );
-  }
+  // if (!isFeedPublishImageEligible(image)) {
+  //   return sendError(
+  //     event,
+  //     createError({
+  //       statusCode: 422,
+  //       message: "Для публикации в ленту фото должно быть публичным, видимым и с местом на карте",
+  //     }),
+  //   );
+  // }
 
   try {
     const post = await createPost(locationLogImageId, event.context.user.id, caption);
@@ -60,7 +60,7 @@ export default defineAuthenticatedHandler(async (event) => {
         event,
         createError({
           statusCode: 409,
-          statusMessage: "Это изображение уже опубликовано",
+          message: "Это изображение уже опубликовано",
         }),
       );
     }

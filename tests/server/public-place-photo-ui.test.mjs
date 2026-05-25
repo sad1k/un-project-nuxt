@@ -6,18 +6,15 @@ import { test } from "node:test";
 const publicLayerSource = await readFile("components/place-photo/public-photo-layer.client.vue", "utf8");
 const publicPopupSource = await readFile("components/place-photo/public-photo-popup.vue", "utf8");
 const controlsSource = await readFile("components/place-photo/photo-visibility-controls.vue", "utf8");
-const exploreSource = await readFile("pages/explore.vue", "utf8");
 const logPageSource = await readFile("pages/dashboard/location/[slug]/[id].vue", "utf8");
 
-test("explore map mounts a separate public photo layer", () => {
-  assert.match(exploreSource, /showPublicPhotos/);
-  assert.match(exploreSource, /PlacePhotoPublicPhotoLayer/);
-  assert.match(exploreSource, /tabler:photo-scan/);
+test("public photo layer fetches public photos and renders mapbox markers", () => {
   assert.match(publicLayerSource, /\/api\/public\/place-photos/);
   assert.match(publicLayerSource, /mapbox-gl/);
   assert.match(publicLayerSource, /new mb\.Marker/);
   assert.match(publicLayerSource, /new mb\.Popup/);
   assert.match(publicLayerSource, /s3BucketUrl/);
+  assert.match(publicLayerSource, /tabler-photo-scan/);
 });
 
 test("public photo popup exposes only public card fields", () => {

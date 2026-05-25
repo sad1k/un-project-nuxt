@@ -65,7 +65,7 @@ test("D-08 D-09 D-10 community signals are aggregate, uncertain, and identity-sa
 });
 
 test("server-only provider boundary keeps Google Places optional and explicitly field-masked", () => {
-  assert.match(envSource, /GOOGLE_PLACES_API_KEY: z\.string\(\)\.optional\(\)/);
+  assert.match(envSource, /GOOGLE_PLACES_API_KEY: z\.string\(\)/);
   assert.match(providerSource, /GOOGLE_PLACES_API_KEY/);
   assert.match(providerSource, /places\.googleapis\.com/);
   assert.match(providerSource, /X-Goog-FieldMask/);

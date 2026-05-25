@@ -39,15 +39,6 @@ const heightPx = computed(() => {
   return Math.max(SHEET_MIN_PX, Math.min(viewportHeight.value - 12, target));
 });
 
-const fullHeightPx = computed(() => {
-  return Math.round((SNAP_POINTS_SVH[SNAP_POINTS_SVH.length - 1] / 100) * viewportHeight.value);
-});
-
-const backdropOpacity = computed(() => {
-  const ratio = heightPx.value / fullHeightPx.value;
-  return Math.min(0.55, Math.max(0, ratio * 0.55));
-});
-
 const renderedHtml = computed(() => {
   if (!props.place)
     return "";
@@ -155,10 +146,6 @@ function onContentClick(event: MouseEvent) {
     emit("story", props.place);
 }
 
-function onBackdropClick() {
-  emit("close");
-}
-
 watch(isOpen, (next) => {
   if (next) {
     currentSnap.value = 1;
@@ -181,15 +168,6 @@ onBeforeUnmount(() => {
 
 <template>
   <Teleport to="body">
-    <Transition name="place-sheet-backdrop">
-      <div
-        v-if="isOpen"
-        class="fixed inset-0 z-[65] md:hidden"
-        :style="{ backgroundColor: `rgba(0, 0, 0, ${backdropOpacity})` }"
-        @click="onBackdropClick"
-      />
-    </Transition>
-
     <Transition name="place-sheet">
       <section
         v-if="isOpen"
@@ -249,14 +227,5 @@ onBeforeUnmount(() => {
 .place-sheet-enter-from,
 .place-sheet-leave-to {
   transform: translateY(100%);
-}
-
-.place-sheet-backdrop-enter-active,
-.place-sheet-backdrop-leave-active {
-  transition: opacity 180ms ease;
-}
-.place-sheet-backdrop-enter-from,
-.place-sheet-backdrop-leave-to {
-  opacity: 0;
 }
 </style>

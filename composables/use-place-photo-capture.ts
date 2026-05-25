@@ -252,6 +252,22 @@ export function usePlacePhotoCapture() {
     }
   }
 
+  function resetForNewCapture() {
+    if (previewUrl.value)
+      URL.revokeObjectURL(previewUrl.value);
+
+    photoFile.value = null;
+    previewUrl.value = null;
+    confirmedPoint.value = null;
+    placeName.value = "";
+    locationAccuracy.value = null;
+    locationSource.value = "manual";
+    nearbyPlaces.value = [];
+    loading.value = false;
+    errorMessage.value = "";
+    saved.value = null;
+  }
+
   onBeforeUnmount(() => {
     if (previewUrl.value)
       URL.revokeObjectURL(previewUrl.value);
@@ -276,6 +292,7 @@ export function usePlacePhotoCapture() {
     loadNearbyPlaces,
     applyNearbyPlace,
     savePrivatePhoto,
+    resetForNewCapture,
   };
 }
 

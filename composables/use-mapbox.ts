@@ -56,6 +56,9 @@ function isTouchDevice() {
 
 async function getMapboxGL() {
   if (!mapboxModule) {
+    // Co-load CSS with JS so importers of this composable don't drag
+    // mapbox-gl.css into their initial compile graph.
+    await import("mapbox-gl/dist/mapbox-gl.css");
     mapboxModule = await import("mapbox-gl");
   }
   return mapboxModule.default || mapboxModule;

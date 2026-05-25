@@ -1,23 +1,26 @@
 <script lang="ts" setup>
-const authStore = useAuthStore();
 const route = useRoute();
 
-const showSideRail = computed(() => route.path !== "/");
-const showMobileMap = computed(() => route.path === "/dashboard" || route.path.startsWith("/dashboard/"));
-
-await authStore.init();
+const isHome = computed(() => route.path === "/");
+const isPlacePhotoCapture = computed(() => route.path.startsWith("/dashboard/place-photo"));
+const showSideRail = computed(() => !isHome.value);
+const showNavBar = computed(() => !isHome.value);
+const showMobileToolbar = computed(() => !isHome.value);
+const showMobileMap = computed(() =>
+  (route.path === "/dashboard" || route.path.startsWith("/dashboard/")) && !isPlacePhotoCapture.value,
+);
 </script>
 
 <template>
   <div class="app-shell min-h-screen">
-    <AppNavBar />
-    <div class="flex min-h-screen pt-16 pb-20 md:pb-0">
+    <AppNavBar v-if="showNavBar" />
+    <div class="flex min-h-screen md:pb-0" :class="{ 'pt-16': showNavBar, 'pb-20': showMobileToolbar }">
       <AppSideRail v-if="showSideRail" />
       <main class="flex min-w-0 flex-1 flex-col">
         <slot />
       </main>
     </div>
-    <AppMobileToolbar />
+    <AppMobileToolbar v-if="showMobileToolbar" />
     <AppMapBottomSheet v-if="showMobileMap" />
     <div class="pwa-shell-stack pointer-events-none fixed inset-x-3 bottom-3 z-40 flex flex-col items-end gap-2 sm:inset-x-auto sm:right-4">
       <div class="pointer-events-auto">

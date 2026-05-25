@@ -43,7 +43,7 @@ test("client polls route generation status and exposes global indicator state", 
   assert.match(indicatorSource, /NuxtLink/);
   assert.match(indicatorSource, /sessionId/);
   assert.match(indicatorSource, /displayStatus/);
-  assert.match(indicatorSource, /route stalled/);
+  assert.match(indicatorSource, /зависло/);
   assert.match(indicatorSource, /getSessionIcon/);
   assert.match(navSource, /AppRouteGenerationIndicator/);
 });
@@ -72,12 +72,12 @@ test("route sessions can be deleted from saved generation history", () => {
   assert.match(statusSource, /csrf-token/);
   assert.match(statusSource, /sessions\.value\.filter\(session => session\.sessionId !== sessionId\)/);
   assert.match(historySource, /tabler:trash/);
-  assert.match(historySource, /Delete \$\{getRouteSessionLabel\(routeSession\)\} from route history/);
+  assert.match(historySource, /Удалить \$\{getRouteSessionLabel\(routeSession\)\} из истории маршрутов/);
 });
 
 test("Explore can restore a generation from a route session link", () => {
   assert.match(exploreSource, /route\.query\.sessionId/);
   assert.match(exploreSource, /restoreRouteSession\(readRouteSessionIdQuery/);
-  assert.match(historySource, /Saved generations/);
+  assert.match(historySource, /Сохранённые генерации/);
   assert.match(historySource, /restoreRouteSession\(routeSession\.sessionId\)/);
 });

@@ -58,9 +58,9 @@ test("quick capture UI is camera first, requires explicit marker confirmation, a
   assert.match(quickCaptureSource, /visibility:\s*"public"/);
   assert.match(quickCaptureSource, /\/api\/posts/);
   assert.match(quickCaptureSource, /locationLogImageId:\s*saved\.value\.image\.id/);
-  assert.match(quickCaptureSource, /Опубликовать в ленту/);
+  assert.match(quickCaptureSource, /В ленту/);
   assert.match(quickCaptureSource, /to="\/feed\?tab=globe"/);
-  assert.match(confirmationMapSource, /mapStore\.addedPoint/);
+  assert.match(confirmationMapSource, /applyPoint|onMarkerDragEnd/);
   assert.match(confirmationMapSource, /Перетащите|дважды нажмите/i);
 });
 
