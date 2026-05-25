@@ -4,6 +4,7 @@ import type { RouteMapPoint } from "~/lib/explore/route-map";
 import {
   buildRouteLegs,
   filterRoutePointsByDay,
+  getRouteDayGroups,
   toRouteMapPoints,
 } from "~/lib/explore/route-map";
 
@@ -21,6 +22,31 @@ const selectedStoryRoutePointId = useState<string | null>("explore-selected-stor
 const routeMapPoints = computed(() => toRouteMapPoints(aiRouteSession.activePoints.value));
 const selectedRoutePoints = computed(() => filterRoutePointsByDay(routeMapPoints.value, selectedDay.value));
 const routeLegs = computed(() => buildRouteLegs(selectedRoutePoints.value));
+const routeDayGroups = computed(() => getRouteDayGroups(routeMapPoints.value));
+
+const activeIndex = computed(() => selectedRoutePoints.value.findIndex(
+  p => p.sourceId === selectedStoryRoutePointId.value,
+));
+
+const headerLabel = computed(() => {
+  if (aiRouteSession.isGenerating.value)
+    return "Генерируем маршрут…";
+
+  const total = selectedRoutePoints.value.length;
+  if (!total)
+    return "";
+
+  const stepIndex = Math.max(0, activeIndex.value);
+  const point = selectedRoutePoints.value[stepIndex];
+  if (!point)
+    return `Шаг 1 из ${total}`;
+
+  return `День ${point.day} · Шаг ${stepIndex + 1} из ${total}`;
+});
+
+function setDay(day: number | null) {
+  selectedDay.value = day;
+}
 
 const showCarousel = computed(() => Boolean(
   aiRouteSession.sessionId.value
@@ -83,6 +109,48 @@ function openCard(point: RouteMapPoint) {
     class="route-step-carousel pointer-events-auto fixed inset-x-0 bottom-[80px] z-30 md:hidden"
     data-testid="explore-route-step-carousel"
   >
+    <header class="route-step-header flex flex-col gap-1.5 px-3 pt-1">
+      <div class="route-step-handle mx-auto h-1.5 w-10 rounded-full" />
+
+      <div
+        v-if="routeDayGroups.length > 1"
+        class="no-scrollbar flex items-center gap-1.5 overflow-x-auto pb-0.5"
+      >
+        <button
+          class="route-step-day-chip explore-chip flex h-7 shrink-0 items-center rounded-full border px-3 text-[11px] font-semibold transition"
+          :class="selectedDay === null ? 'explore-chip-active' : ''"
+          type="button"
+          @click="setDay(null)"
+        >
+          Все
+        </button>
+        <button
+          v-for="group in routeDayGroups"
+          :key="group.day"
+          class="route-step-day-chip explore-chip flex h-7 shrink-0 items-center rounded-full border px-3 text-[11px] font-semibold transition"
+          :class="selectedDay === group.day ? 'explore-chip-active' : ''"
+          type="button"
+          @click="setDay(group.day)"
+        >
+          Д{{ group.day }}
+        </button>
+      </div>
+
+      <div class="flex items-center justify-between">
+        <span class="explore-text-soft text-[11px] font-medium">{{ headerLabel }}</span>
+        <div v-if="selectedRoutePoints.length > 1" class="flex items-center gap-1">
+          <span
+            v-for="(_, index) in selectedRoutePoints"
+            :key="index"
+            class="h-1 rounded-full transition-all"
+            :class="index === Math.max(0, activeIndex)
+              ? 'w-3 bg-[var(--explore-text)]'
+              : 'w-1 bg-[var(--explore-border-strong)]'"
+          />
+        </div>
+      </div>
+    </header>
+
     <ol
       class="route-step-track flex snap-x snap-mandatory overflow-x-auto overscroll-x-contain px-[10vw] pb-3 pt-2"
       data-testid="explore-route-step-track"
@@ -188,5 +256,14 @@ function openCard(point: RouteMapPoint) {
 .route-step-thumb {
   background: var(--explore-surface);
   border: 1px solid var(--explore-border);
+}
+.route-step-handle {
+  background: var(--explore-border-strong);
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  scrollbar-width: none;
 }
 </style>
