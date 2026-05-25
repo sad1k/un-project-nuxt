@@ -41,6 +41,11 @@ function isLast(index: number): boolean {
 function onSelectCard(point: RouteMapPoint) {
   selectedStoryRoutePointId.value = point.sourceId;
 }
+
+function openCard(point: RouteMapPoint) {
+  onSelectCard(point);
+  emit("openDetails", point);
+}
 </script>
 
 <template>
@@ -59,11 +64,14 @@ function onSelectCard(point: RouteMapPoint) {
         class="route-step-card-slot snap-center shrink-0 px-1.5"
         style="flex-basis: 84%;"
       >
-        <button
-          class="route-step-card explore-card group flex w-full items-stretch gap-3 rounded-2xl border p-3 text-left transition"
+        <article
+          class="route-step-card explore-card flex w-full items-stretch gap-3 rounded-2xl border p-3 text-left transition"
           :class="point.sourceId === selectedStoryRoutePointId ? 'route-step-card-active' : ''"
-          type="button"
-          @click="onSelectCard(point); emit('openDetails', point)"
+          role="button"
+          tabindex="0"
+          @click="openCard(point)"
+          @keydown.enter.prevent="openCard(point)"
+          @keydown.space.prevent="openCard(point)"
         >
           <div class="route-step-thumb flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl">
             <Icon
@@ -76,10 +84,10 @@ function onSelectCard(point: RouteMapPoint) {
             <div class="flex items-center gap-2">
               <span
                 class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full font-mono text-[11px]"
-                :class="isLast(index)
-                  ? 'bg-brand-sangria text-[var(--explore-primary-text)]'
-                  : point.sourceId === selectedStoryRoutePointId
-                    ? 'bg-brand-emerald text-[var(--explore-primary-text)]'
+                :class="point.sourceId === selectedStoryRoutePointId
+                  ? 'bg-brand-emerald text-[var(--explore-primary-text)]'
+                  : isLast(index)
+                    ? 'bg-brand-sangria text-[var(--explore-primary-text)]'
                     : 'explore-route-stop-marker border'"
               >
                 {{ index + 1 }}
@@ -118,7 +126,7 @@ function onSelectCard(point: RouteMapPoint) {
               </button>
             </div>
           </div>
-        </button>
+        </article>
       </li>
     </ol>
   </section>
