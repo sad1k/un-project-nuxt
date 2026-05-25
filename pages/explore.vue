@@ -315,6 +315,10 @@ function onSheetStory(point: RouteMapPoint) {
       @story="onSheetStory"
     />
 
-    <ExploreRouteStepCarousel />
+    <ExploreRouteStepCarousel
+      @open-details="openPlaceSheet"
+      @save="onSheetSave"
+      @directions="onSheetDirections"
+    />
   </div>
 </template>
