@@ -39,6 +39,15 @@ const showRouteSession = computed(() => Boolean(
 const collapsed = computed(() => showRouteSession.value && !editing.value);
 const currentStep = computed<Step>(() => STEPS[stepIndex.value] ?? "city");
 
+// Mobile: when the wizard is expanded over an active route, the route step
+// carousel occupies the bottom of the screen. Lift the wizard above it so the
+// "Куда едем?" input does not overlap the place scroll. 200px is a safe
+// fallback until the carousel reports its measured height.
+const carouselHeight = useState<number>("explore-route-carousel-height", () => 0);
+const expandedBottomPx = computed(() =>
+  showRouteSession.value ? (carouselHeight.value || 200) + 12 : 88,
+);
+
 const interestsSummary = computed(() => {
   if (!selectedInterests.value.length)
     return "Интересы не выбраны";
@@ -246,9 +255,10 @@ function onTouchEnd(event: TouchEvent) {
 <template>
   <div
     class="pointer-events-none absolute z-[60] transition-all"
+    :style="{ '--explore-wizard-bottom': `${expandedBottomPx}px` }"
     :class="collapsed && showRouteSession
       ? 'left-3 right-3 top-[120px] md:bottom-6 md:left-1/2 md:right-auto md:top-auto md:w-[min(96vw,520px)] md:-translate-x-1/2'
-      : 'bottom-[88px] left-1/2 w-[min(96vw,520px)] -translate-x-1/2 md:bottom-6'"
+      : 'bottom-[var(--explore-wizard-bottom)] left-1/2 w-[min(96vw,520px)] -translate-x-1/2 md:bottom-6'"
   >
     <Transition name="badge" mode="out-in">
       <button

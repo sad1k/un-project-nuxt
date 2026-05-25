@@ -49,9 +49,29 @@ function setDay(day: number | null) {
   selectedDay.value = day;
 }
 
+const rootRef = ref<HTMLElement | null>(null);
 const trackRef = ref<HTMLElement | null>(null);
 const cardRefs = ref<Record<string, HTMLElement>>({});
 let observer: IntersectionObserver | null = null;
+
+// Publish the carousel's height so the wizard can lift its expanded input
+// above it on mobile instead of overlapping the place scroll.
+const carouselHeight = useState<number>("explore-route-carousel-height", () => 0);
+let resizeObserver: ResizeObserver | null = null;
+
+function setupResizeObserver() {
+  if (!import.meta.client)
+    return;
+  resizeObserver?.disconnect();
+  if (!rootRef.value) {
+    carouselHeight.value = 0;
+    return;
+  }
+  resizeObserver = new ResizeObserver(() => {
+    carouselHeight.value = rootRef.value?.offsetHeight ?? 0;
+  });
+  resizeObserver.observe(rootRef.value);
+}
 const USER_SCROLL_WINDOW_MS = 300;
 let lastUserScrollAt = 0;
 
@@ -93,8 +113,10 @@ function onTrackScroll() {
   lastUserScrollAt = performance.now();
 }
 
-onMounted(() => {
+onMounted(async () => {
   setupObserver();
+  await nextTick();
+  setupResizeObserver();
 });
 
 watch(selectedRoutePoints, async () => {
@@ -105,6 +127,9 @@ watch(selectedRoutePoints, async () => {
 onBeforeUnmount(() => {
   observer?.disconnect();
   observer = null;
+  resizeObserver?.disconnect();
+  resizeObserver = null;
+  carouselHeight.value = 0;
 });
 
 const showCarousel = computed(() => Boolean(
@@ -112,6 +137,11 @@ const showCarousel = computed(() => Boolean(
   || aiRouteSession.isGenerating.value
   || aiRouteSession.activePoints.value.length,
 ));
+
+watch(showCarousel, async () => {
+  await nextTick();
+  setupResizeObserver();
+});
 
 function heroImageFor(point: RouteMapPoint): string | null {
   if (point.markerKind !== "generated")
@@ -192,6 +222,7 @@ function openCard(point: RouteMapPoint) {
 <template>
   <section
     v-if="showCarousel"
+    ref="rootRef"
     class="route-step-carousel pointer-events-auto fixed inset-x-0 bottom-[80px] z-30 md:hidden"
     data-testid="explore-route-step-carousel"
     aria-label="Шаги маршрута"
