@@ -162,39 +162,6 @@ function startAnotherCapture() {
           Добавить фото из поездки
         </h1>
       </div>
-
-      <button
-        v-if="hasPhoto"
-        type="button"
-        class="relative h-11 w-11 shrink-0 overflow-hidden rounded-2xl border border-brand-gold/40 shadow-lg shadow-black/40 transition hover:scale-[1.03] hover:border-brand-gold/70"
-        :disabled="Boolean(saved)"
-        :title="saved ? 'Фото сохранено' : 'Поменять фото'"
-        aria-label="Поменять фото"
-        @click="openCamera"
-      >
-        <img
-          :src="previewUrl!"
-          alt="Текущее фото"
-          class="h-full w-full object-cover"
-        >
-        <span class="absolute inset-x-0 bottom-0 flex items-center justify-center bg-gradient-to-t from-black/75 to-transparent py-0.5">
-          <Icon
-            name="tabler:edit"
-            size="12"
-            class="text-white"
-          />
-        </span>
-      </button>
-      <button
-        v-else
-        type="button"
-        class="inline-flex h-11 shrink-0 items-center gap-2 rounded-2xl border border-brand-gold/45 bg-brand-gold/95 px-3 text-sm font-semibold text-brand-dark shadow-lg shadow-brand-gold/20 transition hover:bg-brand-gold sm:px-4"
-        title="Сделать или выбрать фото"
-        @click="openCamera"
-      >
-        <Icon name="tabler:camera-plus" size="18" />
-        <span class="hidden sm:inline">Фото</span>
-      </button>
     </header>
 
     <input
@@ -236,25 +203,59 @@ function startAnotherCapture() {
     >
       <div class="w-full max-w-2xl rounded-3xl border border-white/12 bg-black/72 p-3.5 shadow-2xl shadow-black/60 backdrop-blur-xl sm:p-4">
         <!-- Status row -->
-        <div class="mb-3 flex flex-wrap items-center gap-2 text-xs">
-          <span
-            class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-medium"
-            :class="hasPhoto
-              ? 'border-brand-gold/45 bg-brand-gold/15 text-brand-gold'
-              : 'border-white/15 bg-white/5 text-white/55'"
+        <div class="mb-3 flex items-start justify-between gap-2">
+          <div class="flex flex-wrap items-center gap-2 text-xs">
+            <span
+              class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-medium"
+              :class="hasPhoto
+                ? 'border-brand-gold/45 bg-brand-gold/15 text-brand-gold'
+                : 'border-white/15 bg-white/5 text-white/55'"
+            >
+              <Icon :name="hasPhoto ? 'tabler:photo-check' : 'tabler:photo-plus'" size="14" />
+              {{ hasPhoto ? "Фото готово" : "Фото не выбрано" }}
+            </span>
+            <span
+              class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-medium"
+              :class="hasPoint
+                ? 'border-emerald-400/40 bg-emerald-400/12 text-emerald-200'
+                : 'border-white/15 bg-white/5 text-white/55'"
+            >
+              <Icon :name="hasPoint ? 'tabler:map-pin-check' : 'tabler:map-pin-plus'" size="14" />
+              {{ hasPoint ? accuracyLabel : "Метка не задана" }}
+            </span>
+          </div>
+
+          <button
+            v-if="hasPhoto"
+            type="button"
+            class="relative h-9 w-9 shrink-0 overflow-hidden rounded-xl border border-brand-gold/40 shadow-md shadow-black/40 transition hover:scale-[1.03] hover:border-brand-gold/70"
+            title="Поменять фото"
+            aria-label="Поменять фото"
+            @click="openCamera"
           >
-            <Icon :name="hasPhoto ? 'tabler:photo-check' : 'tabler:photo-plus'" size="14" />
-            {{ hasPhoto ? "Фото готово" : "Фото не выбрано" }}
-          </span>
-          <span
-            class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-medium"
-            :class="hasPoint
-              ? 'border-emerald-400/40 bg-emerald-400/12 text-emerald-200'
-              : 'border-white/15 bg-white/5 text-white/55'"
+            <img
+              :src="previewUrl!"
+              alt="Текущее фото"
+              class="h-full w-full object-cover"
+            >
+            <span class="absolute inset-x-0 bottom-0 flex items-center justify-center bg-gradient-to-t from-black/75 to-transparent py-0.5">
+              <Icon
+                name="tabler:edit"
+                size="10"
+                class="text-white"
+              />
+            </span>
+          </button>
+          <button
+            v-else
+            type="button"
+            class="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-xl border border-brand-gold/45 bg-brand-gold/95 px-3 text-xs font-semibold text-brand-dark shadow-md shadow-brand-gold/20 transition hover:bg-brand-gold"
+            title="Сделать или выбрать фото"
+            @click="openCamera"
           >
-            <Icon :name="hasPoint ? 'tabler:map-pin-check' : 'tabler:map-pin-plus'" size="14" />
-            {{ hasPoint ? accuracyLabel : "Метка не задана" }}
-          </span>
+            <Icon name="tabler:camera-plus" size="16" />
+            Фото
+          </button>
         </div>
 
         <!-- Step 1: place a marker (when no point) -->
