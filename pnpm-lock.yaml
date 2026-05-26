@@ -20,6 +20,12 @@ importers:
       '@aws-sdk/s3-request-presigner':
         specifier: ^3.946.0
         version: 3.946.0
+      '@iconify-json/logos':
+        specifier: ^1.2.11
+        version: 1.2.11
+      '@iconify-json/tabler':
+        specifier: ^1.2.35
+        version: 1.2.35
       '@indoorequal/vue-maplibre-gl':
         specifier: ^8.4.0
         version: 8.4.0(maplibre-gl@4.7.1)(vue@3.5.16(typescript@5.8.3))
@@ -116,6 +122,9 @@ importers:
       vue:
         specifier: ^3.5.14
         version: 3.5.16(typescript@5.8.3)
+      vue-easy-lightbox:
+        specifier: ^1.19.0
+        version: 1.19.0(vue@3.5.16(typescript@5.8.3))
       vue-router:
         specifier: ^4.5.1
         version: 4.5.1(vue@3.5.16(typescript@5.8.3))
@@ -962,6 +971,12 @@ packages:
   '@humanwhocodes/retry@0.4.3':
     resolution: {integrity: sha512-bV0Tgo9K4hfPCek+aMAn81RppFKv2ySDQeMoSZuvTASywNTnVJCArCZE2FWqpvIatKu7VMRLWlR1EazvVhDyhQ==}
     engines: {node: '>=18.18'}
+
+  '@iconify-json/logos@1.2.11':
+    resolution: {integrity: sha512-fOo4pGEatuyuCFNL+cwquYMa2Im0oJHRHV7lt/Qqs5Ode/lPImHCQcfTtPzZj7qYMPb/h8YHN3TG54uEowrjNQ==}
+
+  '@iconify-json/tabler@1.2.35':
+    resolution: {integrity: sha512-/sJMqHvh5ZWrEERVfDCT5NjVDeKJdhosFtKjJofAVl+P/3AzLiryOQw7WvrfDF25Xa5N/eoOQ15Y1jnhYXxBoQ==}
 
   '@iconify/collections@1.0.557':
     resolution: {integrity: sha512-283MvzQA7NgWkjt2AiMURoyW2hUWu0C4c0PjgAOXiQ4lEVQlwIYP8a9FR3xSECfc+EAMq2+M+1kbUlq09doRtw==}
@@ -7841,6 +7856,14 @@ snapshots:
   '@humanwhocodes/retry@0.3.1': {}
 
   '@humanwhocodes/retry@0.4.3': {}
+
+  '@iconify-json/logos@1.2.11':
+    dependencies:
+      '@iconify/types': 2.0.0
+
+  '@iconify-json/tabler@1.2.35':
+    dependencies:
+      '@iconify/types': 2.0.0
 
   '@iconify/collections@1.0.557':
     dependencies:
