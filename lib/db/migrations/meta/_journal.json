@@ -15,6 +15,13 @@
       "when": 1765395153026,
       "tag": "0001_wild_zaran",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1779235200000,
+      "tag": "0002_pwa_offline_tables",
+      "breakpoints": true
     }
   ]
 }
