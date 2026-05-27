@@ -1,6 +1,8 @@
 <script lang="ts" setup>
 import type { PlaceIntelligence } from "~/lib/explore/place-intelligence";
 import type { RouteMapPoint } from "~/lib/explore/route-map";
+import type { Bbox } from "~/lib/offline/bbox-from-route";
+import type { OfflineRegion } from "~/lib/offline/region-store";
 
 import { createPlacePopupHTML } from "~/components/explore/place-popup";
 import {
@@ -260,6 +262,59 @@ async function regenerateRoute() {
     return;
   await generateRoute(requestContext.value);
 }
+
+type OfflineDownloadPayload = {
+  bbox: Bbox;
+  estimatedBytes: number;
+  pointCount: number;
+};
+
+const offlineDownloadRequest = ref<OfflineDownloadPayload | null>(null);
+const offlineManagerOpen = ref(false);
+const offlinePreviewRegion = ref<OfflineRegion | null>(null);
+
+function onOfflineDownloadRequest(payload: OfflineDownloadPayload) {
+  offlineDownloadRequest.value = payload;
+}
+
+function onOfflineSheetClose() {
+  offlineDownloadRequest.value = null;
+}
+
+function onOfflineSheetConfirm(_payload: OfflineDownloadPayload) {
+  // Region metadata is persisted inside the sheet via useOfflineRegions().
+  // Real tile fetching arrives in the next slice.
+  offlineDownloadRequest.value = null;
+}
+
+function onOpenOfflineManager() {
+  offlineManagerOpen.value = true;
+}
+
+function onCloseOfflineManager() {
+  offlineManagerOpen.value = false;
+}
+
+function onSelectOfflineRegion(region: OfflineRegion) {
+  if (region.status === "complete" && region.tilesDone) {
+    offlinePreviewRegion.value = region;
+    offlineManagerOpen.value = false;
+    return;
+  }
+
+  // Region not fully downloaded — fall back to flying the main Mapbox
+  // globe to the bbox centre so the user at least sees the area.
+  const [west, south, east, north] = region.bbox;
+  mapbox.flyToPoint(
+    { lat: (south + north) / 2, lng: (west + east) / 2 },
+    { zoom: 9, duration: 900 },
+  );
+  offlineManagerOpen.value = false;
+}
+
+function onCloseOfflinePreview() {
+  offlinePreviewRegion.value = null;
+}
 </script>
 
 <template>
@@ -279,6 +334,8 @@ async function regenerateRoute() {
     </div>
 
     <ExploreMapView @loaded="onMapLoaded" />
+
+    <OfflineBanner />
 
     <div class="explore-top-scrim pointer-events-none absolute inset-x-0 top-0 z-10 h-24" />
     <div class="explore-bottom-scrim pointer-events-none absolute inset-x-0 bottom-0 z-10 h-28" />
@@ -340,6 +397,15 @@ async function regenerateRoute() {
       </button>
     </div>
 
+    <div class="pointer-events-none absolute bottom-6 left-[80px] z-30 flex flex-col gap-2 max-md:bottom-[96px] max-md:left-3">
+      <OfflineDownloadTrigger
+        :route-points="selectedRoutePoints"
+        @request="onOfflineDownloadRequest"
+        @open-manager="onOpenOfflineManager"
+      />
+      <OfflineRegionsTrigger @open="onOpenOfflineManager" />
+    </div>
+
     <ExploreWizard />
     <AppSideRail mode="overlay" />
     <AppMobileToolbar />
@@ -359,6 +425,24 @@ async function regenerateRoute() {
       @save="onSheetSave"
       @directions="onSheetDirections"
       @retry="regenerateRoute"
+    />
+
+    <OfflineDownloadSheet
+      :payload="offlineDownloadRequest"
+      :region-label="selectedCity?.label"
+      @close="onOfflineSheetClose"
+      @confirm="onOfflineSheetConfirm"
+    />
+
+    <OfflineRegionsManager
+      :open="offlineManagerOpen"
+      @close="onCloseOfflineManager"
+      @select="onSelectOfflineRegion"
+    />
+
+    <OfflineRegionPreview
+      :region="offlinePreviewRegion"
+      @close="onCloseOfflinePreview"
     />
   </div>
 </template>
