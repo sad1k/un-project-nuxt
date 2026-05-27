@@ -26,12 +26,17 @@
     "verify:explore-foundation": "npm run lint:source && npm run test:server",
     "prepare": "husky",
     "typecheck": "nuxt typecheck",
-    "dev:db": "turso dev --db-file local.db"
+    "dev:db": "turso dev --db-file local.db",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "node scripts/db-migrate.mjs",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.943.0",
     "@aws-sdk/s3-presigned-post": "^3.943.0",
     "@aws-sdk/s3-request-presigner": "^3.946.0",
+    "@iconify-json/logos": "^1.2.11",
+    "@iconify-json/tabler": "^1.2.35",
     "@indoorequal/vue-maplibre-gl": "^8.4.0",
     "@libsql/client": "^0.15.7",
     "@mistralai/mistralai": "^2.2.1",
@@ -66,6 +71,7 @@
     "tailwind-merge": "^3.4.0",
     "tailwindcss": "^4.1.7",
     "vue": "^3.5.14",
+    "vue-easy-lightbox": "^1.19.0",
     "vue-router": "^4.5.1",
     "vue-sonner": "2.0.9",
     "vue-yandex-maps": "^2.2.5",

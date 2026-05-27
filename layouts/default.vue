@@ -33,9 +33,5 @@ const showMobileMap = computed(() =>
         <AppPwaInstallPrompt />
       </div>
     </div>
-    <ClientOnly>
-      <AppRequestErrorNotifications />
-      <OfflineIosA2hsBanner />
-    </ClientOnly>
   </div>
 </template>

@@ -93,15 +93,7 @@ function closeDrawer() {
       ]"
     >
       <div class="flex flex-col gap-5" :class="showLabels ? 'items-stretch' : 'items-center'">
-        <div class="flex items-center gap-2" :class="showLabels ? 'justify-between' : 'flex-col'">
-          <NuxtLink
-            aria-label="Панель WanderLog"
-            class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-brand-emerald to-brand-sangria font-headline text-[10px] text-white transition duration-300 hover:-translate-y-0.5 hover:scale-105"
-            to="/dashboard"
-            @click="closeDrawer"
-          >
-            W
-          </NuxtLink>
+        <div class="flex items-center" :class="showLabels ? 'justify-end' : 'justify-center'">
           <button
             :aria-expanded="showLabels"
             :aria-label="showLabels ? 'Свернуть боковую панель' : 'Развернуть боковую панель'"

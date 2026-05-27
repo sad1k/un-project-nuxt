@@ -2,12 +2,12 @@
   // https://nuxt.com/docs/guide/concepts/typescript
   "extends": "./.nuxt/tsconfig.json",
   "compilerOptions": {
+    "paths": {
+      "ymaps3": ["./node_modules/@yandex/ymaps3-types"]
+    },
     "typeRoots": [
       "./node_modules/@types",
       "./node_modules/@yandex/ymaps3-types"
     ]
-  },
-  "paths": {
-    "ymaps3": ["./node_modules/@yandex/ymaps3-types"]
   }
 }
