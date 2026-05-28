@@ -1,6 +1,4 @@
 <script lang="ts" setup>
-import type { FetchError } from "ofetch";
-
 const locationStore = useLocationStore();
 const { currentLocationLog } = storeToRefs(locationStore);
 const imageFile = ref<File | null>(null);
@@ -8,18 +6,16 @@ const imageUrl = ref<string | null>(null);
 const inputRef = useTemplateRef<HTMLInputElement>("inputRef");
 const loading = ref(false);
 
-const { $csrfFetch } = useNuxtApp();
 const route = useRoute();
 
-type ToastNotification = {
-  id: string;
-  name: string;
-  description: string;
-  time: string;
-  color: string;
-};
+const notifications = ref<Array<{ id: string; description: string }>>([]);
 
-const notifications = ref<ToastNotification[]>([]);
+const pending = usePendingOperationsStore();
+const pendingPhotoUploads = computed(() =>
+  pending.operations.filter(op =>
+    op.type === "photo.upload" && op.payload.logId === Number(route.params.id),
+  ),
+);
 
 function onFileChange(file: File) {
   if (file) {
@@ -28,83 +24,55 @@ function onFileChange(file: File) {
   }
 }
 
-async function getChecksum(blob: Blob) {
-  const arrayBuffer = await blob.arrayBuffer();
-  const hash = await crypto.subtle.digest("SHA-256", arrayBuffer);
-  return btoa(String.fromCharCode(...new Uint8Array(hash)));
+async function resizeToBlob(source: File, url: string): Promise<Blob> {
+  const newImage = new Image();
+  newImage.src = url;
+  await new Promise<void>((resolve, reject) => {
+    newImage.onload = () => resolve();
+    newImage.onerror = () => reject(new Error("Не удалось прочитать изображение"));
+  });
+  const width = Math.min(newImage.width, 1000);
+  const resized = await createImageBitmap(newImage, { resizeWidth: width });
+  const canvas = new OffscreenCanvas(width, resized.height);
+  canvas.getContext("bitmaprenderer")?.transferFromImageBitmap(resized);
+  return canvas.convertToBlob({ type: "image/png", quality: 0.9 });
 }
 
 async function uploadImage() {
-  if (!imageFile.value || !imageUrl.value)
+  if (!imageFile.value || !imageUrl.value || !currentLocationLog.value)
     return;
 
   loading.value = true;
-  const newImage = new Image();
-  newImage.src = imageUrl.value;
-  const width = Math.min(newImage.width, 1000);
-  newImage.onload = async () => {
-    const resized = await createImageBitmap(newImage, {
-      resizeWidth: width,
+  try {
+    const blob = await resizeToBlob(imageFile.value, imageUrl.value);
+    const queue = useOfflineQueue();
+    const pending = usePendingOperationsStore();
+    await queue.enqueuePhoto(blob, {
+      locationSlug: route.params.slug as string,
+      logId: Number(route.params.id),
     });
-
-    const canvas = new OffscreenCanvas(width, resized.height);
-    canvas.getContext("bitmaprenderer")?.transferFromImageBitmap(resized);
-
-    const blob = await canvas.convertToBlob({
-      type: "image/png",
-      quality: 0.9,
+    await pending.refresh();
+  }
+  catch (error) {
+    const id = `err-${Date.now()}`;
+    notifications.value.push({
+      id,
+      description: error instanceof Error ? error.message : "Неизвестная ошибка загрузки",
     });
-
-    const checkSum = await getChecksum(blob);
-    try {
-      const { url, fields, key } = await $csrfFetch(`/api/locations/${route.params.slug}/${route.params.id}/sign-images`, {
-        method: "POST",
-        body: {
-          checksum: checkSum,
-          contentLength: blob.size,
-        },
-      });
-
-      const formData = new FormData();
-      Object.entries(fields).forEach(([key, value]) => {
-        formData.append(key, value as string);
-      });
-
-      formData.append("file", blob);
-      await $fetch(url, {
-        method: "POST",
-        body: formData,
-      });
-
-      await $csrfFetch(`/api/locations/${route.params.slug}/${route.params.id}/image`, {
-        method: "POST",
-        body: {
-          key,
-        },
-      });
-    }
-    catch (error) {
-      const errorMessage = error as unknown as FetchError;
-      notifications.value.push({
-        id: "123",
-        name: "Ошибка загрузки изображения",
-        description: errorMessage.data?.statusMessage || errorMessage.statusMessage || "Неизвестная ошибка",
-        time: "Now",
-        color: "",
-      });
-      setTimeout(() => {
-        notifications.value.shift();
-      }, 5000);
-    }
-    finally {
-      loading.value = false;
-      imageFile.value = null;
+    setTimeout(() => {
+      notifications.value = notifications.value.filter(n => n.id !== id);
+    }, 5000);
+  }
+  finally {
+    loading.value = false;
+    imageFile.value = null;
+    if (imageUrl.value) {
+      URL.revokeObjectURL(imageUrl.value);
       imageUrl.value = null;
-      if (inputRef.value) {
-        inputRef.value.value = "";
-      }
     }
-  };
+    if (inputRef.value)
+      inputRef.value.value = "";
+  }
 }
 </script>
 
@@ -165,6 +133,20 @@ async function uploadImage() {
         :location-log="currentLocationLog"
         :loading="loading"
       />
+    </div>
+
+    <div v-if="pendingPhotoUploads.length" class="mt-2">
+      <h3 class="mb-2 text-sm font-medium text-amber-700 dark:text-amber-400">
+        Загружается ({{ pendingPhotoUploads.length }})
+      </h3>
+      <div class="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5">
+        <OfflineQueuedPhotoThumb
+          v-for="op in pendingPhotoUploads"
+          :key="op.opId"
+          :op-id="op.opId"
+          :status="op.status"
+        />
+      </div>
     </div>
   </div>
 </template>

@@ -3,71 +3,96 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { test } from "node:test";
 
-const serviceWorkerSource = await readFile("public/wanderlog-sw.js", "utf8");
-const legacyWorkerSource = await readFile("public/route-generation-sw.js", "utf8");
+const swPath = "public/wanderlog-sw.js";
+const serviceWorkerSource = await readFile(swPath, "utf8");
 const notificationSource = await readFile("composables/use-route-generation-notifications.ts", "utf8");
 const offlineSource = await readFile("public/offline.html", "utf8");
 
-test("unified app service worker owns shell lifecycle notifications and navigation fallback", () => {
-  for (const eventName of ["install", "activate", "fetch", "push", "notificationclick"])
-    assert.match(serviceWorkerSource, new RegExp(`addEventListener\\("${eventName}"`));
+test("unified app service worker owns push notifications and navigation fallback", () => {
+  for (const eventName of ["activate", "push", "notificationclick", "message"])
+    assert.match(serviceWorkerSource, new RegExp(`addEventListener\\(["']${eventName}["']`));
 
-  assert.match(serviceWorkerSource, /wanderlog-app-shell-v\d+/);
+  assert.match(serviceWorkerSource, /wl-static-v1/);
   assert.match(serviceWorkerSource, /\/offline\.html/);
-  assert.match(serviceWorkerSource, /request\.mode === "navigate"/);
   assert.match(serviceWorkerSource, /showNotification/);
   assert.match(serviceWorkerSource, /clients\.openWindow/);
 });
 
-test("service worker explicitly bypasses private and provider data", () => {
-  for (const expected of [
-    "/api/",
-    "/auth/",
-    "/api/explore/place-story/audio",
-    "api.mapbox.com",
-    "api.open-meteo.com",
-    "nominatim.openstreetmap.org",
-    "/locations/",
-    "/image",
-  ]) {
-    assert.match(serviceWorkerSource, new RegExp(expected.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
-  }
-});
-
-test("service worker caches the static app shell for offline boot", () => {
-  // App shell precache covers the bare HTML fallback plus icons.
-  assert.match(serviceWorkerSource, /wanderlog-app-shell-v2/);
-  assert.match(serviceWorkerSource, /PRECACHE_ASSETS/);
-  assert.match(serviceWorkerSource, /cache\.addAll\(PRECACHE_ASSETS\)/);
-
-  // Runtime cache covers the hashed Nuxt bundle and static assets so
-  // the SPA can boot on a cold offline visit.
-  assert.match(serviceWorkerSource, /\/_nuxt\//);
-  assert.match(serviceWorkerSource, /RUNTIME_CACHE/);
-  assert.match(serviceWorkerSource, /cacheFirst/);
-
-  // Cross-origin font hosts are explicitly allow-listed for runtime
-  // caching — Google Fonts is the only third-party allowed in.
-  assert.match(serviceWorkerSource, /fonts\.googleapis\.com/);
-  assert.match(serviceWorkerSource, /fonts\.gstatic\.com/);
-
-  // Navigations get cached so the same URL works on the next offline
-  // visit; the catch path falls back to the cached HTML, then offline.
-  assert.match(serviceWorkerSource, /handleNavigate/);
-  assert.match(serviceWorkerSource, /NAV_CACHE/);
+test("service worker scoping does not match private or provider data via registered routes", () => {
+  // Routes must filter out auth, audio (large), and health from runtime caching.
+  assert.match(serviceWorkerSource, /\/api\/auth/);
+  assert.match(serviceWorkerSource, /\/api\/explore\/place-story\/audio/);
+  // No hand-rolled cache.put outside Workbox primitives.
+  assert.doesNotMatch(serviceWorkerSource, /cache\.put\(/);
 });
 
 test("route notification registration uses the unified worker path", () => {
   assert.match(notificationSource, /navigator\.serviceWorker\.register\("\/wanderlog-sw\.js"\)/);
   assert.doesNotMatch(notificationSource, /route-generation-sw\.js/);
-  assert.match(legacyWorkerSource, /importScripts\("\/wanderlog-sw\.js"\)/);
 });
 
 test("offline fallback is honest about what works and what does not", () => {
   assert.match(offlineSource, /WanderLog is offline/);
   // Routes/diary/AI still need network — we never promise they sync later.
   assert.match(offlineSource, /Routes, diary changes, and AI features need a network connection/);
-  // Saved offline regions DO work (the only honest claim we add now).
+  // Saved offline regions DO work now that the SW caches the app shell.
   assert.match(offlineSource, /Saved offline regions remain available/);
   assert.doesNotMatch(offlineSource, /sync later|edit offline|generate offline/i);
+});
+
+test("imports workbox primitives", async () => {
+  const sw = await readFile(swPath, "utf8");
+  assert.ok(sw.includes("workbox-precaching"));
+  assert.ok(sw.includes("workbox-routing"));
+  assert.ok(sw.includes("workbox-strategies"));
+  assert.ok(sw.includes("workbox-background-sync"));
+  assert.ok(sw.includes("workbox-expiration"));
+});
+
+test("precaches __WB_MANIFEST", async () => {
+  const sw = await readFile(swPath, "utf8");
+  assert.ok(sw.includes("self.__WB_MANIFEST"));
+  assert.ok(sw.includes("precacheAndRoute"));
+});
+
+test("registers NetworkFirst route for /api/ GET", async () => {
+  const sw = await readFile(swPath, "utf8");
+  assert.ok(sw.includes("NetworkFirst"));
+  assert.match(sw, /registerRoute[\s\S]*\/api\//);
+});
+
+test("registers CacheFirst route for images", async () => {
+  const sw = await readFile(swPath, "utf8");
+  assert.ok(sw.includes("CacheFirst"));
+  assert.ok(sw.includes("wl-images-v1"));
+});
+
+test("registers StaleWhileRevalidate for nuxt assets", async () => {
+  const sw = await readFile(swPath, "utf8");
+  assert.ok(sw.includes("StaleWhileRevalidate"));
+  assert.ok(sw.includes("/_nuxt/"));
+});
+
+test("uses workbox Queue with queue name wl-writes", async () => {
+  const sw = await readFile(swPath, "utf8");
+  assert.ok(sw.includes("workbox-background-sync"));
+  assert.ok(sw.includes("Queue"));
+  assert.ok(sw.includes("wl-writes"));
+});
+
+test("preserves existing push handler", async () => {
+  const sw = await readFile(swPath, "utf8");
+  assert.ok(sw.match(/addEventListener\(["']push["']/));
+  assert.ok(sw.match(/addEventListener\(["']notificationclick["']/));
+});
+
+test("uses ExpirationPlugin for runtime caches", async () => {
+  const sw = await readFile(swPath, "utf8");
+  assert.ok(sw.includes("ExpirationPlugin"));
+  assert.ok(sw.includes("purgeOnQuotaError"));
+});
+
+test("declares wl-api-v1 cache name", async () => {
+  const sw = await readFile(swPath, "utf8");
+  assert.ok(sw.includes("wl-api-v1"));
 });

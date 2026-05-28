@@ -1,58 +1,42 @@
-<script lang="ts" setup>
-// Top-center pill banner that announces the offline state. Pure
-// informational — never blocks input or shifts layout. Mounted
-// once on the explore page; renders nothing while online.
+<script setup lang="ts">
+const { isOffline, isCaptivePortal } = useNetworkStatus();
+const store = usePendingOperationsStore();
+const open = ref(false);
 
-const { isOffline } = useOnline();
-const offlineRegions = useOfflineRegions();
+const message = computed(() => {
+  if (isCaptivePortal.value)
+    return "Wi-Fi требует входа — откройте страницу провайдера, чтобы синхронизировать";
+  if (isOffline.value)
+    return `Офлайн — ${store.pendingCount} операций в очереди`;
+  if (store.blockedCount > 0)
+    return `${store.blockedCount} операций требуют внимания`;
+  return "";
+});
 
-const availableRegions = computed(() =>
-  offlineRegions.regions.value.filter(region => region.status === "complete").length,
-);
-
-const detailText = computed(() => {
-  if (!offlineRegions.isLoaded.value)
-    return "загрузка списка регионов…";
-  if (availableRegions.value === 0)
-    return "карты для офлайна не скачаны";
-  if (availableRegions.value === 1)
-    return "1 регион доступен";
-  return `${availableRegions.value} регионов доступно`;
+const visible = computed(() => Boolean(message.value));
+const colorClass = computed(() => {
+  if (store.blockedCount > 0)
+    return "bg-red-500/95 text-red-50";
+  if (isCaptivePortal.value)
+    return "bg-orange-500/95 text-orange-50";
+  return "bg-amber-500/95 text-amber-50";
 });
 </script>
 
 <template>
-  <Transition name="offline-banner">
+  <div>
     <div
-      v-if="isOffline"
-      class="pointer-events-none fixed inset-x-0 z-[60] flex justify-center px-3"
-      style="top: max(0.5rem, env(safe-area-inset-top))"
+      v-if="visible"
+      class="sticky top-0 z-40 cursor-pointer px-4 py-2 text-sm shadow-md"
+      :class="[colorClass]"
+      role="alert"
+      @click="open = true"
     >
-      <div
-        class="pointer-events-auto inline-flex items-center gap-2 rounded-full border bg-[var(--explore-warning-bg)] px-4 py-1.5 text-xs font-bold shadow-lg backdrop-blur-xl"
-        style="border-color: var(--explore-warning-border); color: var(--explore-warning-text)"
-        role="status"
-        aria-live="polite"
-      >
-        <Icon name="tabler:wifi-off" size="14" />
-        <span>Офлайн режим</span>
-        <span class="opacity-75">· {{ detailText }}</span>
+      <div class="flex items-center justify-between gap-3">
+        <span class="truncate">{{ message }}</span>
+        <Icon name="lucide:chevron-right" class="size-4 shrink-0" />
       </div>
     </div>
-  </Transition>
+    <OfflineSyncDrawer v-model="open" />
+  </div>
 </template>
-
-<style scoped>
-.offline-banner-enter-active,
-.offline-banner-leave-active {
-  transition:
-    opacity 240ms cubic-bezier(0.22, 1, 0.36, 1),
-    transform 240ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.offline-banner-enter-from,
-.offline-banner-leave-to {
-  opacity: 0;
-  transform: translateY(-12px);
-}
-</style>

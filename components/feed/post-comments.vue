@@ -40,24 +40,26 @@ async function submitComment() {
 
   submitting.value = true;
   try {
-    const body: { content: string; parentId?: number; replyToUserId?: number } = {
-      content: newComment.value.trim(),
-    };
-
-    if (replyingTo.value) {
-      body.parentId = replyingTo.value.id;
-      body.replyToUserId = replyingTo.value.userId;
-    }
-
-    await $csrfFetch(`/api/posts/${postId}/comments`, {
-      method: "POST",
-      body,
+    const queue = useOfflineQueue();
+    const pending = usePendingOperationsStore();
+    const { response } = await queue.enqueue({
+      type: "post.comment",
+      payload: {
+        postId,
+        content: newComment.value.trim(),
+        parentId: replyingTo.value?.id,
+        replyToUserId: replyingTo.value?.userId,
+      },
     });
 
     newComment.value = "";
     replyingTo.value = null;
-    await fetchComments();
+    // 2xx → refresh comment list with server state.
+    // 202 (offline-queued) → leave the input cleared; the optimistic Pinia store shows the pending op.
+    if (response.ok && response.status !== 202)
+      await fetchComments();
     emit("commentAdded");
+    await pending.refresh();
   }
   catch {
     console.error("Ошибка отправки комментария");

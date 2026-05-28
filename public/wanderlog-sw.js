@@ -1,138 +1,135 @@
-// WanderLog service worker.
-//
-// Caches the static app shell (HTML/CSS/JS bundles, fonts, icons) so the
-// SPA boots offline — letting the IndexedDB-backed offline-map UX
-// actually run when the network drops. Private data (API, auth, user
-// photos) and provider hosts (Mapbox, OSM, Protomaps) stay strictly
-// bypassed; they go straight to network and fail honestly when offline.
+import { Queue } from "workbox-background-sync";
+import { ExpirationPlugin } from "workbox-expiration";
+import { precacheAndRoute } from "workbox-precaching";
+import { registerRoute } from "workbox-routing";
+import { CacheFirst, NetworkFirst, StaleWhileRevalidate } from "workbox-strategies";
 
-const APP_SHELL_CACHE = "wanderlog-app-shell-v2";
-const RUNTIME_CACHE = "wanderlog-runtime-v1";
-const NAV_CACHE = "wanderlog-nav-v1";
 const OFFLINE_URL = "/offline.html";
 
-const PRECACHE_ASSETS = [
-  OFFLINE_URL,
-  "/manifest.webmanifest",
-  "/favicon.ico",
-  "/icons/wanderlog-icon-192.png",
-  "/icons/wanderlog-icon-512.png",
-  "/icons/wanderlog-maskable-512.png",
-];
+// 1) Precache app shell (manifest injected by vite-pwa injectManifest build)
+precacheAndRoute(self.__WB_MANIFEST || []);
 
-// Strict bypass — these requests are never cached and never replayed
-// from cache, even when offline. Keeps personal data fresh and provider
-// hosts in charge of their own caching/ToS.
-const BYPASS_PATH_PREFIXES = [
-  "/api/",
-  "/auth/",
-  "/api/auth",
-  "/api/explore/place-story/audio",
-];
+// 2) Runtime caches
+// 2a) Nuxt static assets: SWR with no expiration limits (build-time hashed)
+registerRoute(
+  ({ url }) => url.pathname.startsWith("/_nuxt/")
+    || url.pathname.startsWith("/icons/")
+    || url.pathname.startsWith("/screenshots/"),
+  new StaleWhileRevalidate({ cacheName: "wl-static-v1" }),
+);
 
-const BYPASS_HOST_PATTERNS = [
-  "api.mapbox.com",
-  "events.mapbox.com",
-  "tiles.mapbox.com",
-  "api.open-meteo.com",
-  "nominatim.openstreetmap.org",
-  "demo-bucket.protomaps.com",
-];
+// 2b) Images: CacheFirst with LRU
+registerRoute(
+  ({ request, url }) => request.destination === "image"
+    || /\.(?:png|jpe?g|gif|webp|avif|svg)$/i.test(url.pathname),
+  new CacheFirst({
+    cacheName: "wl-images-v1",
+    plugins: [
+      new ExpirationPlugin({
+        maxEntries: 200,
+        maxAgeSeconds: 30 * 24 * 60 * 60,
+        purgeOnQuotaError: true,
+      }),
+    ],
+  }),
+);
 
-// Same-origin paths safe to runtime-cache. `/_nuxt/` is the Nuxt build
-// output with hashed filenames — immutable per build, so a long-lived
-// CacheFirst entry is correct.
-const RUNTIME_CACHE_PREFIXES = ["/_nuxt/", "/icons/", "/screenshots/", "/styles/"];
+// 2c) API GET: NetworkFirst with cache fallback + LRU
+registerRoute(
+  ({ url, request }) => request.method === "GET"
+    && url.pathname.startsWith("/api/")
+    && !url.pathname.startsWith("/api/auth")
+    && !url.pathname.startsWith("/api/explore/place-story/audio")
+    && !url.pathname.startsWith("/api/health"),
+  new NetworkFirst({
+    cacheName: "wl-api-v1",
+    networkTimeoutSeconds: 4,
+    plugins: [
+      new ExpirationPlugin({
+        maxEntries: 100,
+        maxAgeSeconds: 7 * 24 * 60 * 60,
+        purgeOnQuotaError: true,
+      }),
+    ],
+  }),
+);
 
-const RUNTIME_CACHE_HOSTS = ["fonts.googleapis.com", "fonts.gstatic.com"];
-
-self.addEventListener("install", (event) => {
-  event.waitUntil((async () => {
-    const cache = await caches.open(APP_SHELL_CACHE);
-    await cache.addAll(PRECACHE_ASSETS);
-    await self.skipWaiting();
-  })());
-});
-
-self.addEventListener("activate", (event) => {
-  event.waitUntil((async () => {
-    const keys = await caches.keys();
-    const allowed = new Set([APP_SHELL_CACHE, RUNTIME_CACHE, NAV_CACHE]);
-    await Promise.all(keys
-      .filter(key => key.startsWith("wanderlog-") && !allowed.has(key))
-      .map(key => caches.delete(key)));
-    await self.clients.claim();
-  })());
-});
-
-self.addEventListener("fetch", (event) => {
-  const request = event.request;
-  if (request.method !== "GET" || shouldBypassRequest(request))
-    return;
-
-  const url = new URL(request.url);
-  const acceptsHtml = request.headers.get("accept")?.includes("text/html");
-  const isNavigate = request.mode === "navigate" || acceptsHtml;
-
-  if (isNavigate) {
-    event.respondWith(handleNavigate(request));
-    return;
-  }
-
-  if (url.origin === self.location.origin
-    && RUNTIME_CACHE_PREFIXES.some(prefix => url.pathname.startsWith(prefix))) {
-    event.respondWith(cacheFirst(request, RUNTIME_CACHE));
-    return;
-  }
-
-  if (RUNTIME_CACHE_HOSTS.some(host => url.hostname === host))
-    event.respondWith(cacheFirst(request, RUNTIME_CACHE));
-});
-
-async function handleNavigate(request) {
-  // Network-first for HTML so logged-in users always see fresh shell,
-  // but cache the response so the same URL works on the next offline
-  // visit. SSR-off pages (`/explore`, `/dashboard`, `/feed`) are just
-  // the SPA shell and identical across users, so caching them is safe.
-  try {
-    const response = await fetch(request);
-    if (response.ok) {
-      const cache = await caches.open(NAV_CACHE);
-      await cache.put(request, response.clone());
+// 3) Write queue: Queue directly for non-photo mutations
+const writeQueue = new Queue("wl-writes", {
+  maxRetentionTime: 24 * 60,
+  onSync: async ({ queue }) => {
+    let entry;
+    while ((entry = await queue.shiftRequest())) {
+      try {
+        const response = await fetch(entry.request.clone());
+        if (!response.ok) {
+          if (response.status === 401) {
+            await queue.unshiftRequest(entry);
+            broadcastSync({ status: "auth_required", opId: entry.metadata?.opId });
+            break;
+          }
+          if (response.status === 409) {
+            broadcastSync({ status: "conflict", opId: entry.metadata?.opId });
+            continue;
+          }
+          if (response.status === 422) {
+            broadcastSync({ status: "invalid", opId: entry.metadata?.opId });
+            continue;
+          }
+          throw new Error(`HTTP ${response.status}`);
+        }
+        broadcastSync({ status: "success", opId: entry.metadata?.opId });
+      }
+      catch (err) {
+        await queue.unshiftRequest(entry);
+        throw err;
+      }
     }
-    return response;
-  }
-  catch {
-    const navCache = await caches.open(NAV_CACHE);
-    const cached = await navCache.match(request);
-    if (cached)
-      return cached;
-    const offline = await caches.match(OFFLINE_URL);
-    return offline || Response.error();
-  }
-}
+  },
+});
 
-async function cacheFirst(request, cacheName) {
-  const cache = await caches.open(cacheName);
-  const cached = await cache.match(request);
-  if (cached)
-    return cached;
-  try {
-    const response = await fetch(request);
-    if (response.ok)
-      await cache.put(request, response.clone());
-    return response;
-  }
-  catch (error) {
-    if (cached)
-      return cached;
-    throw error;
-  }
-}
+// Match mutating /api/ requests EXCEPT photo sign-images and auth (single route filters all methods)
+registerRoute(
+  ({ url, request }) => ["POST", "PUT", "DELETE"].includes(request.method)
+    && url.pathname.startsWith("/api/")
+    && !url.pathname.includes("/sign-images")
+    && !url.pathname.startsWith("/api/auth"),
+  async ({ event }) => {
+    try {
+      return await fetch(event.request.clone());
+    }
+    catch {
+      // Only POST enqueues for now (PUT/DELETE retry is follow-up work)
+      if (event.request.method === "POST") {
+        await writeQueue.pushRequest({ request: event.request.clone() });
+        return new Response(JSON.stringify({ queued: true }), {
+          status: 202,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+      throw new Error("Offline");
+    }
+  },
+);
 
+// 4) Navigation fallback to offline.html
+registerRoute(
+  ({ request }) => request.mode === "navigate",
+  async ({ event }) => {
+    try {
+      return await fetch(event.request);
+    }
+    catch {
+      const cache = await caches.open("wl-static-v1");
+      const cached = await cache.match(OFFLINE_URL);
+      return cached || Response.error();
+    }
+  },
+);
+
+// 5) Push handlers (preserved from original SW)
 self.addEventListener("push", (event) => {
   let payload = {};
-
   try {
     payload = event.data ? event.data.json() : {};
   }
@@ -140,42 +137,98 @@ self.addEventListener("push", (event) => {
     payload = {};
   }
 
-  const title = payload.title || "Генерация маршрута завершена";
+  const title = payload.title || "WanderLog";
+  const tag = payload.tag || (payload.type ? `${payload.type}:${payload.id || Date.now()}` : "wanderlog");
+
   const options = {
-    body: payload.body || "Ваш маршрут WanderLog готов.",
+    body: payload.body || "",
     data: {
-      sessionId: payload.sessionId,
-      url: payload.sessionId ? `/explore?sessionId=${payload.sessionId}` : "/explore",
+      type: payload.type,
+      url: payload.url || "/",
+      ...payload.data,
     },
     icon: "/icons/wanderlog-icon-192.png",
-    tag: payload.variantId ? `route-generation:${payload.variantId}` : "route-generation",
+    tag,
+    renotify: false,
   };
 
-  event.waitUntil(self.registration.showNotification(title, options));
+  event.waitUntil((async () => {
+    if (await shouldShowInAppToast(payload)) {
+      return;
+    }
+    return self.registration.showNotification(title, options);
+  })());
 });
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-
-  const targetUrl = new URL(event.notification.data?.url || "/explore", self.location.origin).href;
+  const targetUrl = new URL(event.notification.data?.url || "/", self.location.origin).href;
   event.waitUntil((async () => {
     const windows = await self.clients.matchAll({ includeUncontrolled: true, type: "window" });
     const existingClient = windows.find(client => client.url === targetUrl);
-
-    if (existingClient)
+    if (existingClient) {
       return existingClient.focus();
-
+    }
     return self.clients.openWindow(targetUrl);
   })());
 });
 
-function shouldBypassRequest(request) {
-  const url = new URL(request.url);
-  if (url.origin !== self.location.origin)
-    return BYPASS_HOST_PATTERNS.some(host => url.hostname === host || url.hostname.endsWith(`.${host}`));
+// 6) Manual sync trigger (Safari fallback) + cache invalidate from client
+self.addEventListener("message", async (event) => {
+  if (event.data?.type === "wl-manual-sync") {
+    try {
+      await self.registration.sync?.register("wl-writes");
+    }
+    catch {
+      // Background Sync not supported; no-op
+    }
+  }
+  if (event.data?.type === "wl-clear-user-cache") {
+    await caches.delete("wl-api-v1");
+  }
+  if (event.data?.type === "wl-invalidate-cache") {
+    const urls = event.data.urls || [];
+    const cache = await caches.open("wl-api-v1");
+    await Promise.all(urls.map(url => cache.delete(url, { ignoreSearch: false })));
+  }
+});
 
-  return BYPASS_PATH_PREFIXES.some(prefix => url.pathname.startsWith(prefix))
-    || url.pathname.includes("/locations/")
-    || url.pathname.includes("/image")
-    || url.pathname.includes("/place-story/audio");
+// 7) Activate: claim clients and clean old caches
+self.addEventListener("activate", (event) => {
+  event.waitUntil((async () => {
+    const expectedCaches = new Set(["wl-static-v1", "wl-images-v1", "wl-api-v1"]);
+    const keys = await caches.keys();
+    await Promise.all(keys
+      .filter(key => key.startsWith("wl-") && !expectedCaches.has(key))
+      .map(key => caches.delete(key)));
+    await self.clients.claim();
+  })());
+});
+
+function broadcastSync(message) {
+  const channel = new BroadcastChannel("wl-sync");
+  try {
+    channel.postMessage(message);
+  }
+  finally {
+    channel.close();
+  }
+}
+
+async function shouldShowInAppToast(payload) {
+  if (!payload?.type?.startsWith("social.")) {
+    return false;
+  }
+  const windows = await self.clients.matchAll({ includeUncontrolled: true, type: "window" });
+  const focused = windows.find(client => client.focused && client.url.includes("/feed"));
+  if (!focused) {
+    return false;
+  }
+  try {
+    focused.postMessage({ type: "wl-in-app-toast", payload });
+    return true;
+  }
+  catch {
+    return false;
+  }
 }

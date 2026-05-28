@@ -36,7 +36,6 @@ export type FeedResponse = {
 };
 
 export const useFeedStore = defineStore("feedStore", () => {
-  const { $csrfFetch } = useNuxtApp();
   const posts = ref<FeedPost[]>([]);
   const nextCursor = ref<number | null>(null);
   const hasMore = ref(true);
@@ -92,13 +91,19 @@ export const useFeedStore = defineStore("feedStore", () => {
     post.isLikedByUser = true;
     post.likesCount++;
 
-    try {
-      await $csrfFetch(`/api/posts/${postId}/like`, { method: "POST" });
-    }
-    catch {
+    const queue = useOfflineQueue();
+    const pending = usePendingOperationsStore();
+    const { response } = await queue.enqueue({
+      type: "post.like",
+      payload: { postId, action: "like" },
+    });
+    // 2xx (online) and synthetic 202 (offline-queued) both keep the optimistic state;
+    // 4xx means the server rejected (e.g. already liked / unauthorized) so we roll back.
+    if (!response.ok && response.status !== 202) {
       post.isLikedByUser = false;
       post.likesCount--;
     }
+    await pending.refresh();
   }
 
   async function unlikePost(postId: number) {
@@ -109,13 +114,17 @@ export const useFeedStore = defineStore("feedStore", () => {
     post.isLikedByUser = false;
     post.likesCount--;
 
-    try {
-      await $csrfFetch(`/api/posts/${postId}/like`, { method: "DELETE" });
-    }
-    catch {
+    const queue = useOfflineQueue();
+    const pending = usePendingOperationsStore();
+    const { response } = await queue.enqueue({
+      type: "post.like",
+      payload: { postId, action: "unlike" },
+    });
+    if (!response.ok && response.status !== 202) {
       post.isLikedByUser = true;
       post.likesCount++;
     }
+    await pending.refresh();
   }
 
   async function toggleLike(postId: number) {
