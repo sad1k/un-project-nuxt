@@ -20,7 +20,9 @@ const nextIndex = ref(0);
 onMounted(startLoop);
 
 async function startLoop() {
-  const notifications = slots.default ? (slots.default()[0].children ?? []) : [];
+  const defaultVNodes = slots.default ? slots.default() : [];
+  const rawChildren = defaultVNodes[0]?.children;
+  const notifications: unknown[] = Array.isArray(rawChildren) ? rawChildren : [];
   if (!notifications.length)
     return;
 

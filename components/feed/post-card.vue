@@ -96,7 +96,11 @@ const captionWithHighlightedTags = computed(() => {
           <time>{{ formattedDate }}</time>
           <span aria-hidden="true" class="text-gray-300 dark:text-white/20">•</span>
           <div class="feed-post-place flex min-w-0 items-center gap-1 text-cyan-500 dark:text-cyan-400">
-            <Icon name="tabler:map-pin" size="12" class="shrink-0" />
+            <Icon
+              name="tabler:map-pin"
+              size="12"
+              class="shrink-0"
+            />
             <span class="truncate">{{ placeLabel }}</span>
           </div>
         </div>

@@ -8,6 +8,7 @@ const authStore = useAuthStore();
 const route = useRoute();
 
 const { posts, loading, hasMore, error, initialLoading, authorId } = storeToRefs(feedStore);
+const { isOffline } = useOnline();
 
 const feedContainer = ref<HTMLElement | null>(null);
 const activeTab = computed<"feed" | "globe">(() => route.query.tab === "globe" ? "globe" : "feed");
@@ -188,7 +189,11 @@ async function refreshFeed() {
           </div>
 
           <div v-if="authorId" class="mb-6 flex items-center gap-3 rounded-xl border border-brand-gold/25 bg-brand-gold/10 px-4 py-3">
-            <Icon name="tabler:user" size="18" class="shrink-0 text-brand-gold" />
+            <Icon
+              name="tabler:user"
+              size="18"
+              class="shrink-0 text-brand-gold"
+            />
             <span class="min-w-0 flex-1 text-sm font-medium text-gray-900 dark:text-white">
               Публикации {{ authorName ?? 'пользователя' }}
             </span>
@@ -212,6 +217,16 @@ async function refreshFeed() {
             <p class="text-gray-400">
               Загрузка ленты...
             </p>
+          </div>
+
+          <div v-else-if="isOffline && (error || posts.length === 0)" class="py-12">
+            <OfflineUnavailable
+              feature="feed-list"
+              label="Лента"
+              icon="tabler:news-off"
+              variant="card"
+              reason="Подключитесь к сети, чтобы увидеть свежие публикации сообщества."
+            />
           </div>
 
           <div v-else-if="error" class="py-12 text-center">

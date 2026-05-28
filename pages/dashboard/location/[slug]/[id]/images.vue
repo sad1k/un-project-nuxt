@@ -11,12 +11,17 @@ const loading = ref(false);
 const { $csrfFetch } = useNuxtApp();
 const route = useRoute();
 
-const notifications = ref([
+type ToastNotification = {
+  id: string;
+  name: string;
+  description: string;
+  time: string;
+  color: string;
+};
 
-]);
+const notifications = ref<ToastNotification[]>([]);
 
 function onFileChange(file: File) {
-  console.log(file, "file");
   if (file) {
     imageFile.value = file;
     imageUrl.value = URL.createObjectURL(file);
@@ -71,14 +76,12 @@ async function uploadImage() {
         body: formData,
       });
 
-      const insertedImage = await $csrfFetch(`/api/locations/${route.params.slug}/${route.params.id}/image`, {
+      await $csrfFetch(`/api/locations/${route.params.slug}/${route.params.id}/image`, {
         method: "POST",
         body: {
           key,
         },
       });
-
-      console.log(insertedImage);
     }
     catch (error) {
       const errorMessage = error as unknown as FetchError;

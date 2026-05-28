@@ -185,16 +185,34 @@ onBeforeRouteLeave(() => {
   <AppSearchLocations @result-selected="onResultSelected" />
   <dialog ref="leaveDialog" class="modal">
     <div class="modal-box">
-      <h3 class="text-lg font-bold">Покинуть форму?</h3>
+      <h3 class="text-lg font-bold">
+        Покинуть форму?
+      </h3>
       <p class="py-2 text-sm text-gray-600 dark:text-white/70">
         Все несохранённые изменения будут потеряны.
       </p>
       <div class="modal-action">
-        <button type="button" class="btn btn-error" @click="confirmLeave">Покинуть</button>
-        <button type="button" class="btn" @click="cancelLeave">Остаться</button>
+        <button
+          type="button"
+          class="btn btn-error"
+          @click="confirmLeave"
+        >
+          Покинуть
+        </button>
+        <button
+          type="button"
+          class="btn"
+          @click="cancelLeave"
+        >
+          Остаться
+        </button>
       </div>
     </div>
-    <form method="dialog" class="modal-backdrop"><button type="button" @click="cancelLeave">Закрыть</button></form>
+    <form method="dialog" class="modal-backdrop">
+      <button type="button" @click="cancelLeave">
+        Закрыть
+      </button>
+    </form>
   </dialog>
   <Teleport to="body">
     <div class="app-chrome-strong fixed inset-x-0 bottom-16 z-40 border-t px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 md:hidden">
@@ -205,10 +223,18 @@ onBeforeRouteLeave(() => {
         @click="onSubmit"
       >
         <span v-if="loading" class="loading loading-spinner loading-md" />
-        <Icon v-else :name="props.submitButtonIcon || 'tabler:circle-plus-filled'" size="22" />
+        <Icon
+          v-else
+          :name="props.submitButtonIcon || 'tabler:circle-plus-filled'"
+          size="22"
+        />
         {{ props.submitButtonText || "Добавить" }}
       </button>
-      <button type="button" class="mt-2 block w-full text-center text-sm text-gray-500 active:text-gray-700 dark:text-white/60" @click="router.back()">
+      <button
+        type="button"
+        class="mt-2 block w-full text-center text-sm text-gray-500 active:text-gray-700 dark:text-white/60"
+        @click="router.back()"
+      >
         Отмена
       </button>
     </div>

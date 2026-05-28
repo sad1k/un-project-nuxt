@@ -16,9 +16,15 @@ const heightClass = computed(() => {
   }
 });
 
-function toggleCollapse() { mapStore.toggleMobileSheet(); }
-function expandFull() { mapStore.mobileSheetState = "expanded"; }
-function shrinkToPeek() { mapStore.mobileSheetState = "peek"; }
+function toggleCollapse() {
+  mapStore.toggleMobileSheet();
+}
+function expandFull() {
+  mapStore.mobileSheetState = "expanded";
+}
+function shrinkToPeek() {
+  mapStore.mobileSheetState = "peek";
+}
 
 const counterLabel = computed(() => {
   const n = mapStore.mapPoints?.length;

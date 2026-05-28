@@ -1,7 +1,7 @@
 import type { RouteLeg, RouteMapPoint } from "~/lib/explore/route-map";
 
 import { createPlacePopupLoadingHTML } from "~/components/explore/place-popup";
-import { createMarkerElement, createPopupHTML } from "~/components/explore/route-marker";
+import { createMarkerElement, createPopupHTML, updateMarkerLabel } from "~/components/explore/route-marker";
 
 const ROUTE_LINE_LAYER_ID = "explore-route-line";
 const ROUTE_LINE_SOURCE_ID = "explore-route-line";
@@ -21,7 +21,15 @@ const SATELLITE_MAP_STYLE = "mapbox://styles/mapbox/satellite-streets-v12";
 // Module-level shared state so all components share the same instance.
 const mapInstance = shallowRef<any>(null);
 const mapLoaded = ref(false);
-const activeMarkers: any[] = [];
+
+type MarkerEntry = {
+  marker: any;
+  element: HTMLDivElement;
+  labelElement: HTMLDivElement;
+  popup: any | null;
+  detachListeners: () => void;
+};
+const activeMarkerMap = new Map<string, MarkerEntry>();
 let activeRoutePopup: any = null;
 let activeRoutePopupCloseTimeout: ReturnType<typeof setTimeout> | null = null;
 const popupHoverCloseElements = new WeakSet<HTMLElement>();
@@ -183,10 +191,14 @@ export function useMapbox() {
     }
 
     const mb = await getMapboxGL();
-    mb.accessToken = token;
     mapboxAccessToken = token;
 
     const map = new mb.Map({
+      // Token passed via constructor option — assigning to
+      // `mb.accessToken` fails when Vite serves mapbox-gl as a
+      // native frozen ES module (after we excluded it from the
+      // pre-bundler to avoid the CSS-as-module dev-server bug).
+      accessToken: token,
       container,
       style: getActiveMapStyle(),
       projection: "globe",
@@ -237,13 +249,16 @@ export function useMapbox() {
     cancelRoutePopupClose();
     activeRoutePopup?.remove();
     activeRoutePopup = null;
-    activeMarkers.forEach(marker => marker.remove());
-    activeMarkers.length = 0;
+    for (const entry of activeMarkerMap.values()) {
+      entry.detachListeners();
+      entry.popup?.remove();
+      entry.marker.remove();
+    }
+    activeMarkerMap.clear();
     hasActiveRoute = false;
   }
 
   async function addMarkers(points: RouteMapPoint[], options: RoutePopupOptions = {}) {
-    clearMarkers();
     const map = mapInstance.value;
     const mb = await getMapboxGL();
     if (!map)
@@ -254,54 +269,124 @@ export function useMapbox() {
       hasActiveRoute = true;
 
     const touch = isTouchDevice();
+    const seenIds = new Set<string>();
+    const hadMarkersBefore = activeMarkerMap.size > 0;
 
     validPoints.forEach((point, index) => {
-      const el = createMarkerElement(point, index, index * 150);
+      seenIds.add(point.id);
+      const nextPoint = validPoints[index + 1] ?? null;
+      const existing = activeMarkerMap.get(point.id);
 
-      const marker = new mb.Marker({ element: el })
+      if (existing) {
+        existing.marker.setLngLat([point.lng, point.lat]);
+        updateMarkerLabel(existing.labelElement, point, index);
+        existing.detachListeners();
+        existing.detachListeners = bindMarkerInteractions(
+          existing.element,
+          existing.popup,
+          point,
+          nextPoint,
+          options,
+          touch,
+          map,
+        );
+        return;
+      }
+
+      const delayMs = hadMarkersBefore ? 0 : index * 150;
+      const { element, labelElement } = createMarkerElement(point, index, delayMs);
+      const marker = new mb.Marker({ element })
         .setLngLat([point.lng, point.lat])
         .addTo(map);
 
-      const nextPoint = validPoints[index + 1] ?? null;
+      const popup = touch
+        ? null
+        : new mb.Popup({
+            offset: 20,
+            className: "explore-route-popup",
+            maxWidth: "min(300px, calc(100vw - 32px))",
+            closeButton: false,
+            closeOnClick: false,
+          }).setHTML(createPopupHTML(point));
 
-      if (touch) {
-        el.addEventListener("click", (event) => {
-          event.stopPropagation();
-          options.onMarkerClick?.(point);
-        });
-      }
-      else {
-        const popup = new mb.Popup({
-          offset: 20,
-          className: "explore-route-popup",
-          maxWidth: "min(300px, calc(100vw - 32px))",
-          closeButton: false,
-          closeOnClick: false,
-        }).setHTML(createPopupHTML(point));
+      const detachListeners = bindMarkerInteractions(
+        element,
+        popup,
+        point,
+        nextPoint,
+        options,
+        touch,
+        map,
+      );
 
-        const showPopup = () => {
-          cancelRoutePopupClose();
-          if (activeRoutePopup && activeRoutePopup !== popup)
-            activeRoutePopup.remove();
-
-          activeRoutePopup = popup;
-          popup.setHTML(point.markerKind === "generated"
-            ? createPlacePopupLoadingHTML({ name: point.name, day: point.day })
-            : createPopupHTML(point));
-          popup.setLngLat([point.lng, point.lat]).addTo(map);
-          bindPopupActions(point, nextPoint, popup, options);
-          bindPopupHoverClose(popup);
-          if (point.markerKind === "generated")
-            void refreshPopupHTML(point, nextPoint, popup, options);
-        };
-
-        el.addEventListener("mouseenter", showPopup);
-        el.addEventListener("mouseleave", () => scheduleRoutePopupClose(popup));
-        el.addEventListener("click", showPopup);
-      }
-
-      activeMarkers.push(marker);
+      activeMarkerMap.set(point.id, {
+        marker,
+        element,
+        labelElement,
+        popup,
+        detachListeners,
+      });
     });
+
+    for (const [id, entry] of activeMarkerMap) {
+      if (seenIds.has(id))
+        continue;
+
+      entry.detachListeners();
+      if (activeRoutePopup === entry.popup) {
+        activeRoutePopup.remove();
+        activeRoutePopup = null;
+      }
+      entry.popup?.remove();
+      entry.marker.remove();
+      activeMarkerMap.delete(id);
+    }
+  }
+
+  function bindMarkerInteractions(
+    el: HTMLDivElement,
+    popup: any | null,
+    point: RouteMapPoint,
+    nextPoint: RouteMapPoint | null,
+    options: RoutePopupOptions,
+    touch: boolean,
+    map: any,
+  ): () => void {
+    const controller = new AbortController();
+    const { signal } = controller;
+
+    if (touch) {
+      el.addEventListener("click", (event) => {
+        event.stopPropagation();
+        options.onMarkerClick?.(point);
+      }, { signal });
+      return () => controller.abort();
+    }
+
+    if (!popup)
+      return () => controller.abort();
+
+    const showPopup = () => {
+      cancelRoutePopupClose();
+      if (activeRoutePopup && activeRoutePopup !== popup)
+        activeRoutePopup.remove();
+
+      activeRoutePopup = popup;
+      popup.setHTML(point.markerKind === "generated"
+        ? createPlacePopupLoadingHTML({ name: point.name, day: point.day })
+        : createPopupHTML(point));
+      popup.setLngLat([point.lng, point.lat]).addTo(map);
+      bindPopupActions(point, nextPoint, popup, options);
+      bindPopupHoverClose(popup);
+      if (point.markerKind === "generated")
+        void refreshPopupHTML(point, nextPoint, popup, options);
+    };
+
+    el.addEventListener("mouseenter", showPopup, { signal });
+    el.addEventListener("mouseleave", () => scheduleRoutePopupClose(popup), { signal });
+    el.addEventListener("click", showPopup, { signal });
+
+    return () => controller.abort();
   }
 
   async function refreshPopupHTML(

@@ -37,8 +37,6 @@ export default defineAuthenticatedHandler(async (event) => {
 
   const metadata = response.Metadata;
 
-  console.log(metadata, "metadata");
-
   if (
     !metadata
     || metadata["user-id"] !== event.context.user.id.toString()

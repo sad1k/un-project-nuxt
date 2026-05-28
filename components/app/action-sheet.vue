@@ -11,19 +11,22 @@ const sheetRef = ref<HTMLElement | null>(null);
 const titleId = useId();
 
 function close() {
-  if (!props.dismissable) return;
+  if (!props.dismissable)
+    return;
   emit("update:open", false);
 }
 
 function onKey(e: KeyboardEvent) {
-  if (e.key === "Escape") close();
+  if (e.key === "Escape")
+    close();
 }
 
 watch(() => props.open, (open) => {
   if (open) {
     nextTick(() => sheetRef.value?.focus());
     document.addEventListener("keydown", onKey);
-  } else {
+  }
+  else {
     document.removeEventListener("keydown", onKey);
   }
 });
@@ -62,7 +65,11 @@ onBeforeUnmount(() => document.removeEventListener("keydown", onKey));
         @click.stop
       >
         <div class="mx-auto mb-3 h-1 w-10 rounded-full bg-[var(--app-chrome-border-strong)]" />
-        <div v-if="title" :id="titleId" class="mb-3 text-base font-semibold tracking-tight">
+        <div
+          v-if="title"
+          :id="titleId"
+          class="mb-3 text-base font-semibold tracking-tight"
+        >
           {{ title }}
         </div>
         <slot />

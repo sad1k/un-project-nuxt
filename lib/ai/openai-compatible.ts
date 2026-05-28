@@ -58,7 +58,7 @@ export async function* fetchOpenAiCompatibleRouteStream(
       "Content-Type": "application/json",
       "User-Agent": PROVIDER_USER_AGENT,
       ...getProviderRequestHeaders(),
-    },
+    } as HeadersInit,
     body: JSON.stringify(createProviderRequestBody(input, shouldStreamProviderResponse())),
   });
 

@@ -15,7 +15,9 @@ function isActive(path: string) {
   return route.path === path;
 }
 
-function openFab() { fabOpen.value = true; }
+function openFab() {
+  fabOpen.value = true;
+}
 </script>
 
 <template>
@@ -58,29 +60,53 @@ function openFab() { fabOpen.value = true; }
     <AppActionSheet v-model:open="fabOpen" title="Создать">
       <ul class="flex flex-col gap-1">
         <li>
-          <NuxtLink to="/dashboard/add" class="flex items-center gap-3 rounded-xl px-3 py-3 active:bg-gray-100 dark:active:bg-white/10" @click="fabOpen = false">
+          <NuxtLink
+            to="/dashboard/add"
+            class="flex items-center gap-3 rounded-xl px-3 py-3 active:bg-gray-100 dark:active:bg-white/10"
+            @click="fabOpen = false"
+          >
             <Icon name="tabler:map-pin-plus" size="22" />
             <div>
-              <div class="text-sm font-semibold">Добавить место</div>
-              <div class="text-xs text-gray-500">Сохранить локацию в дневник</div>
+              <div class="text-sm font-semibold">
+                Добавить место
+              </div>
+              <div class="text-xs text-gray-500">
+                Сохранить локацию в дневник
+              </div>
             </div>
           </NuxtLink>
         </li>
         <li>
-          <NuxtLink to="/dashboard/place-photo/new" class="flex items-center gap-3 rounded-xl px-3 py-3 active:bg-gray-100 dark:active:bg-white/10" @click="fabOpen = false">
+          <NuxtLink
+            to="/dashboard/place-photo/new"
+            class="flex items-center gap-3 rounded-xl px-3 py-3 active:bg-gray-100 dark:active:bg-white/10"
+            @click="fabOpen = false"
+          >
             <Icon name="tabler:camera-plus" size="22" />
             <div>
-              <div class="text-sm font-semibold">Быстрое фото</div>
-              <div class="text-xs text-gray-500">Прикрепить фото к месту</div>
+              <div class="text-sm font-semibold">
+                Быстрое фото
+              </div>
+              <div class="text-xs text-gray-500">
+                Прикрепить фото к месту
+              </div>
             </div>
           </NuxtLink>
         </li>
         <li>
-          <NuxtLink to="/dashboard/publish" class="flex items-center gap-3 rounded-xl px-3 py-3 active:bg-gray-100 dark:active:bg-white/10" @click="fabOpen = false">
+          <NuxtLink
+            to="/dashboard/publish"
+            class="flex items-center gap-3 rounded-xl px-3 py-3 active:bg-gray-100 dark:active:bg-white/10"
+            @click="fabOpen = false"
+          >
             <Icon name="tabler:send" size="22" />
             <div>
-              <div class="text-sm font-semibold">Опубликовать пост</div>
-              <div class="text-xs text-gray-500">Поделиться с лентой</div>
+              <div class="text-sm font-semibold">
+                Опубликовать пост
+              </div>
+              <div class="text-xs text-gray-500">
+                Поделиться с лентой
+              </div>
             </div>
           </NuxtLink>
         </li>

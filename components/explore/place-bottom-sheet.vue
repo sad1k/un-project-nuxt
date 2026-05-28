@@ -24,6 +24,8 @@ const VELOCITY_DISMISS_THRESHOLD = 0.9;
 const TAP_THRESHOLD_PX = 6;
 const TAP_THRESHOLD_MS = 200;
 
+const { isOnline, isOffline } = useOnline();
+
 const isOpen = computed(() => Boolean(props.place));
 const currentSnap = ref(1);
 const dragOffset = ref(0);
@@ -48,7 +50,10 @@ const renderedHtml = computed(() => {
       day: props.place.day ?? undefined,
     });
   }
-  return createPlacePopupHTML(props.intelligence, { includeStoryCta: true });
+  // Story CTA needs the network to generate fresh audio — hide it when
+  // offline. The standalone <OfflineUnavailable> strip below the HTML
+  // tells the user the feature is paused, not missing.
+  return createPlacePopupHTML(props.intelligence, { includeStoryCta: isOnline.value });
 });
 
 let touchStartY = 0;
@@ -196,6 +201,18 @@ onBeforeUnmount(() => {
           @click="onContentClick"
           v-html="renderedHtml"
         />
+        <div
+          v-if="isOffline"
+          class="shrink-0 px-3 pb-2 pt-1"
+        >
+          <OfflineUnavailable
+            feature="ai-story"
+            label="AI-история"
+            icon="tabler:sparkles"
+            variant="inline"
+            reason="Сгенерируем, когда появится сеть"
+          />
+        </div>
       </section>
     </Transition>
   </Teleport>

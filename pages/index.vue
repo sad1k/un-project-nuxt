@@ -43,7 +43,12 @@ async function handleProviderSignIn(provider: "github" | "google") {
     <div class="cosmos__grid" aria-hidden="true" />
 
     <!-- Toast (auth error) -->
-    <div v-if="authError" class="cosmos__toast" role="alert" aria-live="assertive">
+    <div
+      v-if="authError"
+      class="cosmos__toast"
+      role="alert"
+      aria-live="assertive"
+    >
       <Icon name="tabler:alert-circle" class="text-lg" />
       <span>{{ authError }}</span>
     </div>
@@ -53,7 +58,12 @@ async function handleProviderSignIn(provider: "github" | "google") {
     <div class="cosmos__globe" aria-hidden="true">
       <div class="cosmos__globe-canvas">
         <ClientOnly>
-          <FeedGlobe :realistic="true" :hide-chrome="true" :zoom="2.6" :spin-speed="0.02" />
+          <FeedGlobe
+            :realistic="true"
+            :hide-chrome="true"
+            :zoom="2.6"
+            :spin-speed="0.02"
+          />
         </ClientOnly>
       </div>
       <div class="cosmos__globe-fade" />
@@ -85,7 +95,11 @@ async function handleProviderSignIn(provider: "github" | "google") {
             @click="handleProviderSignIn('google')"
           >
             <span v-if="isSigningIn && activeProvider === 'google'" class="cosmos__spinner" />
-            <Icon v-else name="logos:google-icon" class="text-xl" />
+            <Icon
+              v-else
+              name="logos:google-icon"
+              class="text-xl"
+            />
             <span>Продолжить с Google</span>
           </button>
 
@@ -95,7 +109,11 @@ async function handleProviderSignIn(provider: "github" | "google") {
             @click="handleProviderSignIn('github')"
           >
             <span v-if="isSigningIn && activeProvider === 'github'" class="cosmos__spinner cosmos__spinner--light" />
-            <Icon v-else name="tabler:brand-github" class="text-xl" />
+            <Icon
+              v-else
+              name="tabler:brand-github"
+              class="text-xl"
+            />
             <span>Продолжить с GitHub</span>
           </button>
 
@@ -298,7 +316,6 @@ async function handleProviderSignIn(provider: "github" | "google") {
     display: none;
   }
 }
-
 
 @media (min-width: 1280px) {
   .cosmos__globe {

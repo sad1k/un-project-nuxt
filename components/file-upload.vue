@@ -13,7 +13,7 @@ type FileUploadProps = {
 defineProps<FileUploadProps>();
 
 const emit = defineEmits<{
-  (e: "onChange", files: File[]): void;
+  (e: "onChange", file: File): void;
 }>();
 
 const fileInputRef = ref<HTMLInputElement | null>(null);
@@ -22,6 +22,8 @@ const isActive = ref<boolean>(false);
 
 function handleFileChange(newFiles: File[]) {
   const file = newFiles[0];
+  if (!file)
+    return;
   files.value = [file];
   emit("onChange", file);
 }
