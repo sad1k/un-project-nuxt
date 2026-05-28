@@ -48,7 +48,7 @@ onBeforeUnmount(() => {
       class="flex items-center gap-2"
     >
       <Icon name="tabler:wifi-off" size="15" />
-      <span>Офлайн-оболочка доступна. Для маршрутов, карт, дневника и AI нужна сеть.</span>
+      <span>Офлайн-оболочка доступна. Скачанные регионы карты работают. Для маршрутов, дневника и AI нужна сеть.</span>
     </p>
     <p
       v-else-if="updateReady"
