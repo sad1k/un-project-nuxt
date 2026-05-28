@@ -72,10 +72,52 @@ const previewUrl = computed(() => {
   return `https://api.mapbox.com/styles/v1/mapbox/${styleId}/static/${bboxParam}/600x320@2x?access_token=${token}`;
 });
 
-const sizeQuotaPercent = computed(() => {
+const offlineRegions = useOfflineRegions();
+
+const currentUsedBytes = computed(() =>
+  offlineRegions.regions.value.reduce((sum, region) => sum + (region.actualBytes || region.estimatedBytes), 0),
+);
+
+const projectedTotalBytes = computed(() => {
   if (!props.payload)
-    return 0;
-  return Math.min(100, Math.round((props.payload.estimatedBytes / STORAGE_LIMIT_BYTES) * 100));
+    return currentUsedBytes.value;
+  return currentUsedBytes.value + props.payload.estimatedBytes;
+});
+
+const sizeQuotaPercent = computed(() =>
+  Math.min(100, Math.round((projectedTotalBytes.value / STORAGE_LIMIT_BYTES) * 100)),
+);
+
+type QuotaWarning = "exceeds-cap" | "near-cap" | "large-single" | null;
+
+const LARGE_SINGLE_REGION_BYTES = 100 * 1024 * 1024;
+const NEAR_CAP_FRACTION = 0.8;
+
+const quotaWarning = computed<QuotaWarning>(() => {
+  if (!props.payload)
+    return null;
+  if (projectedTotalBytes.value > STORAGE_LIMIT_BYTES)
+    return "exceeds-cap";
+  if (projectedTotalBytes.value > STORAGE_LIMIT_BYTES * NEAR_CAP_FRACTION)
+    return "near-cap";
+  if (props.payload.estimatedBytes > LARGE_SINGLE_REGION_BYTES)
+    return "large-single";
+  return null;
+});
+
+const quotaBlocked = computed(() => quotaWarning.value === "exceeds-cap");
+
+const quotaMessage = computed(() => {
+  switch (quotaWarning.value) {
+    case "exceeds-cap":
+      return `Превышает лимит 200 МБ. Сейчас занято ${formatSizeMB(currentUsedBytes.value)}; освободите место в менеджере перед загрузкой.`;
+    case "near-cap":
+      return `Регион доводит хранилище до ${sizeQuotaPercent.value}% от лимита. Можно скачать, но скоро придётся чистить.`;
+    case "large-single":
+      return "Регион крупный — загрузка может занять несколько минут на медленной сети.";
+    default:
+      return "";
+  }
 });
 
 const includedItems = computed(() => [
@@ -92,7 +134,6 @@ const excludedItems = [
   { icon: "tabler:cloud-snow", label: "Прогноз погоды" },
 ];
 
-const offlineRegions = useOfflineRegions();
 const saveState = ref<SaveState>("idle");
 const saveError = ref<string | null>(null);
 const activeRegionId = ref<string | null>(null);
@@ -306,18 +347,52 @@ onBeforeUnmount(() => {
               </div>
             </div>
 
+            <!-- Quota warning / error banner -->
+            <div
+              v-if="quotaWarning"
+              class="rounded-xl border px-4 py-3 text-xs"
+              :class="{
+                'explore-status-danger': quotaWarning === 'exceeds-cap',
+                'explore-status-warning': quotaWarning === 'near-cap' || quotaWarning === 'large-single',
+              }"
+              role="status"
+            >
+              <div class="flex items-start gap-2">
+                <Icon
+                  :name="quotaWarning === 'exceeds-cap' ? 'tabler:alert-octagon' : 'tabler:alert-triangle'"
+                  size="14"
+                  class="mt-0.5 shrink-0"
+                />
+                <p class="font-medium leading-5">
+                  {{ quotaMessage }}
+                </p>
+              </div>
+            </div>
+
             <!-- Size + quota -->
             <div class="rounded-xl border border-[var(--explore-border)] bg-[var(--explore-surface-soft)] p-4">
               <div class="mb-2 flex items-baseline justify-between gap-2">
                 <span class="text-2xl font-bold text-[var(--explore-text)]">≈ {{ sizeLabel }}</span>
-                <span class="font-mono text-[10px] text-[var(--explore-text-soft)]">{{ sizeQuotaPercent }}% от лимита (~200 МБ)</span>
+                <span
+                  class="font-mono text-[10px]"
+                  :class="quotaBlocked ? 'text-[var(--explore-danger-text)]' : 'text-[var(--explore-text-soft)]'"
+                >
+                  {{ sizeQuotaPercent }}% от лимита (~200 МБ)
+                </span>
               </div>
               <div class="explore-progress-track h-1.5 overflow-hidden rounded-full">
                 <div
-                  class="h-full rounded-full bg-[var(--explore-primary-bg)] transition-all"
+                  class="h-full rounded-full transition-all"
+                  :class="quotaBlocked ? 'bg-[var(--explore-danger-text)]' : (quotaWarning === 'near-cap' ? 'bg-[var(--explore-warning-text)]' : 'bg-[var(--explore-primary-bg)]')"
                   :style="{ width: `${sizeQuotaPercent}%` }"
                 />
               </div>
+              <p
+                v-if="currentUsedBytes > 0"
+                class="mt-2 font-mono text-[10px] text-[var(--explore-text-faint)]"
+              >
+                Уже занято {{ formatSizeMB(currentUsedBytes) }} · добавится {{ formatSizeMB(payload?.estimatedBytes ?? 0) }} · итого {{ formatSizeMB(projectedTotalBytes) }}
+              </p>
             </div>
 
             <!-- Included -->
@@ -408,7 +483,7 @@ onBeforeUnmount(() => {
               <button
                 type="button"
                 class="explore-primary-button inline-flex h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-60"
-                :disabled="saveState !== 'idle' && saveState !== 'error'"
+                :disabled="(saveState !== 'idle' && saveState !== 'error') || quotaBlocked"
                 @click="onConfirm"
               >
                 <template v-if="saveState === 'saving'">
