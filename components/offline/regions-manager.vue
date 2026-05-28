@@ -126,6 +126,22 @@ async function onSelect(region: OfflineRegion) {
   emit("select", region);
 }
 
+function onCancelDownload(region: OfflineRegion) {
+  offlineRegions.cancelDownload(region.id);
+}
+
+function progressPercent(region: OfflineRegion): number {
+  if (!region.totalTiles)
+    return 0;
+  return Math.min(100, Math.round(((region.tilesDone ?? 0) / region.totalTiles) * 100));
+}
+
+function downloadingMetaLabel(region: OfflineRegion): string {
+  const done = formatSizeMB(region.actualBytes);
+  const tiles = `${region.tilesDone ?? 0} / ${region.totalTiles ?? "?"} тайлов`;
+  return `${done} · ${tiles}`;
+}
+
 function onClose() {
   emit("close");
 }
@@ -275,12 +291,32 @@ onBeforeUnmount(() => {
                       >
                         {{ regionDisplayName(region) }}
                       </button>
-                      <p class="mt-0.5 font-mono text-[11px] text-[var(--explore-text-soft)]">
-                        ≈ {{ formatSizeMB(region.estimatedBytes) }} · {{ areaLabel(region) }} · {{ region.pointCount }} точек
+                      <p
+                        v-if="region.status === 'downloading'"
+                        class="mt-0.5 font-mono text-[11px] text-[var(--explore-info-text)]"
+                      >
+                        {{ downloadingMetaLabel(region) }}
+                      </p>
+                      <p
+                        v-else
+                        class="mt-0.5 font-mono text-[11px] text-[var(--explore-text-soft)]"
+                      >
+                        ≈ {{ formatSizeMB(region.actualBytes || region.estimatedBytes) }} · {{ areaLabel(region) }} · {{ region.pointCount }} точек
                       </p>
                       <p class="mt-0.5 text-[11px] text-[var(--explore-text-faint)]">
                         Сохранено {{ formatRelativeRu(region.dateAdded) }}
                       </p>
+                    </div>
+
+                    <!-- Inline progress bar — only while a download is live. -->
+                    <div
+                      v-if="region.status === 'downloading'"
+                      class="explore-progress-track h-1 overflow-hidden rounded-full"
+                    >
+                      <div
+                        class="h-full rounded-full bg-[var(--explore-primary-bg)] transition-all"
+                        :style="{ width: `${progressPercent(region)}%` }"
+                      />
                     </div>
 
                     <div class="flex items-center justify-between gap-2">
@@ -293,9 +329,25 @@ onBeforeUnmount(() => {
                           'explore-status-danger': statusBadge(region).tone === 'danger',
                         }"
                       >
-                        {{ statusBadge(region).label }}
+                        <Icon
+                          v-if="region.status === 'downloading'"
+                          name="tabler:loader-2"
+                          size="10"
+                          class="animate-spin"
+                        />
+                        {{ statusBadge(region).label }}<span v-if="region.status === 'downloading'"> · {{ progressPercent(region) }}%</span>
                       </span>
                       <button
+                        v-if="region.status === 'downloading'"
+                        type="button"
+                        :aria-label="`Отменить загрузку ${regionDisplayName(region)}`"
+                        class="explore-icon-button flex h-8 w-8 items-center justify-center rounded-lg border transition hover:text-[var(--explore-danger-text)]"
+                        @click="onCancelDownload(region)"
+                      >
+                        <Icon name="tabler:x" size="14" />
+                      </button>
+                      <button
+                        v-else
                         type="button"
                         :aria-label="`Удалить ${regionDisplayName(region)}`"
                         class="explore-icon-button flex h-8 w-8 items-center justify-center rounded-lg border transition hover:text-[var(--explore-danger-text)]"
