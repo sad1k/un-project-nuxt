@@ -25,3 +25,19 @@ test("ai-route queries support per-point update, delete and clear", () => {
   // Deleting a point also cleans up its place story rows.
   assert.match(queriesSource, /\.delete\(routePlaceStory\)/);
 });
+
+const patchEndpoint = await readFile("server/api/ai/route/[session-id]/point/[point-id].patch.ts", "utf8").catch(() => "");
+const deleteEndpoint = await readFile("server/api/ai/route/[session-id]/point/[point-id].delete.ts", "utf8").catch(() => "");
+const clearEndpoint = await readFile("server/api/ai/route/[session-id]/points/clear.post.ts", "utf8").catch(() => "");
+
+test("point endpoints are authenticated and validated", () => {
+  for (const src of [patchEndpoint, deleteEndpoint, clearEndpoint]) {
+    assert.match(src, /defineAuthenticatedHandler/);
+    assert.match(src, /event\.context\.user\.id/);
+  }
+  assert.match(patchEndpoint, /RoutePointPatchSchema/);
+  assert.match(patchEndpoint, /updateAiRoutePoint/);
+  assert.match(patchEndpoint, /statusCode: 404/);
+  assert.match(deleteEndpoint, /deleteAiRoutePoint/);
+  assert.match(clearEndpoint, /clearAiRouteVariantPoints/);
+});
