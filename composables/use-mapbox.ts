@@ -28,6 +28,8 @@ type MarkerEntry = {
   labelElement: HTMLDivElement;
   popup: any | null;
   detachListeners: () => void;
+  point: RouteMapPoint;
+  detachDrag: () => void;
 };
 const activeMarkerMap = new Map<string, MarkerEntry>();
 let activeRoutePopup: any = null;
@@ -42,6 +44,8 @@ let hasActiveRoute = false;
 let routeGeometryRequestId = 0;
 let activeTheme: keyof typeof MAP_THEME_STYLES = "dark";
 let activeStyleMode: "theme" | "satellite" = "theme";
+let pointPlacementHandler: ((event: any) => void) | null = null;
+let markerDragHandler: ((routePointId: string, lngLat: { lng: number; lat: number }) => void) | null = null;
 
 type GeoJsonFeatureCollection = {
   type: "FeatureCollection";
@@ -54,6 +58,7 @@ type RoutePopupOptions = {
   onSaveRequest?: (point: RouteMapPoint) => Promise<void> | void;
   onStoryRequest?: (point: RouteMapPoint) => void;
   onMarkerClick?: (point: RouteMapPoint) => void;
+  onRemoveRequest?: (point: RouteMapPoint) => void;
 };
 
 function isTouchDevice() {
@@ -194,10 +199,8 @@ export function useMapbox() {
     mapboxAccessToken = token;
 
     const map = new mb.Map({
-      // Token passed via constructor option — assigning to
-      // `mb.accessToken` fails when Vite serves mapbox-gl as a
-      // native frozen ES module (after we excluded it from the
-      // pre-bundler to avoid the CSS-as-module dev-server bug).
+      // Pass the token via constructor option rather than mutating
+      // the shared `mb.accessToken` global.
       accessToken: token,
       container,
       style: getActiveMapStyle(),
@@ -251,6 +254,7 @@ export function useMapbox() {
     activeRoutePopup = null;
     for (const entry of activeMarkerMap.values()) {
       entry.detachListeners();
+      entry.detachDrag();
       entry.popup?.remove();
       entry.marker.remove();
     }
@@ -290,12 +294,15 @@ export function useMapbox() {
           touch,
           map,
         );
+        existing.point = point;
+        existing.detachDrag();
+        existing.detachDrag = bindMarkerDrag(existing.marker, point);
         return;
       }
 
       const delayMs = hadMarkersBefore ? 0 : index * 150;
       const { element, labelElement } = createMarkerElement(point, index, delayMs);
-      const marker = new mb.Marker({ element })
+      const marker = new mb.Marker({ element, draggable: Boolean(markerDragHandler) && point.markerKind === "generated" })
         .setLngLat([point.lng, point.lat])
         .addTo(map);
 
@@ -325,6 +332,8 @@ export function useMapbox() {
         labelElement,
         popup,
         detachListeners,
+        point,
+        detachDrag: bindMarkerDrag(marker, point),
       });
     });
 
@@ -333,6 +342,7 @@ export function useMapbox() {
         continue;
 
       entry.detachListeners();
+      entry.detachDrag();
       if (activeRoutePopup === entry.popup) {
         activeRoutePopup.remove();
         activeRoutePopup = null;
@@ -341,6 +351,17 @@ export function useMapbox() {
       entry.marker.remove();
       activeMarkerMap.delete(id);
     }
+  }
+
+  function bindMarkerDrag(marker: any, point: RouteMapPoint): () => void {
+    const onDragEnd = () => {
+      if (point.markerKind !== "generated")
+        return;
+      const lngLat = marker.getLngLat();
+      markerDragHandler?.(point.sourceId, { lng: lngLat.lng, lat: lngLat.lat });
+    };
+    marker.on("dragend", onDragEnd);
+    return () => marker.off("dragend", onDragEnd);
   }
 
   function bindMarkerInteractions(
@@ -490,6 +511,17 @@ export function useMapbox() {
         event.preventDefault();
         event.stopPropagation();
         options.onDirectionsRequest?.(point, nextPoint);
+      }, { once: true });
+    });
+
+    bindPopupButton(popup, "[data-place-remove-cta]", (button) => {
+      if (!options.onRemoveRequest)
+        return;
+
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        options.onRemoveRequest?.(point);
       }, { once: true });
     });
   }
@@ -731,6 +763,53 @@ export function useMapbox() {
     });
   }
 
+  function enablePointPlacement(onPlace: (coordinates: { lng: number; lat: number }) => void) {
+    const map = mapInstance.value;
+    if (!map)
+      return;
+
+    disablePointPlacement();
+    // Keep the globe from spinning back in while the user is dropping stops.
+    pauseGlobeSpin(600000);
+
+    pointPlacementHandler = (event: any) => {
+      const lngLat = event?.lngLat;
+      if (!lngLat || typeof lngLat.lng !== "number" || typeof lngLat.lat !== "number")
+        return;
+      onPlace({ lng: lngLat.lng, lat: lngLat.lat });
+    };
+
+    map.on("click", pointPlacementHandler);
+    const canvas = map.getCanvas?.();
+    if (canvas)
+      canvas.style.cursor = "crosshair";
+  }
+
+  function disablePointPlacement() {
+    const map = mapInstance.value;
+    if (pointPlacementHandler && map)
+      map.off("click", pointPlacementHandler);
+    pointPlacementHandler = null;
+
+    const canvas = map?.getCanvas?.();
+    if (canvas)
+      canvas.style.cursor = "";
+  }
+
+  function enableMarkerDragging(onDragEnd: (routePointId: string, lngLat: { lng: number; lat: number }) => void) {
+    markerDragHandler = onDragEnd;
+    for (const entry of activeMarkerMap.values()) {
+      if (entry.point.markerKind === "generated")
+        entry.marker.setDraggable(true);
+    }
+  }
+
+  function disableMarkerDragging() {
+    markerDragHandler = null;
+    for (const entry of activeMarkerMap.values())
+      entry.marker.setDraggable(false);
+  }
+
   function toggleMapStyle() {
     const map = mapInstance.value;
     if (!map)
@@ -825,6 +904,8 @@ export function useMapbox() {
     if (spinTimeoutId)
       clearTimeout(spinTimeoutId);
     routeGeometryRequestId += 1;
+    disablePointPlacement();
+    disableMarkerDragging();
     clearMarkers();
     clearRoute();
     mapInstance.value?.remove();
@@ -847,6 +928,10 @@ export function useMapbox() {
     zoomOut,
     centerMap,
     flyToPoint,
+    enablePointPlacement,
+    disablePointPlacement,
+    enableMarkerDragging,
+    disableMarkerDragging,
     toggleMapStyle,
     setMapTheme,
     destroy,

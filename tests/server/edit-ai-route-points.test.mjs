@@ -56,3 +56,12 @@ test("route session exposes optimistic point edit/delete/clear", () => {
   assert.match(sessionSource, /method: "DELETE"/);
   assert.match(sessionSource, /points\/clear/);
 });
+
+const mapboxSource = await readFile("composables/use-mapbox.ts", "utf8");
+
+test("mapbox composable supports marker dragging in edit mode", () => {
+  assert.match(mapboxSource, /function enableMarkerDragging/);
+  assert.match(mapboxSource, /function disableMarkerDragging/);
+  assert.match(mapboxSource, /dragend/);
+  assert.match(mapboxSource, /draggable/);
+});
