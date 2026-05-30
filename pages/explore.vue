@@ -513,10 +513,13 @@ function onCloseOfflinePreview() {
       :place="selectedSheetPlace"
       :intelligence="selectedSheetIntelligence"
       :loading="selectedSheetLoading"
+      :editable="isEditMode"
       @close="closePlaceSheet"
       @save="onSheetSave"
       @directions="onSheetDirections"
       @story="onSheetStory"
+      @edit="editingPoint = $event"
+      @delete="deleteRoutePoint($event.sourceId)"
     />
 
     <ExploreRouteStepCarousel

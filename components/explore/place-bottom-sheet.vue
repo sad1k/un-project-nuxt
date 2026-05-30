@@ -8,6 +8,7 @@ const props = defineProps<{
   place: RouteMapPoint | null;
   intelligence: PlaceIntelligence | null;
   loading: boolean;
+  editable?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -15,6 +16,8 @@ const emit = defineEmits<{
   save: [point: RouteMapPoint];
   directions: [point: RouteMapPoint];
   story: [point: RouteMapPoint];
+  edit: [point: RouteMapPoint];
+  delete: [point: RouteMapPoint];
 }>();
 
 const SNAP_POINTS_SVH = [16, 52, 88] as const;
@@ -201,6 +204,29 @@ onBeforeUnmount(() => {
           @click="onContentClick"
           v-html="renderedHtml"
         />
+        <div
+          v-if="editable && place?.markerKind === 'generated'"
+          class="shrink-0 flex gap-2 px-3 pb-3 pt-1"
+        >
+          <button
+            class="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border text-xs font-semibold transition"
+            style="border-color: var(--explore-border); color: var(--explore-text-muted)"
+            type="button"
+            @click="place && emit('edit', place)"
+          >
+            <Icon name="tabler:edit" size="14" />
+            Изменить
+          </button>
+          <button
+            class="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border text-xs font-semibold transition"
+            style="border-color: var(--explore-border); color: var(--explore-danger-text, #ef4444)"
+            type="button"
+            @click="place && emit('delete', place)"
+          >
+            <Icon name="tabler:trash" size="14" />
+            Удалить
+          </button>
+        </div>
         <div
           v-if="isOffline"
           class="shrink-0 px-3 pb-2 pt-1"

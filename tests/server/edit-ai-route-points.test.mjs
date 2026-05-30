@@ -107,3 +107,10 @@ test("explore page wires edit mode: drag, edit, delete, fit-suppression", () => 
   assert.match(pageSource, /ExploreRouteEditControl/);
   assert.match(pageSource, /ExploreRoutePointEditor/);
 });
+
+const sheetSource = await readFile("components/explore/place-bottom-sheet.vue", "utf8");
+
+test("bottom sheet exposes edit and delete for generated points", () => {
+  assert.match(sheetSource, /edit:\s*\[point: RouteMapPoint\]|["']edit["']/);
+  assert.match(sheetSource, /delete:\s*\[point: RouteMapPoint\]|["']delete["']/);
+});
