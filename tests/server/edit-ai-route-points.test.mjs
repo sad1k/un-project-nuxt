@@ -96,3 +96,14 @@ test("edit control toggles edit mode, clears all, and excludes add-mode", () => 
   assert.match(editControlSource, /useUserRoutePoints/);
   assert.match(editControlSource, /setAddMode\(false\)/);
 });
+
+const pageSource = await readFile("pages/explore.vue", "utf8");
+
+test("explore page wires edit mode: drag, edit, delete, fit-suppression", () => {
+  assert.match(pageSource, /useRouteEditMode/);
+  assert.match(pageSource, /enableMarkerDragging/);
+  assert.match(pageSource, /updateRoutePoint/);
+  assert.match(pageSource, /deleteRoutePoint/);
+  assert.match(pageSource, /ExploreRouteEditControl/);
+  assert.match(pageSource, /ExploreRoutePointEditor/);
+});
