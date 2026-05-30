@@ -74,3 +74,25 @@ test("route edit mode composable manages an isEditMode toggle", () => {
   assert.match(editModeSource, /function toggleEditMode/);
   assert.match(editModeSource, /function setEditMode/);
 });
+
+const editorSource = await readFile("components/explore/route-point-editor.vue", "utf8").catch(() => "");
+
+test("route point editor emits a patch with editable fields", () => {
+  assert.match(editorSource, /defineEmits/);
+  assert.match(editorSource, /submit/);
+  assert.match(editorSource, /v-model[^\n]*name/);
+  assert.match(editorSource, /estimatedDurationMinutes|Длительность/);
+  assert.match(editorSource, /day|День/);
+});
+
+const editControlSource = await readFile("components/explore/route-edit-control.vue", "utf8").catch(() => "");
+
+test("edit control toggles edit mode, clears all, and excludes add-mode", () => {
+  assert.match(editControlSource, /useRouteEditMode/);
+  assert.match(editControlSource, /useAiRouteSession/);
+  assert.match(editControlSource, /clearActivePoints/);
+  assert.match(editControlSource, /toggleEditMode/);
+  // Turning on edit mode turns off the manual add-mode (mutual exclusion).
+  assert.match(editControlSource, /useUserRoutePoints/);
+  assert.match(editControlSource, /setAddMode\(false\)/);
+});
