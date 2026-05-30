@@ -53,6 +53,13 @@ const ExploreCandidatePlaceSchema = z.object({
   selected: z.boolean(),
 });
 
+const ExploreAnchorPointSchema = z.object({
+  id: z.string().min(1).max(80),
+  name: z.string().min(1).max(160),
+  coordinates: ExploreCoordinatesSchema,
+  day: z.number().int().min(1).max(14),
+});
+
 export const ExploreRequestContextSchema = z.object({
   city: SelectedExploreCitySchema.nullable(),
   selectedDays: z.number().int().min(1).max(14),
@@ -70,6 +77,7 @@ export const ExploreRequestContextSchema = z.object({
   selectedSavedPlaceIds: z.array(z.number().int().positive()).max(50),
   selectedDiaryLogIds: z.array(z.number().int().positive()).max(50),
   candidatePlaces: z.array(ExploreCandidatePlaceSchema).max(50),
+  anchorPoints: z.array(ExploreAnchorPointSchema).max(25).optional(),
 }) satisfies z.ZodType<ExploreRequestContext>;
 
 export const RouteGenerationRequestSchema = z.object({
@@ -78,10 +86,10 @@ export const RouteGenerationRequestSchema = z.object({
   activeVariantId: z.number().int().positive().optional(),
   followUpMessage: z.string().trim().min(1).max(1000).optional(),
 }).superRefine((value, ctx) => {
-  if (!value.sessionId && !value.context.city) {
+  if (!value.sessionId && !value.context.city && !value.context.anchorPoints?.length) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: "Для первой генерации маршрута нужно выбрать город.",
+      message: "Для первой генерации маршрута нужно выбрать город или отметить точки на карте.",
       path: ["context", "city"],
     });
   }
@@ -120,6 +128,20 @@ export const RoutePointSchema = z.object({
     }
   }
 });
+
+export const RoutePointPatchSchema = z.object({
+  name: z.string().min(1).max(160).optional(),
+  day: z.number().int().min(1).max(14).optional(),
+  coordinates: ExploreCoordinatesSchema.optional(),
+  estimatedStart: z.string().trim().min(1).max(40).optional(),
+  estimatedDurationMinutes: z.number().int().min(15).max(720).optional(),
+  rationale: z.string().trim().min(1).max(500).optional(),
+}).refine(
+  patch => Object.values(patch).some(value => value !== undefined),
+  { message: "Нужно передать хотя бы одно поле для изменения точки." }, // at least one field
+);
+
+export type RoutePointPatch = z.infer<typeof RoutePointPatchSchema>;
 
 const RouteEventBaseSchema = z.object({
   sequence: z.number().int().min(0),
