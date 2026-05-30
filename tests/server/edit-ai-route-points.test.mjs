@@ -65,3 +65,12 @@ test("mapbox composable supports marker dragging in edit mode", () => {
   assert.match(mapboxSource, /dragend/);
   assert.match(mapboxSource, /draggable/);
 });
+
+const editModeSource = await readFile("composables/use-route-edit-mode.ts", "utf8").catch(() => "");
+
+test("route edit mode composable manages an isEditMode toggle", () => {
+  assert.match(editModeSource, /export function useRouteEditMode/);
+  assert.match(editModeSource, /isEditMode/);
+  assert.match(editModeSource, /function toggleEditMode/);
+  assert.match(editModeSource, /function setEditMode/);
+});
