@@ -1,4 +1,4 @@
-import type { RouteEventEnvelope, RoutePoint } from "~/lib/ai/route-contract";
+import type { RouteEventEnvelope, RoutePoint, RoutePointPatch } from "~/lib/ai/route-contract";
 import type { ExploreRequestContext } from "~/lib/explore/context";
 
 type RouteDiarySaveSummary = {
@@ -47,24 +47,34 @@ const lastRequestContext = ref<ExploreRequestContext | null>(null);
 const ROUTE_UNLOAD_DIAGNOSTIC_KEY = "wanderlog.routeGeneration.unload";
 const ROUTE_SESSION_STORAGE_KEY = "wanderlog.routeGeneration.sessionId";
 let routeDiagnosticsInstalled = false;
+let activeStreamController: AbortController | null = null;
 
 const activePoints = computed(() => activeVariantId.value
   ? pointsByVariantId.value[activeVariantId.value] || []
   : []);
 
-async function generateRoute(requestContext: ExploreRequestContext) {
+async function generateRoute(
+  requestContext: ExploreRequestContext,
+  options?: { followUpMessage?: string },
+) {
   resetRouteSession();
   lastRequestContext.value = requestContext;
-  await streamRouteEvents({ context: requestContext });
+  await streamRouteEvents({
+    context: requestContext,
+    followUpMessage: options?.followUpMessage?.trim() || undefined,
+  });
 }
 
-async function submitFollowUp(followUpMessage: string) {
+async function submitFollowUp(
+  followUpMessage: string,
+  contextPatch?: Partial<ExploreRequestContext>,
+) {
   const message = followUpMessage.trim();
   if (!message || !lastRequestContext.value || !sessionId.value || !activeVariantId.value)
     return;
 
   await streamRouteEvents({
-    context: lastRequestContext.value,
+    context: { ...lastRequestContext.value, ...contextPatch },
     sessionId: sessionId.value,
     activeVariantId: activeVariantId.value,
     followUpMessage: message,
@@ -77,6 +87,10 @@ function setActiveVariant(variantId: number) {
 }
 
 function resetRouteSession() {
+  // Abort any in-flight generation so its stream cannot repopulate the state
+  // we are about to clear.
+  activeStreamController?.abort();
+  activeStreamController = null;
   sessionId.value = null;
   activeVariantId.value = null;
   variants.value = [];
@@ -146,6 +160,99 @@ async function saveRoutePointToDiary(routePointId: string) {
   await refreshCurrentRouteSessionSnapshot();
 }
 
+async function updateRoutePoint(routePointId: string, patch: RoutePointPatch) {
+  if (!sessionId.value || !activeVariantId.value)
+    return;
+
+  const variantId = activeVariantId.value;
+  const previous = pointsByVariantId.value[variantId] || [];
+  const index = previous.findIndex(point => point.id === routePointId);
+  if (index === -1)
+    return;
+
+  const optimistic = [...previous];
+  optimistic[index] = applyPatchToRoutePoint(optimistic[index], patch);
+  pointsByVariantId.value = {
+    ...pointsByVariantId.value,
+    [variantId]: [...optimistic].sort((first, second) => first.day - second.day),
+  };
+  refreshVariantPointCount(variantId);
+
+  try {
+    const { csrf } = useCsrf();
+    await $fetch(`/api/ai/route/${sessionId.value}/point/${encodeURIComponent(routePointId)}`, {
+      method: "PATCH",
+      headers: csrf ? { "csrf-token": csrf } : undefined,
+      body: { variantId, patch },
+    });
+  }
+  catch (caughtError) {
+    pointsByVariantId.value = { ...pointsByVariantId.value, [variantId]: previous };
+    refreshVariantPointCount(variantId);
+    lastWarning.value = "Не удалось сохранить изменение точки.";
+    console.error("[useAiRouteSession] updateRoutePoint failed", serializeError(caughtError));
+  }
+}
+
+async function deleteRoutePoint(routePointId: string) {
+  if (!sessionId.value || !activeVariantId.value)
+    return;
+
+  const variantId = activeVariantId.value;
+  const previous = pointsByVariantId.value[variantId] || [];
+  if (!previous.some(point => point.id === routePointId))
+    return;
+
+  pointsByVariantId.value = {
+    ...pointsByVariantId.value,
+    [variantId]: previous.filter(point => point.id !== routePointId),
+  };
+  refreshVariantPointCount(variantId);
+
+  try {
+    const { csrf } = useCsrf();
+    await $fetch(`/api/ai/route/${sessionId.value}/point/${encodeURIComponent(routePointId)}`, {
+      method: "DELETE",
+      headers: csrf ? { "csrf-token": csrf } : undefined,
+      query: { variantId },
+    });
+  }
+  catch (caughtError) {
+    pointsByVariantId.value = { ...pointsByVariantId.value, [variantId]: previous };
+    refreshVariantPointCount(variantId);
+    lastWarning.value = "Не удалось удалить точку.";
+    console.error("[useAiRouteSession] deleteRoutePoint failed", serializeError(caughtError));
+  }
+}
+
+async function clearActivePoints() {
+  if (!sessionId.value || !activeVariantId.value)
+    return;
+
+  const variantId = activeVariantId.value;
+  const previous = pointsByVariantId.value[variantId] || [];
+  if (!previous.length)
+    return;
+
+  pointsByVariantId.value = { ...pointsByVariantId.value, [variantId]: [] };
+  refreshVariantPointCount(variantId);
+
+  try {
+    const { csrf } = useCsrf();
+    await $fetch(`/api/ai/route/${sessionId.value}/points/clear`, {
+      method: "POST",
+      headers: csrf ? { "csrf-token": csrf } : undefined,
+      body: { variantId },
+    });
+  }
+  catch (caughtError) {
+    pointsByVariantId.value = { ...pointsByVariantId.value, [variantId]: previous };
+    refreshVariantPointCount(variantId);
+    lastWarning.value = "Не удалось очистить точки.";
+    console.error("[useAiRouteSession] clearActivePoints failed", serializeError(caughtError));
+  }
+}
+
 async function streamRouteEvents(payload: {
   context: ExploreRequestContext;
   sessionId?: number;
@@ -156,6 +263,10 @@ async function streamRouteEvents(payload: {
   error.value = null;
   lastWarning.value = null;
   let streamCompleted = false;
+
+  const controller = new AbortController();
+  activeStreamController?.abort();
+  activeStreamController = controller;
 
   try {
     const { csrf } = useCsrf();
@@ -170,6 +281,7 @@ async function streamRouteEvents(payload: {
         "csrf-token": csrf,
       },
       body: JSON.stringify(payload),
+      signal: controller.signal,
     });
 
     if (!response.ok || !response.body) {
@@ -188,6 +300,8 @@ async function streamRouteEvents(payload: {
     while (true) {
       const { done, value } = await reader.read();
       if (done)
+        break;
+      if (controller.signal.aborted)
         break;
 
       buffer += decoder.decode(value, { stream: true });
@@ -208,13 +322,18 @@ async function streamRouteEvents(payload: {
     streamCompleted = true;
   }
   catch (caughtError) {
-    console.error("[useAiRouteSession] Route stream failed", {
-      error: serializeError(caughtError),
-      ...getClientDiagnosticContext(),
-    });
-    error.value = "Не удалось сгенерировать маршрут. Попробуйте изменить пожелания.";
+    // A user-triggered cancel aborts the fetch — that is expected, not a failure.
+    if (!controller.signal.aborted) {
+      console.error("[useAiRouteSession] Route stream failed", {
+        error: serializeError(caughtError),
+        ...getClientDiagnosticContext(),
+      });
+      error.value = "Не удалось сгенерировать маршрут. Попробуйте изменить пожелания.";
+    }
   }
   finally {
+    if (activeStreamController === controller)
+      activeStreamController = null;
     isGenerating.value = false;
 
     if (streamCompleted)
@@ -323,6 +442,18 @@ function upsertPoint(variantId: number, point: RoutePoint, replaceExisting: bool
   pointsByVariantId.value = {
     ...pointsByVariantId.value,
     [variantId]: nextPoints.sort((first, second) => first.day - second.day),
+  };
+}
+
+function applyPatchToRoutePoint(point: RoutePoint, patch: RoutePointPatch): RoutePoint {
+  return {
+    ...point,
+    ...(patch.name !== undefined ? { name: patch.name } : {}),
+    ...(patch.day !== undefined ? { day: patch.day } : {}),
+    ...(patch.coordinates ? { coordinates: patch.coordinates } : {}),
+    ...(patch.estimatedStart !== undefined ? { estimatedStart: patch.estimatedStart } : {}),
+    ...(patch.estimatedDurationMinutes !== undefined ? { estimatedDurationMinutes: patch.estimatedDurationMinutes } : {}),
+    ...(patch.rationale !== undefined ? { rationale: patch.rationale } : {}),
   };
 }
 
@@ -511,6 +642,9 @@ export function useAiRouteSession() {
     generateRoute,
     submitFollowUp,
     saveRoutePointToDiary,
+    updateRoutePoint,
+    deleteRoutePoint,
+    clearActivePoints,
     setActiveVariant,
     restoreRouteSession,
     resetRouteSession,

@@ -41,3 +41,18 @@ test("point endpoints are authenticated and validated", () => {
   assert.match(deleteEndpoint, /deleteAiRoutePoint/);
   assert.match(clearEndpoint, /clearAiRouteVariantPoints/);
 });
+
+const sessionSource = await readFile("composables/use-ai-route-session.ts", "utf8");
+
+test("route session exposes optimistic point edit/delete/clear", () => {
+  for (const fn of ["updateRoutePoint", "deleteRoutePoint", "clearActivePoints"]) {
+    assert.match(sessionSource, new RegExp(`function ${fn}`));
+    assert.match(sessionSource, new RegExp(`${fn},`)); // exported in the return object
+  }
+  // Optimistic mutation followed by revert-on-failure.
+  assert.match(sessionSource, /const previous = pointsByVariantId\.value/);
+  assert.match(sessionSource, /\[variantId\]: previous/); // rollback path
+  assert.match(sessionSource, /method: "PATCH"/);
+  assert.match(sessionSource, /method: "DELETE"/);
+  assert.match(sessionSource, /points\/clear/);
+});
