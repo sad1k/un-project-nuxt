@@ -335,7 +335,7 @@ function onCloseOfflinePreview() {
 
     <ExploreMapView @loaded="onMapLoaded" />
 
-    <OfflineBanner />
+    <OfflineBanner floating />
 
     <div class="explore-top-scrim pointer-events-none absolute inset-x-0 top-0 z-10 h-24" />
     <div class="explore-bottom-scrim pointer-events-none absolute inset-x-0 bottom-0 z-10 h-28" />
