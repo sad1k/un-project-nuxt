@@ -138,6 +138,79 @@ export function formatRouteDistance(meters: number | null | undefined): string |
   return `${kilometers.toFixed(kilometers >= 10 ? 0 : 1)} km`;
 }
 
+const EARTH_RADIUS_METERS = 6371000;
+
+type LngLatLike = {
+  lat: number;
+  lng: number;
+};
+
+export function haversineDistanceMeters(from: LngLatLike, to: LngLatLike): number {
+  const toRadians = (value: number) => (value * Math.PI) / 180;
+  const deltaLat = toRadians(to.lat - from.lat);
+  const deltaLng = toRadians(to.lng - from.lng);
+  const fromLat = toRadians(from.lat);
+  const toLat = toRadians(to.lat);
+
+  const a = Math.sin(deltaLat / 2) ** 2
+    + Math.sin(deltaLng / 2) ** 2 * Math.cos(fromLat) * Math.cos(toLat);
+
+  return 2 * EARTH_RADIUS_METERS * Math.asin(Math.min(1, Math.sqrt(a)));
+}
+
+// Returns the index at which `candidate` should be spliced into `points` so the
+// total path grows as little as possible — the classic cheapest-insertion
+// heuristic. This keeps a manually dropped stop "on the way" instead of forcing
+// a long detour.
+export function findCheapestInsertionIndex(points: LngLatLike[], candidate: LngLatLike): number {
+  if (points.length === 0)
+    return 0;
+  if (points.length === 1)
+    return 1;
+
+  // Seed with the two endpoints: append after the last stop or prepend before
+  // the first one.
+  let bestIndex = points.length;
+  let bestCost = haversineDistanceMeters(points[points.length - 1], candidate);
+
+  const prependCost = haversineDistanceMeters(candidate, points[0]);
+  if (prependCost < bestCost) {
+    bestIndex = 0;
+    bestCost = prependCost;
+  }
+
+  for (let i = 1; i < points.length; i += 1) {
+    const previous = points[i - 1];
+    const next = points[i];
+    const detour = haversineDistanceMeters(previous, candidate)
+      + haversineDistanceMeters(candidate, next)
+      - haversineDistanceMeters(previous, next);
+
+    if (detour < bestCost) {
+      bestIndex = i;
+      bestCost = detour;
+    }
+  }
+
+  return bestIndex;
+}
+
+// Weaves user-dropped points into a base route one at a time, each at its
+// cheapest slot, then renumbers the combined sequence.
+export function foldUserPointsIntoRoute(
+  basePoints: RouteMapPoint[],
+  userPoints: RouteMapPoint[],
+): RouteMapPoint[] {
+  let combined = [...basePoints];
+
+  for (const userPoint of userPoints) {
+    const index = findCheapestInsertionIndex(combined, userPoint);
+    combined = [...combined.slice(0, index), userPoint, ...combined.slice(index)];
+  }
+
+  return combined.map((point, index) => ({ ...point, sequence: index }));
+}
+
 function normalizeRouteMapPoints(points: RoutePoint[] | RouteMapPoint[]): RouteMapPoint[] {
   if (points.length === 0)
     return [];
