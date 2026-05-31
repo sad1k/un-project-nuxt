@@ -53,4 +53,8 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: pnpm
       - run: pnpm install
+      # `@nuxt/eslint` writes .nuxt/eslint.config.mjs (imported by eslint.config.mjs)
+      # during module setup. The postinstall `nuxt prepare` does not persist it in
+      # CI, so run prepare explicitly here to guarantee the flat config exists.
+      - run: pnpm exec nuxi prepare
       - run: pnpm lint
