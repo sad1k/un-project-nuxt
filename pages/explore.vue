@@ -289,7 +289,7 @@ async function regenerateRoute() {
       <AppUserMenu />
     </div>
 
-    <div class="absolute right-4 top-20 z-30 flex items-center gap-2">
+    <div class="absolute right-4 top-16 z-30 flex items-center gap-2 md:top-20">
       <AppRouteGenerationIndicator floating />
       <ExploreResultsActions />
     </div>
