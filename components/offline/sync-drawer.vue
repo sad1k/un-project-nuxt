@@ -57,13 +57,21 @@ function formatTime(ms: number) {
             <h2 class="text-base font-semibold">
               Очередь синхронизации ({{ store.totalCount }})
             </h2>
-            <button class="rounded p-1 hover:bg-gray-100 dark:hover:bg-gray-800" aria-label="Закрыть" @click="open = false">
+            <button
+              class="rounded p-1 hover:bg-gray-100 dark:hover:bg-gray-800"
+              aria-label="Закрыть"
+              @click="open = false"
+            >
               <Icon name="lucide:x" class="size-5" />
             </button>
           </header>
 
           <ul v-if="store.operations.length" class="divide-y dark:divide-gray-800">
-            <li v-for="op in store.operations" :key="op.opId" class="flex items-start gap-3 px-4 py-3">
+            <li
+              v-for="op in store.operations"
+              :key="op.opId"
+              class="flex items-start gap-3 px-4 py-3"
+            >
               <div v-if="op.type === 'photo.upload'" class="size-14 shrink-0">
                 <OfflineQueuedPhotoThumb :op-id="op.opId" :status="op.status" />
               </div>
@@ -74,7 +82,11 @@ function formatTime(ms: number) {
                 <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
                   {{ formatTime(op.createdAt) }} · {{ op.retries }} попыт.
                 </p>
-                <p v-if="op.lastError" class="mt-1 truncate text-xs text-red-600 dark:text-red-400" :title="op.lastError">
+                <p
+                  v-if="op.lastError"
+                  class="mt-1 truncate text-xs text-red-600 dark:text-red-400"
+                  :title="op.lastError"
+                >
                   {{ op.lastError }}
                 </p>
               </div>

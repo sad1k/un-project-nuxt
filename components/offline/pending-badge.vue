@@ -25,7 +25,8 @@ const config = computed(() => {
 
 <template>
   <span
-    :class="['inline-flex items-center gap-1 text-xs', config.color]"
+    class="inline-flex items-center gap-1 text-xs"
+    :class="[config.color]"
     :title="config.label"
     :aria-label="config.label"
   >

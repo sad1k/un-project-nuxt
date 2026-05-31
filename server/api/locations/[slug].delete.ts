@@ -6,8 +6,6 @@ export default defineAuthenticatedHandler(async (event) => {
 
   const deleted = await deleteLocationBySlug(slug, event.context.user.id);
 
-  console.log(deleted, "deleted");
-
   if (!deleted) {
     return sendError(event, createError({
       statusCode: 404,

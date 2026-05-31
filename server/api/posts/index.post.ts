@@ -4,7 +4,6 @@ import {
   createPost,
   getFeedPublishImageById,
   getPostById,
-  isFeedPublishImageEligible,
 } from "~/lib/db/queries/post";
 import defineAuthenticatedHandler from "~/utils/define-authenticated-handler";
 

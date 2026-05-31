@@ -50,7 +50,11 @@ async function toggle(key: PushType, value: boolean) {
     </p>
 
     <ul class="divide-y divide-gray-100 dark:divide-white/5">
-      <li v-for="t in types" :key="t.key" class="flex items-start justify-between gap-4 py-3">
+      <li
+        v-for="t in types"
+        :key="t.key"
+        class="flex items-start justify-between gap-4 py-3"
+      >
         <div class="min-w-0 flex-1">
           <p class="text-sm font-medium">
             {{ t.label }}

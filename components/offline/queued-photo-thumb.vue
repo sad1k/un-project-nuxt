@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { getPhotoBlob } from "~/lib/offline/idb";
 import type { PendingStatus } from "~/lib/offline/operation-types";
+
+import { getPhotoBlob } from "~/lib/offline/idb";
 
 const props = defineProps<{
   opId: string;

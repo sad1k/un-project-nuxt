@@ -1,5 +1,7 @@
 import { nanoid } from "nanoid";
 
+import type { PendingOp, PendingOpKind, PhotoUploadOp } from "~/lib/offline/operation-types";
+
 import {
   deletePhotoBlob,
   estimateStorageUsage,
@@ -12,7 +14,6 @@ import {
   requestPersistentStorage,
   updateOperationStatus,
 } from "~/lib/offline/idb";
-import type { PendingOp, PendingOpKind, PhotoUploadOp } from "~/lib/offline/operation-types";
 
 type EnqueueResult = {
   opId: string;

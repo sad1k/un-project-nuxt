@@ -4,7 +4,7 @@ import env from "./lib/env";
 
 // import "./lib/env";
 
-const isDev = process.env.NODE_ENV !== "production";
+const isDev = env.NODE_ENV !== "production";
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
@@ -71,7 +71,7 @@ export default defineNuxtConfig({
   yandexMaps: {
     apikey: env.YANDEX_MAPS_API_KEY,
     lang: "ru_RU",
-    initializeOn: "onPluginInit",
+    initializeOn: "onComponentMount",
   },
 
   nitro: {
@@ -95,22 +95,29 @@ export default defineNuxtConfig({
       tailwindcss(),
     ],
     optimizeDeps: {
-      // Pre-bundle heavy client deps once so Vite doesn't discover them
-      // on first request and trigger a full re-optimize + page reload
-      // (the #1 cause of multi-minute dev "stuck on optimizing").
+      // Pre-bundle heavy client deps that DON'T ship CSS — CSS-shipping
+      // packages are excluded below because Vite's pre-bundler can
+      // mis-emit `import "*.css"` as ES-module URLs after a fresh
+      // optimize, which the browser then rejects with a MIME mismatch.
       include: [
-        "maplibre-gl",
-        "mapbox-gl",
         "@indoorequal/vue-maplibre-gl",
         "vue-yandex-maps",
         "motion-v",
       ],
-      // AWS SDK is server-only (used in nitro routes). Excluding stops
-      // Vite from scanning its hundreds of ESM submodules on the client.
       exclude: [
+        // AWS SDK is server-only (used in nitro routes). Excluding stops
+        // Vite from scanning its hundreds of ESM submodules on the client.
         "@aws-sdk/client-s3",
         "@aws-sdk/s3-presigned-post",
         "@aws-sdk/s3-request-presigner",
+        // CSS-shipping deps — let the browser load these natively so
+        // their `*.css` imports go through Vite's regular middleware
+        // (which sets Content-Type correctly) instead of the dep
+        // optimizer (which can produce ESM URLs pointing at raw CSS).
+        "mapbox-gl",
+        "maplibre-gl",
+        "vue-easy-lightbox",
+        "pmtiles",
       ],
     },
     server: {
@@ -190,5 +197,20 @@ export default defineNuxtConfig({
 
   devServer: {
     port: 3001,
+  },
+
+  alias: {
+    ymaps3: "./node_modules/@yandex/ymaps3-types",
+  },
+
+  typescript: {
+    tsConfig: {
+      compilerOptions: {
+        typeRoots: [
+          "./node_modules/@types",
+          "./node_modules/@yandex/ymaps3-types",
+        ],
+      },
+    },
   },
 });

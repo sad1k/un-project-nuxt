@@ -1,5 +1,6 @@
-import { getPushSettings, setPushSettings } from "~/lib/offline/idb";
 import type { PushSettings } from "~/lib/offline/operation-types";
+
+import { getPushSettings, setPushSettings } from "~/lib/offline/idb";
 
 export type PushType = "social" | "upload" | "reminders" | "route";
 

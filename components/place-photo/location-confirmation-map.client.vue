@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import type { YMap } from "@yandex/ymaps3-types";
+import type { LngLat, YMap } from "@yandex/ymaps3-types";
 import type { YMapLocationRequest } from "@yandex/ymaps3-types/imperative/YMap";
 import type { MapEvent } from "@yandex/ymaps3-types/imperative/YMapFeature/types";
 
@@ -48,7 +48,7 @@ function applyPoint(lng: number, lat: number) {
   emit("changed");
 }
 
-function onMarkerDragEnd(coords: [number, number]) {
+function onMarkerDragEnd(coords: LngLat) {
   applyPoint(coords[0], coords[1]);
 }
 
@@ -63,9 +63,10 @@ watch(point, (next, prev) => {
   if (prev && Math.abs(prev.lat - next.lat) < 1e-6 && Math.abs(prev.long - next.long) < 1e-6)
     return;
 
+  const currentZoom = "zoom" in location.value ? (location.value.zoom ?? 0) : 0;
   location.value = {
     center: [next.long, next.lat],
-    zoom: Math.max(location.value.zoom ?? 0, 14),
+    zoom: Math.max(currentZoom, 14),
     duration: 1200,
     easing: "ease-out",
   };
@@ -169,11 +170,19 @@ watch(point, (next, prev) => {
 }
 
 @keyframes place-photo-pin-pulse {
-  0% { transform: scale(0.6); opacity: 0.85; }
-  100% { transform: scale(1.8); opacity: 0; }
+  0% {
+    transform: scale(0.6);
+    opacity: 0.85;
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .place-photo-pin-pulse { animation: none; }
+  .place-photo-pin-pulse {
+    animation: none;
+  }
 }
 </style>

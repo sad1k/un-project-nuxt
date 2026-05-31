@@ -1,7 +1,7 @@
 import type { RouteLeg, RouteMapPoint } from "~/lib/explore/route-map";
 
 import { createPlacePopupLoadingHTML } from "~/components/explore/place-popup";
-import { createMarkerElement, createPopupHTML } from "~/components/explore/route-marker";
+import { createMarkerElement, createPopupHTML, updateMarkerLabel } from "~/components/explore/route-marker";
 
 const ROUTE_LINE_LAYER_ID = "explore-route-line";
 const ROUTE_LINE_SOURCE_ID = "explore-route-line";
@@ -21,7 +21,17 @@ const SATELLITE_MAP_STYLE = "mapbox://styles/mapbox/satellite-streets-v12";
 // Module-level shared state so all components share the same instance.
 const mapInstance = shallowRef<any>(null);
 const mapLoaded = ref(false);
-const activeMarkers: any[] = [];
+
+type MarkerEntry = {
+  marker: any;
+  element: HTMLDivElement;
+  labelElement: HTMLDivElement;
+  popup: any | null;
+  detachListeners: () => void;
+  point: RouteMapPoint;
+  detachDrag: () => void;
+};
+const activeMarkerMap = new Map<string, MarkerEntry>();
 let activeRoutePopup: any = null;
 let activeRoutePopupCloseTimeout: ReturnType<typeof setTimeout> | null = null;
 const popupHoverCloseElements = new WeakSet<HTMLElement>();
@@ -34,6 +44,8 @@ let hasActiveRoute = false;
 let routeGeometryRequestId = 0;
 let activeTheme: keyof typeof MAP_THEME_STYLES = "dark";
 let activeStyleMode: "theme" | "satellite" = "theme";
+let pointPlacementHandler: ((event: any) => void) | null = null;
+let markerDragHandler: ((routePointId: string, lngLat: { lng: number; lat: number }) => void) | null = null;
 
 type GeoJsonFeatureCollection = {
   type: "FeatureCollection";
@@ -46,6 +58,7 @@ type RoutePopupOptions = {
   onSaveRequest?: (point: RouteMapPoint) => Promise<void> | void;
   onStoryRequest?: (point: RouteMapPoint) => void;
   onMarkerClick?: (point: RouteMapPoint) => void;
+  onRemoveRequest?: (point: RouteMapPoint) => void;
 };
 
 function isTouchDevice() {
@@ -183,10 +196,12 @@ export function useMapbox() {
     }
 
     const mb = await getMapboxGL();
-    mb.accessToken = token;
     mapboxAccessToken = token;
 
     const map = new mb.Map({
+      // Pass the token via constructor option rather than mutating
+      // the shared `mb.accessToken` global.
+      accessToken: token,
       container,
       style: getActiveMapStyle(),
       projection: "globe",
@@ -237,13 +252,17 @@ export function useMapbox() {
     cancelRoutePopupClose();
     activeRoutePopup?.remove();
     activeRoutePopup = null;
-    activeMarkers.forEach(marker => marker.remove());
-    activeMarkers.length = 0;
+    for (const entry of activeMarkerMap.values()) {
+      entry.detachListeners();
+      entry.detachDrag();
+      entry.popup?.remove();
+      entry.marker.remove();
+    }
+    activeMarkerMap.clear();
     hasActiveRoute = false;
   }
 
   async function addMarkers(points: RouteMapPoint[], options: RoutePopupOptions = {}) {
-    clearMarkers();
     const map = mapInstance.value;
     const mb = await getMapboxGL();
     if (!map)
@@ -254,54 +273,141 @@ export function useMapbox() {
       hasActiveRoute = true;
 
     const touch = isTouchDevice();
+    const seenIds = new Set<string>();
+    const hadMarkersBefore = activeMarkerMap.size > 0;
 
     validPoints.forEach((point, index) => {
-      const el = createMarkerElement(point, index, index * 150);
+      seenIds.add(point.id);
+      const nextPoint = validPoints[index + 1] ?? null;
+      const existing = activeMarkerMap.get(point.id);
 
-      const marker = new mb.Marker({ element: el })
+      if (existing) {
+        existing.marker.setLngLat([point.lng, point.lat]);
+        updateMarkerLabel(existing.labelElement, point, index);
+        existing.detachListeners();
+        existing.detachListeners = bindMarkerInteractions(
+          existing.element,
+          existing.popup,
+          point,
+          nextPoint,
+          options,
+          touch,
+          map,
+        );
+        existing.point = point;
+        existing.detachDrag();
+        existing.detachDrag = bindMarkerDrag(existing.marker, point);
+        return;
+      }
+
+      const delayMs = hadMarkersBefore ? 0 : index * 150;
+      const { element, labelElement } = createMarkerElement(point, index, delayMs);
+      const marker = new mb.Marker({ element, draggable: Boolean(markerDragHandler) && point.markerKind === "generated" })
         .setLngLat([point.lng, point.lat])
         .addTo(map);
 
-      const nextPoint = validPoints[index + 1] ?? null;
+      const popup = touch
+        ? null
+        : new mb.Popup({
+            offset: 20,
+            className: "explore-route-popup",
+            maxWidth: "min(300px, calc(100vw - 32px))",
+            closeButton: false,
+            closeOnClick: false,
+          }).setHTML(createPopupHTML(point));
 
-      if (touch) {
-        el.addEventListener("click", (event) => {
-          event.stopPropagation();
-          options.onMarkerClick?.(point);
-        });
-      }
-      else {
-        const popup = new mb.Popup({
-          offset: 20,
-          className: "explore-route-popup",
-          maxWidth: "min(300px, calc(100vw - 32px))",
-          closeButton: false,
-          closeOnClick: false,
-        }).setHTML(createPopupHTML(point));
+      const detachListeners = bindMarkerInteractions(
+        element,
+        popup,
+        point,
+        nextPoint,
+        options,
+        touch,
+        map,
+      );
 
-        const showPopup = () => {
-          cancelRoutePopupClose();
-          if (activeRoutePopup && activeRoutePopup !== popup)
-            activeRoutePopup.remove();
-
-          activeRoutePopup = popup;
-          popup.setHTML(point.markerKind === "generated"
-            ? createPlacePopupLoadingHTML({ name: point.name, day: point.day })
-            : createPopupHTML(point));
-          popup.setLngLat([point.lng, point.lat]).addTo(map);
-          bindPopupActions(point, nextPoint, popup, options);
-          bindPopupHoverClose(popup);
-          if (point.markerKind === "generated")
-            void refreshPopupHTML(point, nextPoint, popup, options);
-        };
-
-        el.addEventListener("mouseenter", showPopup);
-        el.addEventListener("mouseleave", () => scheduleRoutePopupClose(popup));
-        el.addEventListener("click", showPopup);
-      }
-
-      activeMarkers.push(marker);
+      activeMarkerMap.set(point.id, {
+        marker,
+        element,
+        labelElement,
+        popup,
+        detachListeners,
+        point,
+        detachDrag: bindMarkerDrag(marker, point),
+      });
     });
+
+    for (const [id, entry] of activeMarkerMap) {
+      if (seenIds.has(id))
+        continue;
+
+      entry.detachListeners();
+      entry.detachDrag();
+      if (activeRoutePopup === entry.popup) {
+        activeRoutePopup.remove();
+        activeRoutePopup = null;
+      }
+      entry.popup?.remove();
+      entry.marker.remove();
+      activeMarkerMap.delete(id);
+    }
+  }
+
+  function bindMarkerDrag(marker: any, point: RouteMapPoint): () => void {
+    const onDragEnd = () => {
+      if (point.markerKind !== "generated")
+        return;
+      const lngLat = marker.getLngLat();
+      markerDragHandler?.(point.sourceId, { lng: lngLat.lng, lat: lngLat.lat });
+    };
+    marker.on("dragend", onDragEnd);
+    return () => marker.off("dragend", onDragEnd);
+  }
+
+  function bindMarkerInteractions(
+    el: HTMLDivElement,
+    popup: any | null,
+    point: RouteMapPoint,
+    nextPoint: RouteMapPoint | null,
+    options: RoutePopupOptions,
+    touch: boolean,
+    map: any,
+  ): () => void {
+    const controller = new AbortController();
+    const { signal } = controller;
+
+    if (touch) {
+      el.addEventListener("click", (event) => {
+        event.stopPropagation();
+        options.onMarkerClick?.(point);
+      }, { signal });
+      return () => controller.abort();
+    }
+
+    if (!popup)
+      return () => controller.abort();
+
+    const showPopup = () => {
+      cancelRoutePopupClose();
+      if (activeRoutePopup && activeRoutePopup !== popup)
+        activeRoutePopup.remove();
+
+      activeRoutePopup = popup;
+      popup.setHTML(point.markerKind === "generated"
+        ? createPlacePopupLoadingHTML({ name: point.name, day: point.day })
+        : createPopupHTML(point));
+      popup.setLngLat([point.lng, point.lat]).addTo(map);
+      bindPopupActions(point, nextPoint, popup, options);
+      bindPopupHoverClose(popup);
+      if (point.markerKind === "generated")
+        void refreshPopupHTML(point, nextPoint, popup, options);
+    };
+
+    el.addEventListener("mouseenter", showPopup, { signal });
+    el.addEventListener("mouseleave", () => scheduleRoutePopupClose(popup), { signal });
+    el.addEventListener("click", showPopup, { signal });
+
+    return () => controller.abort();
   }
 
   async function refreshPopupHTML(
@@ -405,6 +511,17 @@ export function useMapbox() {
         event.preventDefault();
         event.stopPropagation();
         options.onDirectionsRequest?.(point, nextPoint);
+      }, { once: true });
+    });
+
+    bindPopupButton(popup, "[data-place-remove-cta]", (button) => {
+      if (!options.onRemoveRequest)
+        return;
+
+      button.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        options.onRemoveRequest?.(point);
       }, { once: true });
     });
   }
@@ -646,6 +763,53 @@ export function useMapbox() {
     });
   }
 
+  function enablePointPlacement(onPlace: (coordinates: { lng: number; lat: number }) => void) {
+    const map = mapInstance.value;
+    if (!map)
+      return;
+
+    disablePointPlacement();
+    // Keep the globe from spinning back in while the user is dropping stops.
+    pauseGlobeSpin(600000);
+
+    pointPlacementHandler = (event: any) => {
+      const lngLat = event?.lngLat;
+      if (!lngLat || typeof lngLat.lng !== "number" || typeof lngLat.lat !== "number")
+        return;
+      onPlace({ lng: lngLat.lng, lat: lngLat.lat });
+    };
+
+    map.on("click", pointPlacementHandler);
+    const canvas = map.getCanvas?.();
+    if (canvas)
+      canvas.style.cursor = "crosshair";
+  }
+
+  function disablePointPlacement() {
+    const map = mapInstance.value;
+    if (pointPlacementHandler && map)
+      map.off("click", pointPlacementHandler);
+    pointPlacementHandler = null;
+
+    const canvas = map?.getCanvas?.();
+    if (canvas)
+      canvas.style.cursor = "";
+  }
+
+  function enableMarkerDragging(onDragEnd: (routePointId: string, lngLat: { lng: number; lat: number }) => void) {
+    markerDragHandler = onDragEnd;
+    for (const entry of activeMarkerMap.values()) {
+      if (entry.point.markerKind === "generated")
+        entry.marker.setDraggable(true);
+    }
+  }
+
+  function disableMarkerDragging() {
+    markerDragHandler = null;
+    for (const entry of activeMarkerMap.values())
+      entry.marker.setDraggable(false);
+  }
+
   function toggleMapStyle() {
     const map = mapInstance.value;
     if (!map)
@@ -740,6 +904,8 @@ export function useMapbox() {
     if (spinTimeoutId)
       clearTimeout(spinTimeoutId);
     routeGeometryRequestId += 1;
+    disablePointPlacement();
+    disableMarkerDragging();
     clearMarkers();
     clearRoute();
     mapInstance.value?.remove();
@@ -762,6 +928,10 @@ export function useMapbox() {
     zoomOut,
     centerMap,
     flyToPoint,
+    enablePointPlacement,
+    disablePointPlacement,
+    enableMarkerDragging,
+    disableMarkerDragging,
     toggleMapStyle,
     setMapTheme,
     destroy,

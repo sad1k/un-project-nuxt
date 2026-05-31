@@ -31,9 +31,12 @@ test("route notification registration uses the unified worker path", () => {
   assert.doesNotMatch(notificationSource, /route-generation-sw\.js/);
 });
 
-test("offline fallback is static and does not promise unsupported offline features", () => {
+test("offline fallback is honest about what works and what does not", () => {
   assert.match(offlineSource, /WanderLog is offline/);
-  assert.match(offlineSource, /routes, maps, diary changes, and AI features need a network connection/);
+  // Routes/diary/AI still need network — we never promise they sync later.
+  assert.match(offlineSource, /Routes, diary changes, and AI features need a network connection/);
+  // Saved offline regions DO work now that the SW caches the app shell.
+  assert.match(offlineSource, /Saved offline regions remain available/);
   assert.doesNotMatch(offlineSource, /sync later|edit offline|generate offline/i);
 });
 

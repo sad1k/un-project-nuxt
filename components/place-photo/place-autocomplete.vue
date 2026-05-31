@@ -119,7 +119,11 @@ onBeforeUnmount(() => {
 <template>
   <div ref="root" class="place-photo-autocomplete relative w-full">
     <label class="group flex h-11 w-full items-center gap-2 rounded-full border border-white/10 bg-black/55 px-4 text-sm text-white shadow-lg shadow-black/30 backdrop-blur-md transition focus-within:border-brand-gold/55 focus-within:bg-black/65 focus-within:ring-2 focus-within:ring-brand-gold/25">
-      <Icon name="tabler:search" size="18" class="shrink-0 text-white/65" />
+      <Icon
+        name="tabler:search"
+        size="18"
+        class="shrink-0 text-white/65"
+      />
       <input
         :value="query"
         type="search"
@@ -169,7 +173,11 @@ onBeforeUnmount(() => {
             :title="result.display_name"
             @click="onSelect(result)"
           >
-            <Icon name="tabler:map-pin" size="16" class="mt-0.5 shrink-0 text-brand-gold" />
+            <Icon
+              name="tabler:map-pin"
+              size="16"
+              class="mt-0.5 shrink-0 text-brand-gold"
+            />
             <span class="min-w-0 text-sm leading-snug">
               {{ shortenLabel(result.display_name) }}
             </span>

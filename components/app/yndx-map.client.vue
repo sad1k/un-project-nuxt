@@ -30,7 +30,7 @@ const mapSettings = computed(() => ({
 }));
 
 onMounted(async () => {
-  await mapStore.init(() => createYndxMapAdapter(mapRef, LOCATION));
+  await mapStore.init(async () => createYndxMapAdapter(mapRef, LOCATION));
 });
 
 function updateAddedPoint(location: LngLat) {

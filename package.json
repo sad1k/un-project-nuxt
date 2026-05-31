@@ -67,6 +67,7 @@
     "nuxt-easy-lightbox": "1.1.0",
     "nuxt-maplibre": "1.1.1",
     "pinia": "^3.0.2",
+    "pmtiles": "^4.4.1",
     "slug": "^11.0.0",
     "tailwind-merge": "^3.4.0",
     "tailwindcss": "^4.1.7",

@@ -41,7 +41,11 @@ function dismiss() {
           Нажмите <Icon name="lucide:share" class="inline size-3.5" /> → «На экран Домой», чтобы получать push-уведомления и работать офлайн.
         </p>
       </div>
-      <button class="rounded p-1 hover:bg-white/10" aria-label="Закрыть" @click="dismiss">
+      <button
+        class="rounded p-1 hover:bg-white/10"
+        aria-label="Закрыть"
+        @click="dismiss"
+      >
         <Icon name="lucide:x" class="size-4" />
       </button>
     </div>

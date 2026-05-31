@@ -31,7 +31,9 @@ test("PWA status UI reports offline shell honestly without unsupported claims", 
   assert.match(statusSource, /navigator\.onLine/);
   assert.match(statusSource, /serviceWorker/);
   assert.match(statusSource, /Офлайн-оболочка доступна/);
-  assert.match(statusSource, /Для маршрутов, карт, дневника и AI нужна сеть/);
+  // Saved-offline-regions claim is the only thing we now promise works.
+  assert.match(statusSource, /Скачанные регионы карты работают/);
+  assert.match(statusSource, /Для маршрутов, дневника и AI нужна сеть/);
   assert.doesNotMatch(statusSource, /offline generation|edit offline|sync later/i);
 });
 

@@ -13,6 +13,7 @@ import {
   aiRouteSession,
   aiRouteVariant,
   routeDiarySave,
+  routePlaceStory,
 } from "../schema";
 
 type RouteMessageRole = "user" | "assistant" | "system";
@@ -358,6 +359,103 @@ export async function deleteAiRouteSessionByIdForUser(userId: number, sessionId:
     .returning();
 
   return deletedSession;
+}
+
+export async function updateAiRoutePoint(
+  userId: number,
+  input: {
+    variantId: number;
+    routePointId: string;
+    patch: {
+      name?: string;
+      day?: number;
+      coordinates?: { lat: number; long: number };
+      estimatedStart?: string;
+      estimatedDurationMinutes?: number;
+      rationale?: string;
+    };
+  },
+) {
+  const values: Partial<typeof aiRoutePoint.$inferInsert> = {};
+  if (input.patch.name !== undefined)
+    values.name = input.patch.name;
+  if (input.patch.day !== undefined)
+    values.day = input.patch.day;
+  if (input.patch.coordinates) {
+    values.lat = input.patch.coordinates.lat;
+    values.long = input.patch.coordinates.long;
+  }
+  if (input.patch.estimatedStart !== undefined)
+    values.estimatedStart = input.patch.estimatedStart;
+  if (input.patch.estimatedDurationMinutes !== undefined)
+    values.estimatedDurationMinutes = input.patch.estimatedDurationMinutes;
+  if (input.patch.rationale !== undefined)
+    values.rationale = input.patch.rationale;
+
+  if (Object.keys(values).length === 0)
+    return null;
+
+  const [updated] = await db
+    .update(aiRoutePoint)
+    .set(values)
+    .where(and(
+      eq(aiRoutePoint.userId, userId),
+      eq(aiRoutePoint.variantId, input.variantId),
+      eq(aiRoutePoint.routePointId, input.routePointId),
+    ))
+    .returning();
+
+  return updated ?? null;
+}
+
+export async function deleteAiRoutePoint(
+  userId: number,
+  input: { sessionId: number; variantId: number; routePointId: string },
+) {
+  const [deleted] = await db
+    .delete(aiRoutePoint)
+    .where(and(
+      eq(aiRoutePoint.userId, userId),
+      eq(aiRoutePoint.variantId, input.variantId),
+      eq(aiRoutePoint.routePointId, input.routePointId),
+    ))
+    .returning();
+
+  if (deleted) {
+    await db
+      .delete(routePlaceStory)
+      .where(and(
+        eq(routePlaceStory.userId, userId),
+        eq(routePlaceStory.sessionId, input.sessionId),
+        eq(routePlaceStory.variantId, input.variantId),
+        eq(routePlaceStory.routePointId, input.routePointId),
+      ));
+  }
+
+  return Boolean(deleted);
+}
+
+export async function clearAiRouteVariantPoints(
+  userId: number,
+  input: { sessionId: number; variantId: number },
+) {
+  const deleted = await db
+    .delete(aiRoutePoint)
+    .where(and(
+      eq(aiRoutePoint.userId, userId),
+      eq(aiRoutePoint.variantId, input.variantId),
+    ))
+    .returning();
+
+  await db
+    .delete(routePlaceStory)
+    .where(and(
+      eq(routePlaceStory.userId, userId),
+      eq(routePlaceStory.sessionId, input.sessionId),
+      eq(routePlaceStory.variantId, input.variantId),
+    ));
+
+  return deleted.length;
 }
 
 export async function findAiRouteSessionSummariesByUserId(

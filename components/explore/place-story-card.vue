@@ -8,6 +8,7 @@ const props = defineProps<{
 }>();
 
 const placeStory = usePlaceStory();
+const { isOffline } = useOnline();
 const request = computed(() => placeStory.createRequest({
   point: props.point,
   sessionId: props.sessionId,
@@ -150,6 +151,19 @@ async function handleOfflineAction() {
       class="mt-3 rounded-md bg-[var(--explore-danger-bg)] px-3 py-2 text-xs text-[var(--explore-danger-text)]"
     >
       {{ state.error || "Не удалось подготовить аудиоисторию." }}
+    </div>
+
+    <div
+      v-else-if="isOffline && !story?.audio"
+      class="mt-3"
+    >
+      <OfflineUnavailable
+        feature="ai-story"
+        label="AI-история"
+        icon="tabler:sparkles"
+        variant="inline"
+        reason="Сгенерируем, когда появится сеть"
+      />
     </div>
 
     <div

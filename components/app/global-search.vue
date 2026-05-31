@@ -325,7 +325,9 @@ function getResultIcon(item: GlobalSearchItem) {
     rgba(243, 209, 158, 0.03) 45%,
     rgba(146, 103, 184, 0.06) 100%
   );
-  transition: background 200ms ease, transform 200ms ease;
+  transition:
+    background 200ms ease,
+    transform 200ms ease;
 }
 
 .ai-cta:hover {
@@ -365,11 +367,11 @@ function getResultIcon(item: GlobalSearchItem) {
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
     linear-gradient(#000 0 0);
-          mask:
+  mask:
     linear-gradient(#000 0 0) content-box,
     linear-gradient(#000 0 0);
   -webkit-mask-composite: xor;
-          mask-composite: exclude;
+  mask-composite: exclude;
   animation: ai-cta-shimmer 7s ease-in-out infinite;
 }
 
@@ -386,19 +388,11 @@ function getResultIcon(item: GlobalSearchItem) {
 }
 
 .ai-cta__glow {
-  background: radial-gradient(
-    circle at 14% 30%,
-    rgba(243, 209, 158, 0.22),
-    transparent 55%
-  );
+  background: radial-gradient(circle at 14% 30%, rgba(243, 209, 158, 0.22), transparent 55%);
 }
 
 .ai-badge {
-  background: linear-gradient(
-    135deg,
-    rgba(243, 209, 158, 0.2),
-    rgba(146, 103, 184, 0.2)
-  );
+  background: linear-gradient(135deg, rgba(243, 209, 158, 0.2), rgba(146, 103, 184, 0.2));
   color: var(--color-brand-gold);
   box-shadow: inset 0 0 0 1px rgba(243, 209, 158, 0.35);
 }

@@ -85,4 +85,3 @@ export async function getAllUserSubscriptions(userId: number) {
     where: eq(pushSubscription.userId, userId),
   });
 }
-

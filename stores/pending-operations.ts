@@ -1,7 +1,8 @@
 import { defineStore } from "pinia";
 
-import { listOperations, removeOperation, updateOperationStatus } from "~/lib/offline/idb";
 import type { PendingOp, PendingStatus } from "~/lib/offline/operation-types";
+
+import { listOperations, removeOperation, updateOperationStatus } from "~/lib/offline/idb";
 
 export const usePendingOperationsStore = defineStore("pending-operations", () => {
   const operations = ref<PendingOp[]>([]);

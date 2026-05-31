@@ -49,7 +49,12 @@ function injectMarkerStyles() {
   styleInjected = true;
 }
 
-export function createMarkerElement(point: RouteMapPoint, index: number, delayMs: number): HTMLDivElement {
+export type MarkerElements = {
+  element: HTMLDivElement;
+  labelElement: HTMLDivElement;
+};
+
+export function createMarkerElement(point: RouteMapPoint, index: number, delayMs: number): MarkerElements {
   injectMarkerStyles();
   const markerStyle = MARKER_STYLES[point.markerKind];
 
@@ -82,9 +87,21 @@ export function createMarkerElement(point: RouteMapPoint, index: number, delayMs
     animationDelay: `${delayMs}ms`,
     animationFillMode: "both",
   });
-  marker.textContent = point.markerKind === "generated" ? (index + 1).toString() : markerStyle.text;
+  marker.textContent = getMarkerLabelText(point, index);
   el.appendChild(marker);
-  return el;
+  return { element: el, labelElement: marker };
+}
+
+export function updateMarkerLabel(labelElement: HTMLDivElement, point: RouteMapPoint, index: number) {
+  const nextText = getMarkerLabelText(point, index);
+  if (labelElement.textContent !== nextText)
+    labelElement.textContent = nextText;
+}
+
+function getMarkerLabelText(point: RouteMapPoint, index: number) {
+  return point.markerKind === "generated"
+    ? (index + 1).toString()
+    : MARKER_STYLES[point.markerKind].text;
 }
 
 export function createPopupHTML(point: RouteMapPoint): string {

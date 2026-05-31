@@ -26,6 +26,8 @@ const {
   canSave,
 } = capture;
 
+const { isOnline, isOffline } = useOnline();
+
 const publishLoading = ref(false);
 const publishError = ref("");
 const publishedPostId = ref<number | null>(null);
@@ -36,7 +38,8 @@ const canPublishSavedPhoto = computed(() => Boolean(
   saved.value?.image.id
   && !publishLoading.value
   && !publishedPostId.value
-  && caption.value.length <= CAPTION_MAX,
+  && caption.value.length <= CAPTION_MAX
+  && isOnline.value,
 ));
 
 const hasPhoto = computed(() => Boolean(previewUrl.value));
@@ -323,7 +326,17 @@ function startAnotherCapture() {
             </button>
           </div>
 
+          <OfflineUnavailable
+            v-if="isOffline"
+            feature="photo-upload-save"
+            label="Загрузка фото"
+            icon="tabler:cloud-off"
+            variant="inline"
+            reason="Сохраним, когда появится сеть"
+            class="mt-1 flex justify-center"
+          />
           <button
+            v-else
             class="btn mt-1 h-12 w-full border-none bg-brand-sangria text-white shadow-lg shadow-brand-sangria/25 hover:bg-rose-600 disabled:bg-white/10 disabled:text-white/40 disabled:shadow-none"
             type="button"
             :disabled="!canSave"

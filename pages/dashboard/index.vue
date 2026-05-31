@@ -132,8 +132,14 @@ onBeforeRouteLeave((to) => {
           class="stat stat--gold"
           :title="`${stats.total} ${pluralizeRu(stats.total, 'место', 'места', 'мест')}`"
         >
-          <Icon name="tabler:map-pin" size="14" class="stat__icon" />
-          <dt class="sr-only">Всего мест</dt>
+          <Icon
+            name="tabler:map-pin"
+            size="14"
+            class="stat__icon"
+          />
+          <dt class="sr-only">
+            Всего мест
+          </dt>
           <dd class="stat__body">
             <span class="stat__value">{{ stats.total }}</span>
           </dd>
@@ -143,8 +149,14 @@ onBeforeRouteLeave((to) => {
           :class="{ 'stat--muted': stats.streak === 0 }"
           :title="stats.streak === 0 ? 'Нет серии добавлений' : `${stats.streak} ${pluralizeRu(stats.streak, 'день', 'дня', 'дней')} подряд`"
         >
-          <Icon name="tabler:flame" size="14" class="stat__icon" />
-          <dt class="sr-only">Серия дней подряд</dt>
+          <Icon
+            name="tabler:flame"
+            size="14"
+            class="stat__icon"
+          />
+          <dt class="sr-only">
+            Серия дней подряд
+          </dt>
           <dd class="stat__body">
             <span class="stat__value">{{ stats.streak }}</span>
             <span class="stat__label">дн</span>
@@ -155,16 +167,28 @@ onBeforeRouteLeave((to) => {
           :class="{ 'stat--muted': stats.thisMonth === 0 }"
           title="Добавлено в этом месяце"
         >
-          <Icon name="tabler:sparkles" size="14" class="stat__icon" />
-          <dt class="sr-only">Добавлено в этом месяце</dt>
+          <Icon
+            name="tabler:sparkles"
+            size="14"
+            class="stat__icon"
+          />
+          <dt class="sr-only">
+            Добавлено в этом месяце
+          </dt>
           <dd class="stat__body">
             <span class="stat__value">{{ stats.thisMonth }}</span>
             <span class="stat__label">/мес</span>
           </dd>
         </div>
         <div class="stat stat--violet" title="Последнее добавление">
-          <Icon name="tabler:clock" size="14" class="stat__icon" />
-          <dt class="sr-only">Последнее добавление</dt>
+          <Icon
+            name="tabler:clock"
+            size="14"
+            class="stat__icon"
+          />
+          <dt class="sr-only">
+            Последнее добавление
+          </dt>
           <dd class="stat__body">
             <span class="stat__value stat__value--text">{{ formatRelative(stats.latest) }}</span>
           </dd>

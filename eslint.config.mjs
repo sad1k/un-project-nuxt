@@ -12,7 +12,7 @@ export default withNuxt(antfu({
     semi: true,
     quotes: "double",
   },
-  ignores: [".omx/**", ".planning/**", ".pnpm-store/**", "AGENTS.md", "**/migrations/*", "**/dist/**", "**/node_modules/**", "**/public/**", "**/package-lock.json", "pnpm-lock.yaml"],
+  ignores: [".omx/**", ".git/**", "**.docx", "**.png", "**.jpg", "**.jpeg", "**.gif", "**.bmp", "**.tiff", "**.ico", "**.webp", "**.svg", "**.puml", "**.dot", ".planning/**", ".pnpm-store/**", "AGENTS.md", "**/migrations/*", "**/dist/**", "**/node_modules/**", "**/public/**", "**/package-lock.json", "pnpm-lock.yaml", "**/.env", "**/.env.local", "**/.env.development", "**/.env.production", "**/*.md"],
 }, {
   rules: {
     "vue/max-attributes-per-line": ["error", {

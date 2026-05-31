@@ -27,7 +27,7 @@ function onSubmitComplete() {
   <LocationForm
     v-if="locationStore.currentLocationStatus !== 'pending'"
     :on-submit="submit"
-    :initial-values="locationStore.currentLocation"
+    :initial-values="locationStore.currentLocation ?? undefined"
     submit-button-text="Сохранить"
     submit-button-icon="tabler:save"
     :on-submit-complete="onSubmitComplete"

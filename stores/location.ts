@@ -60,7 +60,6 @@ export const useLocationStore = defineStore("useLocationStore", () => {
   });
 
   effect(() => {
-    console.log(route.name?.toString(), "route.name");
     if (
       locations.value
       && LOCATION_PAGES.includes(route.name?.toString() || "")
