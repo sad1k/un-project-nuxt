@@ -1,3 +1,5 @@
+import { toast } from "vue-sonner";
+
 import type { RouteEventEnvelope, RoutePoint, RoutePointPatch } from "~/lib/ai/route-contract";
 import type { ExploreRequestContext } from "~/lib/explore/context";
 
@@ -46,6 +48,9 @@ const lastWarning = ref<string | null>(null);
 const lastRequestContext = ref<ExploreRequestContext | null>(null);
 const ROUTE_UNLOAD_DIAGNOSTIC_KEY = "wanderlog.routeGeneration.unload";
 const ROUTE_SESSION_STORAGE_KEY = "wanderlog.routeGeneration.sessionId";
+// Shared toast id so repeated failures (e.g. a retry that fails again) replace
+// the previous notification instead of stacking.
+const ROUTE_FAILURE_TOAST_ID = "route-generation-failed";
 let routeDiagnosticsInstalled = false;
 let activeStreamController: AbortController | null = null;
 
@@ -329,6 +334,7 @@ async function streamRouteEvents(payload: {
         ...getClientDiagnosticContext(),
       });
       error.value = "Не удалось сгенерировать маршрут. Попробуйте изменить пожелания.";
+      notifyRouteFailure("Попробуйте изменить пожелания или повторить попытку.");
     }
   }
   finally {
@@ -361,6 +367,26 @@ function appendSseBlock(block: string) {
       lastWarning.value = "Не удалось показать обновление маршрута.";
     }
   }
+}
+
+function notifyRouteFailure(description: string) {
+  if (!import.meta.client)
+    return;
+
+  const retryContext = lastRequestContext.value;
+  toast.error("Не удалось сгенерировать маршрут", {
+    id: ROUTE_FAILURE_TOAST_ID,
+    description,
+    duration: 10000,
+    action: retryContext
+      ? {
+          label: "Повторить",
+          onClick: () => {
+            void generateRoute(retryContext);
+          },
+        }
+      : undefined,
+  });
 }
 
 function appendRouteEvent(event: RouteEventEnvelope) {
@@ -416,6 +442,7 @@ function appendRouteEvent(event: RouteEventEnvelope) {
       variantId: event.variantId,
     });
     error.value = event.message;
+    notifyRouteFailure(event.message);
     if (event.variantId) {
       upsertVariant({
         id: event.variantId,

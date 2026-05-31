@@ -104,6 +104,12 @@ function wrapOfetch(fetcher: FetchLike, source: "$fetch" | "$csrfFetch", notifyR
 }
 
 function shouldNotifyRequestFailure(request: unknown, options?: { method?: string }) {
+  // The AI route stream renders its own tailored failure toast
+  // (composables/use-ai-route-session.ts), so skip the generic notifier here to
+  // avoid two toasts for a single generation failure.
+  if (isRouteStreamRequest(request))
+    return false;
+
   const method = normalizeMethod(options?.method, request);
   if (method !== "GET")
     return true;
@@ -151,4 +157,18 @@ function isAppDataRequest(pathname: string) {
   return pathname.startsWith("/api/")
     || pathname.startsWith("/auth/")
     || pathname.endsWith(".json");
+}
+
+function isRouteStreamRequest(request: unknown) {
+  const rawUrl = getRequestUrl(request);
+  if (!rawUrl)
+    return false;
+
+  try {
+    const url = new URL(rawUrl, import.meta.client ? window.location.origin : "http://localhost");
+    return url.pathname === "/api/ai/route";
+  }
+  catch {
+    return rawUrl.startsWith("/api/ai/route");
+  }
 }

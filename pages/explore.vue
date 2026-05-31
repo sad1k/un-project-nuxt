@@ -420,7 +420,7 @@ function onCloseOfflinePreview() {
       <AppUserMenu />
     </div>
 
-    <div class="absolute right-4 top-20 z-30 flex items-center gap-2">
+    <div class="absolute right-4 top-16 z-30 flex items-center gap-2 md:top-20">
       <AppRouteGenerationIndicator floating />
       <ExploreResultsActions />
     </div>
@@ -546,5 +546,9 @@ function onCloseOfflinePreview() {
       :region="offlinePreviewRegion"
       @close="onCloseOfflinePreview"
     />
+
+    <!-- /explore opts out of the default layout, so it mounts the toaster itself
+         (route-generation failures and offline actions surface as toasts here). -->
+    <AppRequestErrorNotifications />
   </div>
 </template>
