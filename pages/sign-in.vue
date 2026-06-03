@@ -37,7 +37,7 @@ async function handleProviderSignIn(provider: "github" | "google") {
 
 watchEffect(() => {
   if (authStore.user) {
-    navigateTo("/dashboard");
+    navigateTo("/explore");
   }
 });
 </script>
