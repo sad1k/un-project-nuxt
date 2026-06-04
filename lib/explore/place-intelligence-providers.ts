@@ -6,6 +6,8 @@ import { formatPriceLevel } from "~/lib/explore/place-intelligence";
 const GOOGLE_PLACES_BASE_URL = "https://places.googleapis.com/v1";
 const GOOGLE_PLACES_LANGUAGE_CODE = "ru";
 const GOOGLE_PLACES_REGION_CODE = "RU";
+// Full "Enterprise + Atmosphere" field mask. Only the place-intelligence popup needs
+// ratings/reviews/price/AI summary, so the cost of that billing tier is paid here alone.
 const GOOGLE_PLACE_FIELDS = [
   "places.id",
   "places.displayName",
@@ -18,16 +20,11 @@ const GOOGLE_PLACE_FIELDS = [
   "places.generativeSummary",
 ].join(",");
 
-const GOOGLE_PLACE_DETAIL_FIELDS = [
-  "id",
-  "displayName",
-  "formattedAddress",
-  "photos",
-  "rating",
-  "userRatingCount",
-  "reviews",
-  "priceLevel",
-  "generativeSummary",
+// Photo lookups only need an id + photo references, which stays in the cheaper "Pro"
+// tier instead of paying for the Atmosphere fields the photo path never reads.
+const GOOGLE_PLACE_PHOTO_FIELDS = [
+  "places.id",
+  "places.photos",
 ].join(",");
 
 const WIKIMEDIA_API_URL = "https://commons.wikimedia.org/w/api.php";
@@ -68,6 +65,8 @@ export async function fetchGooglePlaceIntelligence(input: {
   }
 
   try {
+    // Text Search already returns every field in GOOGLE_PLACE_FIELDS, so a follow-up
+    // Place Details request would only re-bill the same Atmosphere fields for no new data.
     const place = await searchGooglePlace(input);
     if (!place) {
       return {
@@ -76,11 +75,9 @@ export async function fetchGooglePlaceIntelligence(input: {
       };
     }
 
-    const details = typeof place.id === "string" ? await fetchGooglePlaceDetails(place.id) : place;
-
     return {
       available: true,
-      data: normalizeGooglePlaceDetails(details || place, input.name),
+      data: normalizeGooglePlaceDetails(place, input.name),
     };
   }
   catch {
@@ -103,7 +100,9 @@ export async function fetchGooglePlacePhoto(input: {
 
   try {
     logGooglePlacePhotoDebug("search_start", input);
-    const place = await searchGooglePlace(input);
+    // Photos are returned straight from Text Search; the narrow id+photos mask keeps
+    // this lookup in the cheap Pro tier instead of "Enterprise + Atmosphere".
+    const place = await searchGooglePlace(input, GOOGLE_PLACE_PHOTO_FIELDS);
     if (!place) {
       logGooglePlacePhotoDebug("search_no_match", input);
       return null;
@@ -114,23 +113,20 @@ export async function fetchGooglePlacePhoto(input: {
       hasPlaceId: typeof place.id === "string",
       hasPhotos: Array.isArray(place.photos) && place.photos.length > 0,
     });
-    const details = typeof place.id === "string" ? await fetchGooglePlaceDetails(place.id) : place;
-    const resolvedPlace = details || place;
-    const photo = normalizePhoto(resolvedPlace, input.name, {
+    const photo = normalizePhoto(place, input.name, {
       kind: "provider",
       label: "Google Places",
       confidence: "medium",
     });
     if (!photo) {
-      logGooglePlacePhotoDebug("details_no_photo", {
+      logGooglePlacePhotoDebug("search_no_photo", {
         ...input,
-        usedDetails: Boolean(details),
-        hasPhotos: Array.isArray(resolvedPlace.photos) && resolvedPlace.photos.length > 0,
+        hasPhotos: Array.isArray(place.photos) && place.photos.length > 0,
       });
       return null;
     }
 
-    const photos = Array.isArray(resolvedPlace.photos) ? resolvedPlace.photos.filter(isRecord) : [];
+    const photos = Array.isArray(place.photos) ? place.photos.filter(isRecord) : [];
     const firstPhoto = photos[0];
     const providerPhotoReference = typeof firstPhoto?.name === "string" ? firstPhoto.name : "";
     if (!providerPhotoReference) {
@@ -146,7 +142,7 @@ export async function fetchGooglePlacePhoto(input: {
       url: photo.url,
       alt: photo.alt,
       attribution: photo.attribution,
-      providerPlaceId: typeof resolvedPlace.id === "string" ? resolvedPlace.id : undefined,
+      providerPlaceId: typeof place.id === "string" ? place.id : undefined,
       providerPhotoReference,
     };
   }
@@ -228,13 +224,16 @@ export async function fetchWikimediaPlacePhoto(input: {
   }
 }
 
-async function searchGooglePlace(input: { name: string; lat: number; long: number }) {
+async function searchGooglePlace(
+  input: { name: string; lat: number; long: number },
+  fieldMask: string = GOOGLE_PLACE_FIELDS,
+) {
   const response = await fetch(`${GOOGLE_PLACES_BASE_URL}/places:searchText`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "X-Goog-Api-Key": env.GOOGLE_PLACES_API_KEY || "",
-      "X-Goog-FieldMask": GOOGLE_PLACE_FIELDS,
+      "X-Goog-FieldMask": fieldMask,
     },
     body: JSON.stringify({
       languageCode: GOOGLE_PLACES_LANGUAGE_CODE,
@@ -265,30 +264,6 @@ async function searchGooglePlace(input: { name: string; lat: number; long: numbe
     return null;
 
   return payload.places.find(isRecord) ?? null;
-}
-
-async function fetchGooglePlaceDetails(placeId: string) {
-  const url = new URL(`${GOOGLE_PLACES_BASE_URL}/places/${encodeURIComponent(placeId)}`);
-  url.searchParams.set("languageCode", GOOGLE_PLACES_LANGUAGE_CODE);
-  url.searchParams.set("regionCode", GOOGLE_PLACES_REGION_CODE);
-
-  const response = await fetch(url, {
-    headers: {
-      "X-Goog-Api-Key": env.GOOGLE_PLACES_API_KEY || "",
-      "X-Goog-FieldMask": GOOGLE_PLACE_DETAIL_FIELDS,
-    },
-  });
-
-  if (!response.ok) {
-    logGooglePlacePhotoDebug("details_http_error", {
-      placeIdLength: placeId.length,
-      status: response.status,
-    });
-    return null;
-  }
-
-  const payload = await response.json();
-  return isRecord(payload) ? payload : null;
 }
 
 export function normalizeGooglePlaceDetails(place: Record<string, unknown>, fallbackName: string): PlaceProviderData {
