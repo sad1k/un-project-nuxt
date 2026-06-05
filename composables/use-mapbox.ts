@@ -531,7 +531,7 @@ export function useMapbox() {
     selector: string,
     bind: (button: HTMLButtonElement) => void,
   ) {
-    const button = popup.getElement?.().querySelector?.(selector);
+    const button = popup.getElement?.()?.querySelector(selector);
     if (button instanceof HTMLButtonElement)
       bind(button);
   }
