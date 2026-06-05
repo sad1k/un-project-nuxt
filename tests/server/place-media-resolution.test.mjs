@@ -9,18 +9,18 @@ const locationImageQuerySource = await readFile("lib/db/queries/location-log-ima
 const endpointSource = await readFile("server/api/explore/place-intelligence.get.ts", "utf8");
 const photoEndpointSource = await readFile("server/api/explore/place-photo.get.ts", "utf8");
 
-test("real place photo resolver checks public app photos before Google provider photos", () => {
+test("real place photo resolver prefers app photos, then free Wikimedia, then Google", () => {
   assert.match(mediaSource, /resolveRealPlacePhoto/);
   const appIndex = mediaSource.indexOf("deps.findAppPhoto ?? findAppPlacePhoto");
   const googleIndex = mediaSource.indexOf("deps.fetchGooglePhoto ?? fetchGooglePlaceMediaPhoto");
   const openIndex = mediaSource.indexOf("deps.fetchOpenProviderPhoto ?? fetchUnavailableOpenProviderPhoto");
   assert.ok(appIndex >= 0, "app photo resolver should be present");
-  assert.ok(googleIndex > appIndex, "Google resolver should run after app photo resolver");
-  assert.ok(openIndex > googleIndex, "open/provider fallback hook should run after Google");
+  assert.ok(openIndex > appIndex, "Wikimedia resolver should run after the app photo resolver");
+  assert.ok(googleIndex > openIndex, "Google resolver should run after the free Wikimedia fallback");
   assert.match(mediaSource, /status:\s*"missing"/);
 });
 
-test("Wikimedia fallback runs after Google and before missing state", () => {
+test("Wikimedia is a free fallback that runs before Google and ahead of missing state", () => {
   assert.match(providerSource, /export async function fetchWikimediaPlacePhoto/);
   assert.match(providerSource, /https:\/\/commons\.wikimedia\.org\/w\/api\.php/);
   assert.match(providerSource, /generator", "geosearch"/);

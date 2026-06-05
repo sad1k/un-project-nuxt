@@ -111,18 +111,21 @@ export async function resolveRealPlacePhoto(
   }
   logPlaceMediaDebug("cache_miss", logContext);
 
+  // Order = preference. App-owned public photos first (most relevant, free), then the
+  // free Wikimedia fallback, and Google last so it only fires when the free sources miss
+  // (and is skipped entirely when no Google key is configured).
   const resolvers = [
     {
       name: "app_public_photo",
       resolve: deps.findAppPhoto ?? findAppPlacePhoto,
     },
     {
-      name: "google_places_photo",
-      resolve: deps.fetchGooglePhoto ?? fetchGooglePlaceMediaPhoto,
-    },
-    {
       name: "open_provider_photo",
       resolve: deps.fetchOpenProviderPhoto ?? fetchUnavailableOpenProviderPhoto,
+    },
+    {
+      name: "google_places_photo",
+      resolve: deps.fetchGooglePhoto ?? fetchGooglePlaceMediaPhoto,
     },
   ];
 
