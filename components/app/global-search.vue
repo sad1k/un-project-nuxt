@@ -136,7 +136,11 @@ function onDocumentPointerDown(event: PointerEvent) {
 }
 
 function onDocumentKeydown(event: KeyboardEvent) {
-  if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+  // Match the physical K key via event.code so the shortcut still fires under
+  // non-Latin layouts — on the Russian ЙЦУКЕН layout that key emits "л", so the
+  // event.key check never matched. Keep event.key as a fallback for Dvorak/Colemak.
+  const isSearchHotkey = event.code === "KeyK" || event.key.toLowerCase() === "k";
+  if ((event.ctrlKey || event.metaKey) && isSearchHotkey) {
     event.preventDefault();
     open.value = true;
     searchRoot.value?.querySelector("input")?.focus();

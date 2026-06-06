@@ -29,6 +29,20 @@
       "when": 1779952200000,
       "tag": "0003_pwa_offline_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1780644297278,
+      "tag": "0004_melted_weapon_omega",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1780686211230,
+      "tag": "0005_burly_loners",
+      "breakpoints": true
     }
   ]
 }

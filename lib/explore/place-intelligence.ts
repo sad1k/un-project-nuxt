@@ -25,6 +25,10 @@ export const PlacePhotoSchema = z.object({
   alt: z.string().min(1).max(180),
   attribution: z.string().max(220).optional(),
   source: PlacePhotoSourceSchema,
+  // Extra photos (including the hero at [0]) for the desktop carousel. Reused from a provider's
+  // single multi-photo response (e.g. TripAdvisor returns up to 5 per call), so it costs no extra
+  // quota beyond the one photo call already made.
+  gallery: z.array(z.string().min(1)).max(5).optional(),
 });
 
 export const PlaceReviewSnippetSchema = z.object({

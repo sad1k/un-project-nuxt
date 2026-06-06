@@ -4,12 +4,14 @@ import {
   toRouteMapPoints,
 } from "~/lib/explore/route-map";
 
-type PopoverKey = "weather" | "history" | "followUp" | "share";
+type PopoverKey = "weather" | "history" | "followUp" | "share" | "reset";
 
 const { requestContext, selectedCity } = useExploreContext();
 const aiRouteSession = useAiRouteSession();
 const routeWeatherTips = useRouteWeatherTips();
 const route = useRoute();
+const router = useRouter();
+const isGenerating = aiRouteSession.isGenerating;
 
 const selectedDay = useState<number | null>("explore-selected-route-day", () => null);
 const routeMapPoints = computed(() => toRouteMapPoints(aiRouteSession.activePoints.value));
@@ -79,6 +81,19 @@ function toggle(key: PopoverKey) {
 
 function close() {
   openPopover.value = null;
+}
+
+async function confirmReset() {
+  // Wipe the active route (and cancel any in-flight generation) so the user can
+  // start over when the assistant proposes an unsuitable route.
+  aiRouteSession.resetRouteSession();
+  openPopover.value = null;
+
+  if (route.query.sessionId) {
+    const nextQuery = { ...route.query };
+    delete nextQuery.sessionId;
+    await router.replace({ query: nextQuery });
+  }
 }
 
 function onDocumentClick(event: MouseEvent) {
@@ -265,6 +280,50 @@ async function share() {
         </div>
       </Transition>
     </div>
+
+    <div class="relative">
+      <button
+        aria-label="Удалить маршрут"
+        class="explore-results-button flex h-9 w-9 items-center justify-center rounded-full border backdrop-blur-md transition"
+        :class="openPopover === 'reset' ? 'explore-results-button-danger' : ''"
+        type="button"
+        @click="toggle('reset')"
+      >
+        <Icon name="tabler:trash" size="16" />
+      </button>
+      <Transition name="pop">
+        <div
+          v-if="openPopover === 'reset'"
+          class="explore-popover z-40 rounded-xl border p-3 max-md:fixed max-md:inset-x-3 max-md:bottom-[96px] max-md:left-3 max-md:right-auto max-md:top-auto max-md:w-auto max-md:max-w-none md:absolute md:right-0 md:top-full md:mt-2 md:w-64"
+        >
+          <div class="mb-1 text-sm font-semibold text-[var(--explore-text)]">
+            {{ isGenerating ? "Отменить генерацию?" : "Удалить маршрут?" }}
+          </div>
+          <p class="explore-text-soft mb-3 text-xs leading-snug">
+            Текущий маршрут будет стёрт. Вы сможете построить новый.
+          </p>
+          <div class="flex items-center gap-2">
+            <button
+              class="flex h-8 flex-1 items-center justify-center gap-1 rounded-lg px-3 text-xs font-semibold text-white transition"
+              style="background: var(--explore-danger-text)"
+              type="button"
+              @click="confirmReset"
+            >
+              <Icon name="tabler:trash" size="14" />
+              {{ isGenerating ? "Отменить" : "Удалить" }}
+            </button>
+            <button
+              class="flex h-8 items-center justify-center rounded-lg border px-3 text-xs font-semibold transition"
+              style="border-color: var(--explore-border); color: var(--explore-text-muted)"
+              type="button"
+              @click="close"
+            >
+              Отмена
+            </button>
+          </div>
+        </div>
+      </Transition>
+    </div>
   </div>
 </template>
 
@@ -283,6 +342,11 @@ async function share() {
   background: var(--explore-surface-active);
   color: var(--explore-accent-strong);
   border-color: color-mix(in srgb, var(--explore-accent-strong) 35%, transparent);
+}
+.explore-results-button-danger {
+  background: var(--explore-danger-bg);
+  color: var(--explore-danger-text);
+  border-color: var(--explore-danger-border);
 }
 
 .explore-diary-pill-neutral {

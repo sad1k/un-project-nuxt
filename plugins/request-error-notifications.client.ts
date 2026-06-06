@@ -110,24 +110,42 @@ function shouldNotifyRequestFailure(request: unknown, options?: { method?: strin
   if (isRouteStreamRequest(request))
     return false;
 
+  if (!import.meta.client)
+    return false;
+
+  const rawUrl = getRequestUrl(request);
+  if (!rawUrl)
+    return false;
+
+  const url = parseRequestUrl(rawUrl);
+  if (!url) {
+    // Unparseable URL: only surface it when it clearly targets our own API and
+    // is not a best-effort enrichment endpoint.
+    return rawUrl.startsWith("/api/") && !isBestEffortRequest(rawUrl);
+  }
+
+  // Third-party / cross-origin requests (Mapbox telemetry + tiles, map and
+  // provider CDNs, analytics, …) fail for reasons outside the app's control —
+  // most visibly the Mapbox `events.mapbox.com` telemetry POSTs that fail in
+  // dev — and must never raise a "Запрос не выполнен" toast. Only same-origin
+  // app requests are actionable by the user.
+  if (url.origin !== window.location.origin)
+    return false;
+
+  // Best-effort enrichment endpoints (place photos, place intelligence, place
+  // stories, weather tips) proxy third-party providers and degrade gracefully
+  // in the UI, so a failed fetch is expected background noise — not an error
+  // worth interrupting the user with a toast.
+  if (isBestEffortRequest(url.pathname))
+    return false;
+
   const method = normalizeMethod(options?.method, request);
+  // Same-origin mutations (saving a place, etc.) are always worth surfacing.
   if (method !== "GET")
     return true;
 
-  const rawUrl = getRequestUrl(request);
-  if (!rawUrl || !import.meta.client)
-    return false;
-
-  try {
-    const url = new URL(rawUrl, window.location.origin);
-    if (url.origin !== window.location.origin)
-      return false;
-
-    return isAppDataRequest(url.pathname);
-  }
-  catch {
-    return rawUrl.startsWith("/api/");
-  }
+  // Same-origin reads: only surface real app-data endpoints (skip assets/HMR).
+  return isAppDataRequest(url.pathname);
 }
 
 function normalizeMethod(method: string | undefined, request: unknown) {
@@ -153,10 +171,34 @@ function getRequestUrl(request: unknown) {
   return "";
 }
 
+function parseRequestUrl(rawUrl: string): URL | null {
+  try {
+    return new URL(rawUrl, window.location.origin);
+  }
+  catch {
+    return null;
+  }
+}
+
 function isAppDataRequest(pathname: string) {
   return pathname.startsWith("/api/")
     || pathname.startsWith("/auth/")
     || pathname.endsWith(".json");
+}
+
+// Enrichment endpoints that proxy third-party providers (Google / Wikimedia /
+// 2GIS photos, place intelligence, AI place stories, weather tips). They are
+// best-effort: the UI falls back to an "unavailable" state when they fail, so
+// their failures must never raise a global request-error toast.
+const BEST_EFFORT_REQUEST_PATHS = [
+  "/api/explore/place-photo",
+  "/api/explore/place-intelligence",
+  "/api/explore/place-story",
+  "/api/explore/weather-tips",
+];
+
+function isBestEffortRequest(pathnameOrUrl: string) {
+  return BEST_EFFORT_REQUEST_PATHS.some(path => pathnameOrUrl.startsWith(path));
 }
 
 function isRouteStreamRequest(request: unknown) {

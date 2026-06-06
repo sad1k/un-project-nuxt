@@ -35,6 +35,11 @@ export async function* createMockAiRouteEventStream(input: {
 function buildMockRoutePoints(request: RouteGenerationRequest): RoutePoint[] {
   const city = request.context.city;
   const base = city?.coordinates || { lat: 40.7128, long: -74.006 };
+
+  const anchors = request.context.anchorPoints ?? [];
+  if (anchors.length)
+    return buildMockAnchorRoutePoints(anchors, request);
+
   const selectedCandidates = request.context.candidatePlaces.filter(place => place.selected);
   const candidatePoints = selectedCandidates
     .slice(0, 4)
@@ -76,6 +81,54 @@ function buildMockRoutePoints(request: RouteGenerationRequest): RoutePoint[] {
     priceConfidence: index % 3 === 0 ? "medium" : undefined,
     priceSource: index % 3 === 0 ? "оценка заглушки" : undefined,
   }));
+}
+
+// Mirrors the anchor-enrichment behaviour for the keyless dev mock: route
+// through each user anchor and weave a themed "discovered" stop next to it.
+function buildMockAnchorRoutePoints(
+  anchors: NonNullable<RouteGenerationRequest["context"]["anchorPoints"]>,
+  request: RouteGenerationRequest,
+): RoutePoint[] {
+  const interests = request.context.interests.length
+    ? request.context.interests
+    : ["culture", "food", "nature"];
+  const points: RoutePoint[] = [];
+
+  anchors.forEach((anchor, index) => {
+    const anchorHour = 9 + points.length;
+    points.push({
+      id: `mock-anchor-${anchor.id}`.slice(0, 80),
+      name: anchor.name,
+      day: anchor.day,
+      coordinates: anchor.coordinates,
+      estimatedStart: `${formatMockHour(anchorHour)}:00`,
+      estimatedDurationMinutes: 60,
+      rationale: request.followUpMessage
+        ? `Ваша опорная точка. Учли пожелание: ${request.followUpMessage.slice(0, 100)}`
+        : "Ваша опорная точка — маршрут проходит через неё.",
+      confidence: "high",
+      approximateDistanceMeters: points.length === 0 ? 0 : 600,
+    });
+
+    const interest = interests[index % interests.length];
+    points.push({
+      id: `mock-near-${anchor.id}`.slice(0, 80),
+      name: `${interestLabelRu(interest)} рядом с «${anchor.name}»`.slice(0, 160),
+      day: anchor.day,
+      coordinates: offsetCoordinates(anchor.coordinates, index + 1),
+      estimatedStart: `${formatMockHour(anchorHour + 1)}:00`,
+      estimatedDurationMinutes: 75,
+      rationale: `Заглушка AI добавила это место «по пути» под интерес «${interestLabelRu(interest)}».`,
+      confidence: "medium",
+      approximateDistanceMeters: 450 + index * 200,
+    });
+  });
+
+  return points;
+}
+
+function formatMockHour(hour: number) {
+  return String(Math.max(8, Math.min(21, hour))).padStart(2, "0");
 }
 
 function interestLabelRu(interest: string) {

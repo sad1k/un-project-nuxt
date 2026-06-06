@@ -8,6 +8,7 @@ export * from "./place-media-cache";
 export * from "./post";
 export * from "./post-comment";
 export * from "./post-like";
+export * from "./provider-usage";
 export * from "./push-subscription";
 export * from "./route-diary-save";
 export * from "./route-notification";

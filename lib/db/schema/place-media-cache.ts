@@ -1,6 +1,6 @@
 import { int, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
-export const placeMediaSourceValues = ["app", "google", "wikimedia", "foursquare"] as const;
+export const placeMediaSourceValues = ["app", "google", "wikimedia", "wikidata", "wikimapia", "flickr", "tripadvisor", "mapillary", "foursquare"] as const;
 export const placeMediaFailureCodeValues = [
   "app_photo_no_match",
   "provider_not_configured",
@@ -17,6 +17,9 @@ export const placeMediaCache = sqliteTable("placeMediaCache", {
   providerPlaceId: text(),
   providerPhotoReference: text(),
   photoUrl: text(),
+  // JSON-encoded extra photos (incl. hero) for the carousel; cached so re-opens reuse the one
+  // billable multi-photo call instead of refetching.
+  gallery: text(),
   alt: text(),
   attribution: text(),
   licenseHint: text(),

@@ -45,7 +45,6 @@ export function buildOfflineStyle(regionId: string, theme: StyleTheme = "dark"):
   const palette = PALETTES[theme];
   return {
     version: 8,
-    glyphs: "https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf",
     sources: {
       offline: {
         type: "vector",
@@ -104,24 +103,13 @@ export function buildOfflineStyle(regionId: string, theme: StyleTheme = "dark"):
           "line-width": ["interpolate", ["linear"], ["zoom"], 6, 0.8, 14, 3],
         },
       },
-      {
-        "id": "places",
-        "type": "symbol",
-        "source": "offline",
-        "source-layer": "places",
-        "minzoom": 4,
-        "layout": {
-          "text-field": ["coalesce", ["get", "name:en"], ["get", "name"]],
-          "text-font": ["Noto Sans Regular"],
-          "text-size": ["interpolate", ["linear"], ["zoom"], 4, 10, 12, 14],
-          "text-anchor": "center",
-        },
-        "paint": {
-          "text-color": palette.text,
-          "text-halo-color": palette.halo,
-          "text-halo-width": 1.4,
-        },
-      },
+      // No symbol/label layer on purpose. Text needs glyph PBFs, and the only
+      // public source (protomaps.github.io) is unreachable offline — exactly
+      // when this preview runs. A remote `glyphs` URL is worse than missing
+      // labels: the glyph fetch rejects inside the tile worker, which fails the
+      // WHOLE tile parse (fills and lines included) and blanks the map. Keep the
+      // style fully self-contained; labels can return later via glyphs bundled
+      // into IndexedDB at download time.
     ],
   };
 }

@@ -44,9 +44,12 @@ export async function ensureOfflineProtocol(): Promise<void> {
       throw new Error(`Tile ${z}/${x}/${y} missing for region ${regionId}`);
 
     // Hand MapLibre a fresh ArrayBuffer (not the IDB-managed Uint8Array
-    // view) so the worker thread can transfer ownership cleanly.
+    // view) so the worker thread can transfer ownership cleanly. Copy into a
+    // freshly allocated ArrayBuffer so the type is a plain ArrayBuffer rather
+    // than ArrayBufferLike (which could be a SharedArrayBuffer).
     const view = tile.data;
-    const buffer = view.buffer.slice(view.byteOffset, view.byteOffset + view.byteLength);
+    const buffer = new ArrayBuffer(view.byteLength);
+    new Uint8Array(buffer).set(view);
     return { data: buffer };
   });
 

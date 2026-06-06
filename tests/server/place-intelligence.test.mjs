@@ -85,7 +85,7 @@ test("authenticated endpoint validates inputs, verifies route ownership, and ret
   assert.match(endpointSource, /defineAuthenticatedHandler/);
   assert.match(endpointSource, /getValidatedQuery/);
   assert.match(endpointSource, /findAiRoutePointForPlaceIntelligence/);
-  assert.match(endpointSource, /fetchGooglePlaceIntelligence/);
+  assert.match(endpointSource, /fetchPlaceIntelligence/);
   assert.match(endpointSource, /findCommunityPlaceSignal/);
   assert.match(endpointSource, /buildPlaceIntelligence/);
   assert.doesNotMatch(endpointSource, /headers/);

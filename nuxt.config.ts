@@ -2,53 +2,63 @@ import tailwindcss from "@tailwindcss/vite";
 
 import env from "./lib/env";
 
-// import "./lib/env";
-
-const isDev = env.NODE_ENV !== "production";
+// Heavy local-only directories (AI-tooling state, nested git worktrees, docker data).
+// They must be excluded from Nuxt/Nitro/Vite scanning and file watching — otherwise the
+// dev server crawls the full repo copies under .claude/worktrees and OOMs with
+// multi-minute "Compiled X.mjs" rebuilds.
+const IGNORED_PATHS = [
+  "**/.claude/**",
+  "**/.codex/**",
+  "**/.omc/**",
+  "**/docker-data/**",
+  "**/local.db*",
+];
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: "2025-05-15",
-  // Devtools eats ~500MB RAM — keep off by default, flip on when debugging.
-  devtools: { enabled: false },
+  devtools: { enabled: true },
+
+  // Keep Nuxt's own file scanning/watching out of the heavy local-only dirs.
+  ignore: IGNORED_PATHS,
+
+  // Nitro builds the server bundle ("Compiled X.mjs"); without this it scans and watches
+  // the nested .claude/worktrees repo copies and OOMs the dev server.
+  nitro: {
+    ignore: IGNORED_PATHS,
+    watchOptions: {
+      ignored: IGNORED_PATHS,
+    },
+  },
 
   modules: [
-    // ESLint module runs a background linter that hogs RAM/CPU in dev.
-    ...(isDev ? [] : ["@nuxt/eslint" as const]),
+    "@nuxt/eslint",
     "@nuxt/icon",
     "@nuxtjs/color-mode",
     "@pinia/nuxt",
     "@vee-validate/nuxt",
     "nuxt-csurf",
     "nuxt-maplibre",
-    // Sentry is heavy on cold compile — disabled in dev for faster startup.
-    ...(isDev ? [] : ["@sentry/nuxt/module" as const]),
+    "@sentry/nuxt/module",
     "nuxt-easy-lightbox",
     "vue-yandex-maps/nuxt",
     "@vite-pwa/nuxt",
   ],
 
-  icon: {
-    // Restrict server bundle to only the collections we actually use.
-    // Drops icon bundle size dramatically and speeds up dev server compile.
-    serverBundle: {
-      collections: ["tabler", "logos"],
-    },
-  },
-
   routeRules: {
-    // SSR is OFF on logged-in routes: no SEO value (personal content),
-    // and SSR was waiting on session API + DB round-trip per request.
-    // CSR with payload-driven auth boots faster.
     "/dashboard": { ssr: false },
     "/dashboard/**": { ssr: false },
     "/feed": { ssr: false },
     "/explore": { ssr: false },
     "/admin/**": { ssr: false },
+    // Prerender a static, network-free shell. The service worker serves this
+    // document for offline navigations so the app cold-starts into the saved
+    // offline maps (rendered client-side from IndexedDB).
+    "/offline": { prerender: true },
   },
 
   build: {
-    transpile: ["nuxt-maplibre"], // <------
+    transpile: ["nuxt-maplibre"],
   },
 
   css: ["~/assets/css/main.css"],
@@ -74,84 +84,35 @@ export default defineNuxtConfig({
     initializeOn: "onComponentMount",
   },
 
-  nitro: {
-    // Mark heavy SDKs as external — they won't be bundled by Nitro's rollup,
-    // they load from node_modules at runtime. Massively cuts the server
-    // bundle compile time (esbuild has less to chew through).
-    externals: {
-      external: [
-        "@mistralai/mistralai",
-        "@aws-sdk/client-s3",
-        "@aws-sdk/s3-presigned-post",
-        "@aws-sdk/s3-request-presigner",
-        "@sentry/nuxt",
-      ],
-    },
-  },
-
   vite: {
-
     plugins: [
       tailwindcss(),
     ],
     optimizeDeps: {
-      // Pre-bundle heavy client deps that DON'T ship CSS — CSS-shipping
-      // packages are excluded below because Vite's pre-bundler can
-      // mis-emit `import "*.css"` as ES-module URLs after a fresh
-      // optimize, which the browser then rejects with a MIME mismatch.
+      // mapbox-gl and maplibre-gl both ship a UMD `dist/*.js` under a
+      // `type: module` package, so served raw they parse as an ESM with no
+      // exports and `module.default` is undefined (`X.Map is not a
+      // constructor`). Neither imports its own CSS (we load that manually),
+      // so it's safe to pre-bundle them here — esbuild gives each a real
+      // default export. NOTE: keep maplibre-gl here, NOT in `exclude` — it is
+      // UMD like mapbox-gl, not a real-ESM CSS dep like the ones below.
       include: [
-        "@indoorequal/vue-maplibre-gl",
-        "vue-yandex-maps",
-        "motion-v",
-      ],
-      exclude: [
-        // AWS SDK is server-only (used in nitro routes). Excluding stops
-        // Vite from scanning its hundreds of ESM submodules on the client.
-        "@aws-sdk/client-s3",
-        "@aws-sdk/s3-presigned-post",
-        "@aws-sdk/s3-request-presigner",
-        // CSS-shipping deps — let the browser load these natively so
-        // their `*.css` imports go through Vite's regular middleware
-        // (which sets Content-Type correctly) instead of the dep
-        // optimizer (which can produce ESM URLs pointing at raw CSS).
         "mapbox-gl",
         "maplibre-gl",
+      ],
+      // CSS-shipping deps — let the browser load these natively so
+      // their `*.css` imports go through Vite's regular middleware
+      // (which sets Content-Type correctly) instead of the dep
+      // optimizer (which can produce ESM URLs pointing at raw CSS).
+      exclude: [
         "vue-easy-lightbox",
         "pmtiles",
       ],
     },
     server: {
       watch: {
-        ignored: [
-          "./docker-data/**",
-          "**/local.db*",
-          "**/node_modules/**",
-          "**/.git/**",
-          "**/.nuxt/**",
-          "**/.output/**",
-          // OMC/Claude/Codex write status & metrics every few seconds —
-          // without these excludes Vite triggers a full page reload + plugins
-          // recompile on every write, eventually OOM'ing node (the real 20-min hang).
-          "**/.omx/**",
-          "**/.claude/**",
-          "**/.codex/**",
-          "**.docx",
-          "**.png",
-          "**.jpg",
-          "**.jpeg",
-          "**.gif",
-          "**.bmp",
-          "**.tiff",
-          "**.ico",
-          "**.webp",
-          "**.svg",
-          "**.puml",
-          "**.dot",
-        ],
+        ignored: IGNORED_PATHS,
       },
-      // Warmup is intentionally OFF in dev: warming `/` and `/feed` here
-      // forces eager compile of FeedGlobe → full mapbox-gl graph at boot,
-      // which dominated cold-start. Lazy on-demand compile is faster.
     },
   },
 

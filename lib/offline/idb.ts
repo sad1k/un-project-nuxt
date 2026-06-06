@@ -61,7 +61,12 @@ export async function updateOperationStatus(opId: string, patch: Partial<Pending
   const existing = await db.get("pending_operations", opId);
   if (!existing)
     return;
-  await db.put("pending_operations", { ...existing, ...patch, updatedAt: Date.now() });
+  // Spreading the discriminated `PendingOp` union widens `type`/`payload` into
+  // independent members, so the literal is no longer recognised as a single
+  // union variant. The merge preserves `existing`'s discriminant at runtime, so
+  // assert it back to `PendingOp`.
+  const next = { ...existing, ...patch, updatedAt: Date.now() } as PendingOp;
+  await db.put("pending_operations", next);
 }
 
 export async function putPhotoBlob(opId: string, blob: Blob) {

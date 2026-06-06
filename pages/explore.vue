@@ -10,6 +10,7 @@ import {
   filterRoutePointsByDay,
   findCheapestInsertionIndex,
   foldUserPointsIntoRoute,
+  getRouteDayGroups,
   toRouteMapPoints,
 } from "~/lib/explore/route-map";
 
@@ -33,6 +34,7 @@ const CAROUSEL_FLYTO_SUPPRESSION_MS = 800;
 const isCarouselDriven = ref(false);
 let carouselFlyToTimer: ReturnType<typeof setTimeout> | null = null;
 const routeMapPoints = computed(() => toRouteMapPoints(activePoints.value));
+const routeDayGroups = computed(() => getRouteDayGroups(routeMapPoints.value));
 const selectedRoutePoints = computed(() => filterRoutePointsByDay(routeMapPoints.value, selectedDay.value));
 const userMapPoints = computed(() => userRoutePoints.userPoints.value
   .filter(point => !selectedDay.value || point.day === selectedDay.value)
@@ -45,7 +47,9 @@ const displayLegs = computed(() => buildRouteLegs(displayPoints.value));
 const editingPoint = ref<RouteMapPoint | null>(null);
 const selectedSheetPlace = ref<RouteMapPoint | null>(null);
 const selectedSheetIntelligence = ref<PlaceIntelligence | null>(null);
-const selectedSheetLoading = ref(false);
+// Granular flags (photo vs details) so the panel/sheet can paint the prefetched photo first and
+// stream the detail/review payload in behind it, instead of blocking on the whole response.
+const selectedSheetLoading = ref<{ details?: boolean; photo?: boolean }>({});
 let sheetLoadToken = 0;
 const mapControlButtonClass = "explore-control flex h-10 w-10 items-center justify-center shadow-lg backdrop-blur-xl transition hover:text-brand-gold";
 
@@ -101,12 +105,18 @@ watch(
     }
 
     await mapbox.addMarkers(pts, {
-      async getPopupHTML(point) {
+      async renderPopup(point, render) {
         if (point.markerKind !== "generated")
-          return "";
+          return;
 
-        const intelligence = await placeIntelligence.loadForRoutePoint(point, activeVariantId.value);
-        return createPlacePopupHTML(intelligence, { includeStoryCta: true });
+        await placeIntelligence.loadForRoutePointProgressive(
+          point,
+          activeVariantId.value,
+          update => render(createPlacePopupHTML(update.intelligence, {
+            includeStoryCta: true,
+            loading: update.loading,
+          })),
+        );
       },
       async onSaveRequest(point) {
         await saveRoutePointFromPopup(point);
@@ -240,6 +250,18 @@ watch(routeMapPoints, (points) => {
     selectedDay.value = null;
 });
 
+// Photos are the slowest piece of a place card, so warm them the moment each generated stop
+// streams in (or a saved session is restored) — by the time the user opens a popup the provider
+// chain and server-side media cache are already primed. Deduping/throttling lives in the composable.
+watch(
+  routeMapPoints,
+  (points) => {
+    for (const point of points)
+      placeIntelligence.prefetchPhotoForRoutePoint(point);
+  },
+  { immediate: true },
+);
+
 function readRouteSessionIdQuery(input: unknown) {
   const value = Array.isArray(input) ? input[0] : input;
   const parsed = Number(value);
@@ -290,29 +312,32 @@ function toggleMapLayer() {
 async function openPlaceSheet(point: RouteMapPoint) {
   selectedSheetPlace.value = point;
   selectedSheetIntelligence.value = null;
-  selectedSheetLoading.value = point.markerKind === "generated";
+  selectedSheetLoading.value = point.markerKind === "generated" ? { details: true, photo: true } : {};
 
   if (point.markerKind !== "generated")
     return;
 
+  // Progressive load: the photo (already prefetched while the route streamed in) paints the moment
+  // the panel opens, and the detail/review payload streams in behind it — same photo-first flow the
+  // map popup uses. The token guards against a stale load when the user opens another stop mid-flight.
   const token = ++sheetLoadToken;
-  try {
-    const intelligence = await placeIntelligence.loadForRoutePoint(point, activeVariantId.value);
-    if (token !== sheetLoadToken)
-      return;
-    selectedSheetIntelligence.value = intelligence;
-  }
-  finally {
-    if (token === sheetLoadToken)
-      selectedSheetLoading.value = false;
-  }
+  await placeIntelligence.loadForRoutePointProgressive(
+    point,
+    activeVariantId.value,
+    (update) => {
+      if (token !== sheetLoadToken)
+        return;
+      selectedSheetIntelligence.value = update.intelligence;
+      selectedSheetLoading.value = update.loading;
+    },
+  );
 }
 
 function closePlaceSheet() {
   sheetLoadToken += 1;
   selectedSheetPlace.value = null;
   selectedSheetIntelligence.value = null;
-  selectedSheetLoading.value = false;
+  selectedSheetLoading.value = {};
 }
 
 function onSheetSave(point: RouteMapPoint) {
@@ -425,6 +450,19 @@ function onCloseOfflinePreview() {
       <ExploreResultsActions />
     </div>
 
+    <!-- Desktop-only day switcher: the mobile step carousel already carries its
+         own day chips, but on md+ that carousel is hidden, so the multi-day
+         route filter lives here as a floating overlay bound to the same state. -->
+    <div
+      v-if="routeDayGroups.length > 1"
+      class="explore-popover absolute left-1/2 top-16 z-30 hidden w-[min(92vw,420px)] -translate-x-1/2 rounded-2xl border p-3 backdrop-blur-xl md:top-20 md:block"
+    >
+      <ExploreRouteDaySelector
+        v-model="selectedDay"
+        :day-groups="routeDayGroups"
+      />
+    </div>
+
     <div class="absolute left-[80px] top-24 z-20 flex flex-col gap-2 max-md:hidden">
       <div class="explore-map-controls-group flex flex-col overflow-hidden rounded-xl border backdrop-blur-xl">
         <button
@@ -510,6 +548,19 @@ function onCloseOfflinePreview() {
     </Transition>
 
     <ExplorePlaceBottomSheet
+      :place="selectedSheetPlace"
+      :intelligence="selectedSheetIntelligence"
+      :loading="selectedSheetLoading"
+      :editable="isEditMode"
+      @close="closePlaceSheet"
+      @save="onSheetSave"
+      @directions="onSheetDirections"
+      @story="onSheetStory"
+      @edit="editingPoint = $event"
+      @delete="deleteRoutePoint($event.sourceId)"
+    />
+
+    <ExplorePlaceSidePanel
       :place="selectedSheetPlace"
       :intelligence="selectedSheetIntelligence"
       :loading="selectedSheetLoading"

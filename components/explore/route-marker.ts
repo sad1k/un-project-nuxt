@@ -27,8 +27,8 @@ const MARKER_STYLES: Record<RouteMarkerKind, {
     background: "var(--explore-marker-user)",
     borderRadius: "8px",
     boxShadow: "0 0 0 4px color-mix(in srgb, var(--explore-primary-bg) 16%, transparent), 0 2px 8px var(--explore-marker-shadow)",
-    label: "Сохранённое место",
-    text: "P",
+    label: "Моя точка",
+    text: "",
   },
 };
 
@@ -105,9 +105,16 @@ function getMarkerLabelText(point: RouteMapPoint, index: number) {
 }
 
 export function createPopupHTML(point: RouteMapPoint): string {
-  const color = point.markerKind === "generated" ? "var(--explore-accent)" : "var(--explore-info-text)";
+  const color = point.markerKind === "generated"
+    ? "var(--explore-accent)"
+    : point.markerKind === "user-place"
+      ? "var(--color-brand-gold)"
+      : "var(--explore-info-text)";
   const colorWash = `color-mix(in srgb, ${color} 18%, transparent)`;
   const markerLabel = MARKER_STYLES[point.markerKind].label;
+  const removeAction = point.markerKind === "user-place"
+    ? `<button type="button" data-place-remove-cta="${escapeHtml(point.sourceId)}" style="margin-top:8px;width:100%;border:1px solid var(--explore-border);border-radius:8px;background:var(--explore-surface-strong);color:var(--explore-danger-text);padding:6px 9px;font-size:12px;font-weight:700;line-height:1.2;cursor:pointer">Удалить точку</button>`
+    : "";
   return `
     <div style="padding:8px;min-width:150px;font-family:system-ui,sans-serif">
       <div style="display:inline-block;padding:2px 8px;border-radius:9999px;background:${colorWash};color:${color};font-size:11px;font-weight:600;margin-bottom:4px">
@@ -118,6 +125,7 @@ export function createPopupHTML(point: RouteMapPoint): string {
         <span style="width:8px;height:8px;border-radius:50%;background:${color};display:inline-block"></span>
         ${escapeHtml(markerLabel)}
       </div>
+      ${removeAction}
     </div>
   `;
 }

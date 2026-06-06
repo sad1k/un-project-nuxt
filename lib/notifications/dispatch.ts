@@ -1,3 +1,4 @@
+// @ts-expect-error web-push ships no bundled type declarations
 import webpush from "web-push";
 
 import { getSubscriptionsByUserAndType, removeByEndpoint } from "~/lib/db/queries/push-subscription";

@@ -583,6 +583,35 @@ html:not([data-theme="dark"]) .admin-theme-page [class~="border-sky-300/25"] {
   border-radius: 12px;
 }
 
+/* Progressive place-card loading: shimmer placeholder shown while a section streams in. */
+.place-popup__skel {
+  position: relative;
+  overflow: hidden;
+  background: var(--explore-surface-soft);
+  border-radius: 8px;
+}
+
+.place-popup__skel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--explore-text) 9%, transparent), transparent);
+  animation: placePopupShimmer 1.25s ease-in-out infinite;
+}
+
+@keyframes placePopupShimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .place-popup__skel::after {
+    animation: none;
+  }
+}
+
 .page-content-top {
   @apply p-4 min-h-80;
 }

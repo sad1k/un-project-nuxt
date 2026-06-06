@@ -1,13 +1,26 @@
 import { Queue } from "workbox-background-sync";
 import { ExpirationPlugin } from "workbox-expiration";
-import { precacheAndRoute } from "workbox-precaching";
+import { matchPrecache, precacheAndRoute } from "workbox-precaching";
 import { registerRoute } from "workbox-routing";
 import { CacheFirst, NetworkFirst, StaleWhileRevalidate } from "workbox-strategies";
 
 const OFFLINE_URL = "/offline.html";
+// Prerendered SPA shell that boots into the saved offline maps (IndexedDB).
+const OFFLINE_SHELL_URL = "/offline";
+// Cache name for the offline shell — versioned so an update forces re-fetch.
+const SHELL_CACHE = "wl-shell-v1";
 
 // 1) Precache app shell (manifest injected by vite-pwa injectManifest build)
 precacheAndRoute(self.__WB_MANIFEST || []);
+
+// 1b) Cache the offline shell at install time so it's available for cold
+// offline starts even when the workbox precache manifest is empty (e.g. in
+// dev or when the build pipeline doesn't inject __WB_MANIFEST).
+self.addEventListener("install", (event) => {
+  event.waitUntil(
+    caches.open(SHELL_CACHE).then(cache => cache.add(OFFLINE_SHELL_URL)),
+  );
+});
 
 // 2) Runtime caches
 // 2a) Nuxt static assets: SWR with no expiration limits (build-time hashed)
@@ -112,7 +125,10 @@ registerRoute(
   },
 );
 
-// 4) Navigation fallback to offline.html
+// 4) Navigation fallback: when offline, boot the prerendered /offline app
+// shell from the precache so the SPA cold-starts into the saved offline maps
+// (rendered from IndexedDB). Non-shell navigations redirect to /offline so the
+// client router lands there; the shell itself is served from the precache.
 registerRoute(
   ({ request }) => request.mode === "navigate",
   async ({ event }) => {
@@ -120,9 +136,18 @@ registerRoute(
       return await fetch(event.request);
     }
     catch {
-      const cache = await caches.open("wl-static-v1");
-      const cached = await cache.match(OFFLINE_URL);
-      return cached || Response.error();
+      const { pathname } = new URL(event.request.url);
+      const onShell = pathname === OFFLINE_SHELL_URL || pathname === `${OFFLINE_SHELL_URL}/`;
+      if (!onShell)
+        return Response.redirect(OFFLINE_SHELL_URL, 302);
+
+      // Try precache first (populated when vite-pwa injects __WB_MANIFEST),
+      // then fall back to the install-time shell cache (always populated).
+      const shell = await matchPrecache(`${OFFLINE_SHELL_URL}/index.html`)
+        || await matchPrecache(OFFLINE_SHELL_URL)
+        || await caches.match(OFFLINE_SHELL_URL, { cacheName: SHELL_CACHE })
+        || await matchPrecache(OFFLINE_URL);
+      return shell || Response.error();
     }
   },
 );

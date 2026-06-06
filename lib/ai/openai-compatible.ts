@@ -15,6 +15,8 @@ const DEFAULT_MISTRAL_BASE_URL = "https://api.mistral.ai/v1";
 const DEFAULT_MISTRAL_ROUTE_MODEL = "mistral-medium-latest";
 const DEFAULT_OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 const DEFAULT_OPENROUTER_ROUTE_MODEL = "qwen/qwen3.5-flash-02-23";
+const DEFAULT_AIHUBMIX_BASE_URL = "https://aihubmix.com/v1";
+const DEFAULT_AIHUBMIX_ROUTE_MODEL = "gpt-4o-mini";
 const MISTRAL_ROUTE_MAX_TOKENS = 8192;
 const MISTRAL_ROUTE_TIMEOUT_MS = 120_000;
 const PROVIDER_USER_AGENT = "WanderLog/1.0";
@@ -130,6 +132,7 @@ export function sanitizeProviderError(status: number | string) {
     || status === "missing_cerebras_api_key"
     || status === "missing_mistral_api_key"
     || status === "missing_openrouter_api_key"
+    || status === "missing_aihubmix_api_key"
     || status === "provider_auth_failed"
   ) {
     return "provider_auth_failed";
@@ -222,6 +225,9 @@ function getOpenAiBaseUrl() {
   if (env.AI_ROUTE_PROVIDER === "openrouter")
     return DEFAULT_OPENROUTER_BASE_URL;
 
+  if (env.AI_ROUTE_PROVIDER === "aihubmix")
+    return DEFAULT_AIHUBMIX_BASE_URL;
+
   return (env.OPENAI_BASE_URL || DEFAULT_OPENAI_BASE_URL).replace(/\/+$/, "");
 }
 
@@ -235,7 +241,7 @@ function getOpenAiRouteApi() {
   if (env.AI_ROUTE_PROVIDER === "mistral")
     return "conversations";
 
-  return env.AI_ROUTE_PROVIDER === "cerebras" || env.AI_ROUTE_PROVIDER === "openrouter"
+  return env.AI_ROUTE_PROVIDER === "cerebras" || env.AI_ROUTE_PROVIDER === "openrouter" || env.AI_ROUTE_PROVIDER === "aihubmix"
     ? "chat_completions"
     : env.OPENAI_ROUTE_API;
 }
@@ -249,6 +255,9 @@ function getOpenAiRouteModel() {
 
   if (env.AI_ROUTE_PROVIDER === "openrouter")
     return env.OPENROUTER_ROUTE_MODEL?.trim() || DEFAULT_OPENROUTER_ROUTE_MODEL;
+
+  if (env.AI_ROUTE_PROVIDER === "aihubmix")
+    return env.AIHUBMIX_ROUTE_MODEL?.trim() || DEFAULT_AIHUBMIX_ROUTE_MODEL;
 
   return env.OPENAI_ROUTE_MODEL;
 }
@@ -265,16 +274,7 @@ function getProviderRequestHeaders() {
 
 function getChatCompletionProviderOptions() {
   const model = getOpenAiRouteModel().toLowerCase();
-  const providerOptions = env.AI_ROUTE_PROVIDER === "openrouter"
-    ? {
-        provider: {
-          require_parameters: true,
-        },
-        response_format: {
-          type: "json_object",
-        },
-      }
-    : {};
+  const providerOptions = getRouteResponseFormatOptions();
 
   if (isQwenHybridThinkingModel(model)) {
     return {
@@ -284,6 +284,29 @@ function getChatCompletionProviderOptions() {
   }
 
   return providerOptions;
+}
+
+function getRouteResponseFormatOptions() {
+  if (env.AI_ROUTE_PROVIDER === "openrouter") {
+    return {
+      provider: {
+        require_parameters: true,
+      },
+      response_format: {
+        type: "json_object",
+      },
+    };
+  }
+
+  if (env.AI_ROUTE_PROVIDER === "aihubmix") {
+    return {
+      response_format: {
+        type: "json_object",
+      },
+    };
+  }
+
+  return {};
 }
 
 function isQwenHybridThinkingModel(model: string) {
@@ -306,6 +329,9 @@ function getRouteProviderApiKey() {
   if (env.AI_ROUTE_PROVIDER === "openrouter")
     return env.OPENROUTER_API_KEY;
 
+  if (env.AI_ROUTE_PROVIDER === "aihubmix")
+    return env.AIHUBMIX_API_KEY;
+
   return env.OPENAI_API_KEY;
 }
 
@@ -315,6 +341,9 @@ function getMissingApiKeyCode() {
 
   if (env.AI_ROUTE_PROVIDER === "openrouter")
     return "missing_openrouter_api_key";
+
+  if (env.AI_ROUTE_PROVIDER === "aihubmix")
+    return "missing_aihubmix_api_key";
 
   return env.AI_ROUTE_PROVIDER === "cerebras"
     ? "missing_cerebras_api_key"

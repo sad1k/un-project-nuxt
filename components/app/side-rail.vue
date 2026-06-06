@@ -93,11 +93,17 @@ function closeDrawer() {
       ]"
     >
       <div class="flex flex-col gap-5" :class="showLabels ? 'items-stretch' : 'items-center'">
-        <div class="flex items-center" :class="showLabels ? 'justify-end' : 'justify-center'">
+        <div class="flex items-center gap-2" :class="showLabels ? 'justify-between' : 'justify-center'">
+          <span
+            v-if="showLabels"
+            class="app-chrome-muted select-none pl-3 text-[11px] font-semibold uppercase tracking-[0.18em]"
+          >
+            Меню
+          </span>
           <button
             :aria-expanded="showLabels"
             :aria-label="showLabels ? 'Свернуть боковую панель' : 'Развернуть боковую панель'"
-            class="app-chrome-control flex h-8 w-8 items-center justify-center rounded-lg border transition hover:text-brand-gold"
+            class="app-chrome-control flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg border transition hover:text-brand-gold"
             type="button"
             @click="toggleExpanded"
           >

@@ -47,6 +47,18 @@ test("OpenAI-compatible client can use OpenRouter Qwen route defaults", () => {
   assert.match(providerSource, /model\.startsWith\("qwen\/qwen3\.5-"\)/);
 });
 
+test("OpenAI-compatible client can use AIHubMix OpenAI-compatible defaults", () => {
+  assert.match(envSource, /"aihubmix"/);
+  assert.match(envSource, /AIHUBMIX_API_KEY/);
+  assert.match(envSource, /AIHUBMIX_ROUTE_MODEL/);
+  assert.match(providerSource, /https:\/\/aihubmix\.com\/v1/);
+  assert.match(providerSource, /DEFAULT_AIHUBMIX_ROUTE_MODEL/);
+  assert.match(providerSource, /missing_aihubmix_api_key/);
+  assert.match(providerSource, /env\.AI_ROUTE_PROVIDER === "aihubmix"/);
+  assert.match(providerSource, /response_format/);
+  assert.match(providerSource, /json_object/);
+});
+
 test("OpenAI-compatible client can use Cerebras provider defaults", () => {
   assert.match(envSource, /AI_ROUTE_PROVIDER/);
   assert.match(envSource, /CEREBRAS_API_KEY/);

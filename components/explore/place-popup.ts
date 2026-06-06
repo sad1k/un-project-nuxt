@@ -1,13 +1,22 @@
 import type { PlaceIntelligence, PlaceMissingDataSlot } from "~/lib/explore/place-intelligence";
 
+type PlacePopupLoading = {
+  details?: boolean;
+  photo?: boolean;
+};
+
 type PlacePopupOptions = {
   includeStoryCta?: boolean;
+  // Progressive loading: render a shimmer skeleton in place of a section whose data is still
+  // in flight, so the card opens instantly and fills in section-by-section.
+  loading?: PlacePopupLoading;
 };
 
 export function createPlacePopupHTML(place: PlaceIntelligence, options: PlacePopupOptions = {}): string {
+  const loading = options.loading ?? {};
   return `
     <article class="place-popup explore-place-popup">
-      ${renderPhotoSection(place)}
+      ${renderPhotoSection(place, loading.photo === true)}
       <div class="place-popup__body" style="padding:12px">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px">
           <div style="min-width:0">
@@ -16,11 +25,13 @@ export function createPlacePopupHTML(place: PlaceIntelligence, options: PlacePop
           </div>
           <div style="flex:0 0 auto;white-space:nowrap;border-radius:999px;background:var(--explore-warning-bg);padding:3px 7px;font-size:11px;font-weight:700;color:var(--explore-warning-text)">Точка маршрута</div>
         </div>
-        ${renderSummary(place)}
+        ${loading.details === true
+          ? renderDetailsSkeleton()
+          : `${renderSummary(place)}
         ${renderRatingAndCost(place)}
         ${renderReviews(place)}
         ${renderCommunity(place)}
-        ${renderMissingSlots(place.missingSlots)}
+        ${renderMissingSlots(place.missingSlots)}`}
         <div style="position:sticky;bottom:0;z-index:1;margin:10px -12px -12px;display:flex;flex-wrap:wrap;gap:6px;padding:10px 12px 12px;background:var(--explore-popup-backdrop)">
           ${options.includeStoryCta ? renderStoryAction(place) : ""}
           <button type="button" data-place-save-cta="${escapeHtml(place.id)}" style="flex:1 1 54px;min-width:0;max-width:100%;border:0;border-radius:8px;background:var(--explore-text-strong);color:var(--explore-surface-strong);padding:7px 9px;font-size:12px;font-weight:700;line-height:1.2;text-align:center">Сохранить</button>
@@ -50,7 +61,13 @@ export function escapeHtml(input: string | number | null | undefined): string {
     .replace(/'/g, "&#39;");
 }
 
-function renderPhotoSection(place: PlaceIntelligence): string {
+function renderPhotoSection(place: PlaceIntelligence, photoLoading: boolean): string {
+  if (photoLoading) {
+    return `
+      <div class="place-popup__photo place-popup__skel" aria-hidden="true" style="height:128px;border-radius:0"></div>
+    `;
+  }
+
   if (!place.photo) {
     const photoMissing = place.missingSlots.find(slot => slot.key === "photo");
     return `
@@ -153,6 +170,24 @@ function renderMissingSlots(slots: PlaceMissingDataSlot[]): string {
           <div style="font-size:10px;line-height:1.35;color:var(--explore-text-faint);overflow-wrap:anywhere">${escapeHtml(slot.message)}</div>
         </div>
       `).join("")}
+    </section>
+  `;
+}
+
+function renderDetailsSkeleton(): string {
+  const bar = (width: string, marginTop: string) =>
+    `<div class="place-popup__skel" aria-hidden="true" style="height:12px;width:${width};margin-top:${marginTop}"></div>`;
+
+  return `
+    <section aria-hidden="true" style="margin-top:8px">
+      ${bar("100%", "0")}
+      ${bar("88%", "6px")}
+      <div style="margin-top:10px;display:flex;gap:8px">
+        <div class="place-popup__skel" style="height:54px;flex:1 1 0"></div>
+        <div class="place-popup__skel" style="height:54px;flex:1 1 0"></div>
+      </div>
+      ${bar("72%", "10px")}
+      ${bar("94%", "6px")}
     </section>
   `;
 }

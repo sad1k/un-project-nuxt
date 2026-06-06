@@ -1,0 +1,1 @@
+ALTER TABLE `placeMediaCache` ADD `gallery` text;

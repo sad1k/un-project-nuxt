@@ -37,6 +37,7 @@ test("header search dropdown keeps Explore generator as the first selectable slo
 
 test("header search fetches global results and supports keyboard opening", () => {
   assert.match(componentSource, /\$fetch<GlobalSearchResponse>\("\/api\/search\/global"/);
+  assert.match(componentSource, /event\.code === "KeyK"/);
   assert.match(componentSource, /event\.key\.toLowerCase\(\) === "k"/);
   assert.match(componentSource, /@keydown\.down\.prevent="moveActive\(1\)"/);
   assert.match(componentSource, /@submit\.prevent="selectActiveResult"/);

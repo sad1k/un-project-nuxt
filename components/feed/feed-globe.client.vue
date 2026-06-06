@@ -533,11 +533,11 @@ function degreesToRadians(value: number) {
       {{ visibleCount }} · +{{ hiddenCount }}
     </div>
 
-    <div v-if="loading" class="absolute inset-0 grid place-items-center bg-white/30 text-sm text-slate-700 backdrop-blur-sm dark:bg-black/30 dark:text-white/70">
+    <div v-if="loading && !hideChrome" class="absolute inset-0 grid place-items-center bg-white/30 text-sm text-slate-700 backdrop-blur-sm dark:bg-black/30 dark:text-white/70">
       Загрузка...
     </div>
 
-    <div v-else-if="error" class="absolute inset-x-4 bottom-4 rounded-lg border border-rose-400/30 bg-rose-950/80 p-3 text-sm text-rose-100">
+    <div v-else-if="error && !hideChrome" class="absolute inset-x-4 bottom-4 rounded-lg border border-rose-400/30 bg-rose-950/80 p-3 text-sm text-rose-100">
       {{ error }}
     </div>
   </section>
@@ -735,6 +735,22 @@ function degreesToRadians(value: number) {
   border-color: rgba(15, 23, 42, 0.18);
   background: rgba(255, 255, 255, 0.88);
   color: #0f172a;
+}
+
+/* Hero mode (index page) paints its own cosmic backdrop. Keep the fallback
+   globe transparent so the page shows through instead of flashing an opaque
+   light/dark box — in light theme that box is near-white and floods the
+   oversized canvas while the real map loads. */
+.feed-globe--hero .feed-globe-fallback {
+  background: transparent;
+}
+
+.feed-globe--hero .feed-globe-fallback__stars {
+  display: none;
+}
+
+.feed-globe--hero .feed-globe-fallback > p {
+  display: none;
 }
 
 :global(.feed-globe--hero .mapboxgl-ctrl-bottom-left),

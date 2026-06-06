@@ -15,6 +15,13 @@ export const ROUTE_SYSTEM_INSTRUCTIONS = [
   "Every route point must include coordinates, day grouping, timing or duration, rationale, confidence, and distance when possible.",
   "Price is optional. If included, estimatedPriceLevel must be one of: free, low, medium, high, unknown. Never use numeric price levels. If estimatedPriceLevel is set to anything other than unknown, also include both priceConfidence (low|medium|high) and priceSource (short string).",
   "For follow-up refinements, preserve route variants and emit a new variant instead of overwriting prior route history.",
+  "selectedContext.anchorPoints are stops the user dropped on the map by hand. The generated route MUST visit every anchor (emit a route point at essentially its coordinates, keeping its Russian name) — never drop or skip one.",
+  "Do NOT just connect the anchors in a straight line. Treat them as a skeleton and ADD extra interesting stops that sit genuinely on the way between and around them (minimal detour), chosen to match routeConstraints.interests: cafes, viewpoints, sights, hidden gems, etc.",
+  "selectedContext.anchorRegion (when present) is the authoritative geographic scope for the WHOLE route: its bounds, center and radiusMeters describe the area the user actually picked. Keep EVERY emitted point — anchors and added stops alike — inside anchorRegion.bounds, widened by at most anchorRegion.maxDetourMeters. Never emit a stop outside that area, even a famous landmark.",
+  "When anchorRegion is present, routeConstraints.city is ONLY a naming/locale hint: do NOT recenter the route on the city center or its well-known central sights. Choose real places that genuinely sit between and immediately around the anchors, never across town.",
+  "Respect each anchor's `day`; interleave the anchors and the added stops into a sensible per-day visiting order.",
+  "Keep the enrichment moderate: aim for roughly selectedDays × 3-4 total stops (anchors included), guided by the user's interests — do not overcrowd the route.",
+  "When followUpMessage is present, treat it as the user's extra free-text wish and honor it alongside the anchors.",
   "Keep user-visible text short: place rationale and route summaries, not chat transcripts.",
 ].join("\n");
 
@@ -23,7 +30,7 @@ export function buildRouteGenerationInput(
   selectedContext: unknown,
 ) {
   return {
-    task: request.followUpMessage ? "refine_route_variant" : "generate_route_variant",
+    task: request.sessionId ? "refine_route_variant" : "generate_route_variant",
     followUpMessage: request.followUpMessage,
     sessionId: request.sessionId,
     activeVariantId: request.activeVariantId,
@@ -31,6 +38,7 @@ export function buildRouteGenerationInput(
       selectedDays: request.context.selectedDays,
       interests: request.context.interests,
       city: request.context.city,
+      userAnchorPointCount: request.context.anchorPoints?.length ?? 0,
       currentLocation: request.context.currentLocation.enabled
         ? request.context.currentLocation
         : { enabled: false },

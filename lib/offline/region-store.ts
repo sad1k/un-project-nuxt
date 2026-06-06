@@ -56,6 +56,15 @@ export function tileKey(regionId: string, z: number, x: number, y: number): stri
   return `${regionId}|${z}|${x}|${y}`;
 }
 
+// IndexedDB persists values via the structured-clone algorithm, which throws
+// `DataCloneError` ("[object Array] could not be cloned") on Vue reactive /
+// readonly Proxies. `bbox` routinely arrives as a Proxy — e.g. from the
+// `readonly(regions)` ref or from component props — so copy it into a fresh
+// plain tuple before it reaches the store.
+function toPlainBbox(bbox: Bbox): Bbox {
+  return [bbox[0], bbox[1], bbox[2], bbox[3]];
+}
+
 let dbPromise: Promise<IDBDatabase> | null = null;
 
 function openDb(): Promise<IDBDatabase> {
@@ -118,7 +127,7 @@ export async function addRegion(input: OfflineRegionInput): Promise<OfflineRegio
   const now = Date.now();
   const region: OfflineRegion = {
     id: crypto.randomUUID(),
-    bbox: input.bbox,
+    bbox: toPlainBbox(input.bbox),
     estimatedBytes: input.estimatedBytes,
     actualBytes: 0,
     pointCount: input.pointCount,

@@ -4,7 +4,8 @@
   "private": true,
   "packageManager": "pnpm@10.24.0+sha512.01ff8ae71b4419903b65c60fb2dc9d34cf8bb6e06d03bde112ef38f7a34d6904c424ba66bea5cdcf12890230bf39f9580473140ed9c946fef328b6e5238a345a",
   "scripts": {
-    "build": "nuxt build",
+    "build": "NODE_OPTIONS=--max-old-space-size=8192 nuxt build",
+    "postbuild": "node scripts/fix-output-public.mjs",
     "dev": "nuxt dev",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
@@ -91,6 +92,7 @@
     "web-push": "^3.6.7",
     "workbox-background-sync": "^7.4.1",
     "workbox-broadcast-update": "^7.4.1",
+    "workbox-build": "7.4.1",
     "workbox-expiration": "^7.4.1",
     "workbox-precaching": "^7.4.1",
     "workbox-routing": "^7.4.1",

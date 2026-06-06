@@ -58,6 +58,16 @@ export type ExplorePersonalContext = {
   diaryLogs: ExploreDiaryLogContext[];
 };
 
+// A stop the user manually dropped on the map. Unlike a candidate place (an
+// optional suggestion), the AI must route through it and then enrich the path
+// with additional on-the-way discoveries.
+export type ExploreAnchorPoint = {
+  id: string;
+  name: string;
+  coordinates: ExploreCoordinates;
+  day: number;
+};
+
 export type ExploreRequestContext = {
   city: SelectedExploreCity | null;
   selectedDays: number;
@@ -67,6 +77,7 @@ export type ExploreRequestContext = {
   selectedSavedPlaceIds: number[];
   selectedDiaryLogIds: number[];
   candidatePlaces: ExploreCandidatePlace[];
+  anchorPoints?: ExploreAnchorPoint[];
 };
 
 export const DEFAULT_EXPLORE_FILTERS: ExplorePlaceFilters = {

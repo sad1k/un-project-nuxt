@@ -29,6 +29,7 @@ export async function getFreshPlaceMediaCacheEntry(placeKey: string): Promise<Pl
     termsHint: entry.termsHint ?? undefined,
     expiresAt: entry.expiresAt,
     matchConfidence: entry.matchConfidence,
+    gallery: parseGallery(entry.gallery),
   };
 }
 
@@ -39,6 +40,7 @@ export async function upsertPlaceMediaCacheEntry(entry: PlaceMediaCacheEntry) {
     providerPlaceId: entry.providerPlaceId ?? null,
     providerPhotoReference: entry.providerPhotoReference ?? null,
     photoUrl: entry.url,
+    gallery: serializeGallery(entry.gallery),
     alt: entry.alt,
     attribution: entry.attribution ?? null,
     licenseHint: entry.licenseHint ?? null,
@@ -54,6 +56,7 @@ export async function upsertPlaceMediaCacheEntry(entry: PlaceMediaCacheEntry) {
       providerPlaceId: entry.providerPlaceId ?? null,
       providerPhotoReference: entry.providerPhotoReference ?? null,
       photoUrl: entry.url,
+      gallery: serializeGallery(entry.gallery),
       alt: entry.alt,
       attribution: entry.attribution ?? null,
       licenseHint: entry.licenseHint ?? null,
@@ -65,6 +68,26 @@ export async function upsertPlaceMediaCacheEntry(entry: PlaceMediaCacheEntry) {
       updateAt: Date.now(),
     },
   });
+}
+
+function serializeGallery(gallery: string[] | undefined): string | null {
+  return gallery && gallery.length ? JSON.stringify(gallery) : null;
+}
+
+function parseGallery(value: string | null): string[] | undefined {
+  if (!value)
+    return undefined;
+
+  try {
+    const parsed = JSON.parse(value);
+    if (!Array.isArray(parsed))
+      return undefined;
+    const urls = parsed.filter((url): url is string => typeof url === "string");
+    return urls.length ? urls : undefined;
+  }
+  catch {
+    return undefined;
+  }
 }
 
 export async function recordPlaceMediaCacheFailure(placeKey: string, failureCode: PlaceMediaFailureCode) {

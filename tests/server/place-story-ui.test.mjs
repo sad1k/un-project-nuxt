@@ -24,7 +24,8 @@ test("map popup CTA focuses the route sidebar story card through selected route 
   assert.match(mapboxSource, /\[data-place-story-cta\]/);
   assert.match(pageSource, /explore-selected-story-route-point-id/);
   assert.match(pageSource, /selectedStoryRoutePointId\.value = point\.sourceId/);
-  assert.match(pageSource, /createPlacePopupHTML\(intelligence,\s*\{ includeStoryCta: true \}\)/);
+  assert.match(pageSource, /createPlacePopupHTML\(update\.intelligence, \{/);
+  assert.match(pageSource, /includeStoryCta: true/);
   assert.match(pageSource, /saveRoutePointFromPopup/);
   assert.match(pageSource, /openDirectionsToNextStop/);
 });

@@ -11,6 +11,9 @@ const cssSource = await readFile("assets/css/main.css", "utf8");
 const modelSource = await readFile("lib/explore/place-intelligence.ts", "utf8");
 const providerSource = await readFile("lib/explore/place-intelligence-providers.ts", "utf8");
 const composableSource = await readFile("composables/use-place-intelligence.ts", "utf8").catch(() => "");
+const sidePanelSource = await readFile("components/explore/place-side-panel.vue", "utf8").catch(() => "");
+const placeDetailSource = await readFile("components/explore/place-detail.vue", "utf8").catch(() => "");
+const sheetSource = await readFile("components/explore/place-bottom-sheet.vue", "utf8").catch(() => "");
 const createPopupSource = popupSource.slice(
   popupSource.indexOf("export function createPlacePopupHTML"),
   popupSource.indexOf("export function createPlacePopupLoadingHTML"),
@@ -121,4 +124,73 @@ test("Mapbox route markers can resolve rich async popup HTML and keep a fallback
   assert.match(mapboxSource, /1000/);
   assert.match(pageSource, /usePlaceIntelligence/);
   assert.match(pageSource, /createPlacePopupHTML/);
+});
+
+test("place card loads progressively: instant skeletons, parallel detail + photo, streaming repaint", () => {
+  // Renderer: per-section loading flags drive shimmer skeletons.
+  assert.match(popupSource, /place-popup__skel/);
+  assert.match(popupSource, /renderDetailsSkeleton/);
+  assert.match(popupSource, /loading\.photo === true/);
+  assert.match(popupSource, /loading\.details === true/);
+  // Popup gains a render(html) sink it can call repeatedly, guarded against stale repaints.
+  assert.match(mapboxSource, /renderPopup/);
+  assert.match(mapboxSource, /activeRoutePopup !== popup/);
+  // Composable splits the slow photo onto its own request and runs both in parallel.
+  assert.match(composableSource, /loadForRoutePointProgressive/);
+  assert.match(composableSource, /withPhoto: 0/);
+  assert.match(composableSource, /\/api\/explore\/place-photo-resolve/);
+  assert.match(composableSource, /Promise\.all/);
+  // Page wires the progressive renderer into the map markers.
+  assert.match(pageSource, /renderPopup/);
+  assert.match(pageSource, /loadForRoutePointProgressive/);
+  // Shimmer keyframes exist and respect reduced-motion.
+  assert.match(cssSource, /place-popup__skel/);
+  assert.match(cssSource, /placePopupShimmer/);
+  assert.match(cssSource, /prefers-reduced-motion/);
+});
+
+test("place photos prefetch as route points stream in to hide the slowest request", () => {
+  // Composable exposes a deduped, throttled background photo warmer.
+  assert.match(composableSource, /prefetchPhotoForRoutePoint/);
+  assert.match(composableSource, /resolvePlacePhoto/);
+  assert.match(composableSource, /photoResolutionCache/);
+  assert.match(composableSource, /PHOTO_PREFETCH_CONCURRENCY/);
+  // Only generated stops are warmed, and prefetching stays client-only.
+  assert.match(composableSource, /markerKind !== "generated"/);
+  assert.match(composableSource, /import\.meta\.client/);
+  // The progressive popup loader reuses the same resolver, so an opened card joins the in-flight
+  // prefetch instead of re-running the provider chain.
+  assert.match(composableSource, /resolvePlacePhoto\(point\)/);
+  // The page warms photos for every generated stop as the route streams in / is restored.
+  assert.match(pageSource, /prefetchPhotoForRoutePoint/);
+});
+
+test("shared place detail (carousel + tabs + reviews) powers BOTH the desktop panel and the mobile sheet", () => {
+  // Shared rich content: carousel over the provider gallery + tabs (Обзор / Фото / Отзывы) + reviews.
+  assert.match(placeDetailSource, /carouselIndex/);
+  assert.match(placeDetailSource, /photo\.gallery/);
+  assert.match(placeDetailSource, /activeTab/);
+  assert.match(placeDetailSource, /Обзор/);
+  assert.match(placeDetailSource, /Фото/);
+  assert.match(placeDetailSource, /Отзывы/);
+  assert.match(placeDetailSource, /v-for="\(review, index\) in reviews"/);
+  assert.match(placeDetailSource, /Отзывов из источников пока нет/);
+  // Photo and details stream in independently; skeletons respect reduced motion.
+  assert.match(placeDetailSource, /photoLoading/);
+  assert.match(placeDetailSource, /detailsLoading/);
+  assert.match(placeDetailSource, /place-detail__skel/);
+  assert.match(placeDetailSource, /prefers-reduced-motion/);
+  // Both cards render the same component, so the carousel works on mobile too (adaptive version).
+  assert.match(sidePanelSource, /ExplorePlaceDetail/);
+  assert.match(sheetSource, /ExplorePlaceDetail/);
+  // Desktop panel wrapper: desktop-only, slides in from the left, Esc-to-close.
+  assert.match(sidePanelSource, /md:flex/);
+  assert.match(sidePanelSource, /translateX\(-100%\)/);
+  assert.match(sidePanelSource, /Escape/);
+  // Wired into the page beside the bottom sheet on the same selected-place state.
+  assert.match(pageSource, /ExplorePlaceSidePanel/);
+  assert.match(pageSource, /:intelligence="selectedSheetIntelligence"/);
+  // The gallery comes free from TripAdvisor's single multi-photo call (up to 5) — no extra quota.
+  assert.match(providerSource, /gallery: string\[\]/);
+  assert.match(providerSource, /gallery\.length >= 5/);
 });

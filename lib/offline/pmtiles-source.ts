@@ -2,10 +2,13 @@
 // dynamically on first use so it never enters the SSR bundle and never
 // hurts the initial client compile graph.
 
-// Reasonable default — Protomaps' public demo planet, range-served.
-// In production this should be replaced with a self-hosted bucket or
-// an authenticated Protomaps API endpoint.
-const DEFAULT_PMTILES_URL = "https://demo-bucket.protomaps.com/v4.pmtiles";
+// Tiles are read through a SAME-ORIGIN server proxy, not straight from
+// Protomaps. The public daily-build host (build.protomaps.com) does not send
+// `Access-Control-Allow-Origin`, so a direct browser fetch is CORS-blocked.
+// The proxy (server/routes/offline/pmtiles.get.ts) resolves the real upstream
+// server-side — the rotating daily build, or a private `PMTILES_URL` override —
+// and forwards byte-range requests back to us same-origin.
+const PMTILES_PROXY_PATH = "/offline/pmtiles";
 
 type PmtilesArchive = {
   getZxy: (z: number, x: number, y: number) => Promise<{ data: ArrayBuffer | Uint8Array } | undefined>;
@@ -26,22 +29,20 @@ async function loadPmtilesModule(): Promise<PmtilesModule> {
   return modulePromise;
 }
 
-export function getPmtilesUrl(): string {
-  const runtime = useRuntimeConfig();
-  const fromConfig = (runtime.public as Record<string, unknown>).pmtilesUrl;
-  if (typeof fromConfig === "string" && fromConfig.length > 0)
-    return fromConfig;
-  return DEFAULT_PMTILES_URL;
+// Absolute same-origin URL for the tile proxy. The `pmtiles` FetchSource issues
+// range requests against it; being same-origin, no CORS applies.
+export function resolvePmtilesUrl(): string {
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  return `${origin}${PMTILES_PROXY_PATH}`;
 }
 
-export async function getPmtilesArchive(url: string = getPmtilesUrl()): Promise<PmtilesArchive> {
+export async function getPmtilesArchive(url: string = resolvePmtilesUrl()): Promise<PmtilesArchive> {
   if (archive && archiveUrl === url)
     return archive;
 
   const mod = await loadPmtilesModule();
-  // The pmtiles `PMTiles` constructor accepts either a URL string or a
-  // custom Source. Pass the URL — the library will create its own
-  // FetchSource under the hood.
+  // The pmtiles `PMTiles` constructor accepts either a URL string or a custom
+  // Source. Pass the URL — the library creates its own FetchSource.
   archive = new mod.PMTiles(url);
   archiveUrl = url;
   return archive;

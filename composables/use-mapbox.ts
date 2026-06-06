@@ -53,6 +53,9 @@ type GeoJsonFeatureCollection = {
 };
 
 type RoutePopupOptions = {
+  // Progressive renderer: gets a `render(html)` sink it may call repeatedly as data streams in
+  // (skeleton → details → photo). Preferred over getPopupHTML when set.
+  renderPopup?: (point: RouteMapPoint, render: (html: string) => void) => Promise<void> | void;
   getPopupHTML?: (point: RouteMapPoint) => Promise<string> | string;
   onDirectionsRequest?: (point: RouteMapPoint, nextPoint: RouteMapPoint | null) => void;
   onSaveRequest?: (point: RouteMapPoint) => Promise<void> | void;
@@ -405,7 +408,13 @@ export function useMapbox() {
 
     el.addEventListener("mouseenter", showPopup, { signal });
     el.addEventListener("mouseleave", () => scheduleRoutePopupClose(popup), { signal });
-    el.addEventListener("click", showPopup, { signal });
+    // Desktop: hover shows the quick popup preview; a click opens the full detail panel (sidebar),
+    // same as a tap on mobile. Without this the click only re-showed the popup and the sidebar
+    // (driven by onMarkerClick → openPlaceSheet) never opened.
+    el.addEventListener("click", (event) => {
+      event.stopPropagation();
+      options.onMarkerClick?.(point);
+    }, { signal });
 
     return () => controller.abort();
   }
@@ -416,18 +425,34 @@ export function useMapbox() {
     popup: any,
     options: RoutePopupOptions,
   ) {
+    // Repaint sink: ignore writes once this popup is no longer the active one, so a slow photo
+    // request can't overwrite a popup the user already moved away from.
+    const render = (html: string) => {
+      if (activeRoutePopup !== popup)
+        return;
+      popup.setHTML(html);
+      bindPopupActions(point, nextPoint, popup, options);
+      bindPopupHoverClose(popup);
+    };
+
+    if (options.renderPopup) {
+      try {
+        await options.renderPopup(point, render);
+      }
+      catch {
+        render(createPopupHTML(point));
+      }
+      return;
+    }
+
     if (!options.getPopupHTML)
       return;
 
     try {
-      popup.setHTML(await options.getPopupHTML(point));
-      bindPopupActions(point, nextPoint, popup, options);
-      bindPopupHoverClose(popup);
+      render(await options.getPopupHTML(point));
     }
     catch {
-      popup.setHTML(createPopupHTML(point));
-      bindPopupActions(point, nextPoint, popup, options);
-      bindPopupHoverClose(popup);
+      render(createPopupHTML(point));
     }
   }
 

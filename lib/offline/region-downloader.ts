@@ -128,6 +128,10 @@ export async function downloadRegion(options: DownloadOptions): Promise<Download
       return { tilesDone, totalTiles, bytesDone, cancelled: true };
     }
 
+    console.error(
+      `[offline-download] region ${regionId} failed after ${tilesDone}/${totalTiles} tiles (${bytesDone} bytes):`,
+      error,
+    );
     await updateRegion(regionId, { status: "error", tilesDone, actualBytes: bytesDone });
     emitProgress(true);
     throw error;

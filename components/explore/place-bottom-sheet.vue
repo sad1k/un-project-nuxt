@@ -2,12 +2,11 @@
 import type { PlaceIntelligence } from "~/lib/explore/place-intelligence";
 import type { RouteMapPoint } from "~/lib/explore/route-map";
 
-import { createPlacePopupHTML, createPlacePopupLoadingHTML } from "~/components/explore/place-popup";
-
 const props = defineProps<{
   place: RouteMapPoint | null;
   intelligence: PlaceIntelligence | null;
-  loading: boolean;
+  // Granular per-section flags (photo vs details), forwarded as-is to ExplorePlaceDetail.
+  loading: { details?: boolean; photo?: boolean };
   editable?: boolean;
 }>();
 
@@ -27,7 +26,7 @@ const VELOCITY_DISMISS_THRESHOLD = 0.9;
 const TAP_THRESHOLD_PX = 6;
 const TAP_THRESHOLD_MS = 200;
 
-const { isOnline, isOffline } = useOnline();
+const { isOffline } = useOnline();
 
 const isOpen = computed(() => Boolean(props.place));
 const currentSnap = ref(1);
@@ -42,21 +41,6 @@ const baseHeightPx = computed(() => {
 const heightPx = computed(() => {
   const target = baseHeightPx.value - dragOffset.value;
   return Math.max(SHEET_MIN_PX, Math.min(viewportHeight.value - 12, target));
-});
-
-const renderedHtml = computed(() => {
-  if (!props.place)
-    return "";
-  if (props.loading || !props.intelligence) {
-    return createPlacePopupLoadingHTML({
-      name: props.place.name,
-      day: props.place.day ?? undefined,
-    });
-  }
-  // Story CTA needs the network to generate fresh audio — hide it when
-  // offline. The standalone <OfflineUnavailable> strip below the HTML
-  // tells the user the feature is paused, not missing.
-  return createPlacePopupHTML(props.intelligence, { includeStoryCta: isOnline.value });
 });
 
 let touchStartY = 0;
@@ -140,20 +124,6 @@ function onTouchEnd() {
   currentSnap.value = nearestIndex;
 }
 
-function onContentClick(event: MouseEvent) {
-  const target = (event.target as HTMLElement | null)?.closest(
-    "[data-place-save-cta], [data-place-directions-cta], [data-place-story-cta]",
-  ) as HTMLElement | null;
-  if (!target || !props.place)
-    return;
-  if (target.hasAttribute("data-place-save-cta"))
-    emit("save", props.place);
-  else if (target.hasAttribute("data-place-directions-cta"))
-    emit("directions", props.place);
-  else if (target.hasAttribute("data-place-story-cta"))
-    emit("story", props.place);
-}
-
 watch(isOpen, (next) => {
   if (next) {
     currentSnap.value = 1;
@@ -199,34 +169,20 @@ onBeforeUnmount(() => {
             style="background-color: var(--explore-border-strong)"
           />
         </div>
-        <div
-          class="place-bottom-sheet-content min-h-0 flex-1 overflow-y-auto overscroll-contain"
-          @click="onContentClick"
-          v-html="renderedHtml"
+
+        <ExplorePlaceDetail
+          class="min-h-0 flex-1"
+          :place="place"
+          :intelligence="intelligence"
+          :loading="loading"
+          :editable="editable"
+          @save="emit('save', $event)"
+          @directions="emit('directions', $event)"
+          @story="emit('story', $event)"
+          @edit="emit('edit', $event)"
+          @delete="emit('delete', $event)"
         />
-        <div
-          v-if="editable && place?.markerKind === 'generated'"
-          class="shrink-0 flex gap-2 px-3 pb-3 pt-1"
-        >
-          <button
-            class="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border text-xs font-semibold transition"
-            style="border-color: var(--explore-border); color: var(--explore-text-muted)"
-            type="button"
-            @click="place && emit('edit', place)"
-          >
-            <Icon name="tabler:edit" size="14" />
-            Изменить
-          </button>
-          <button
-            class="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border text-xs font-semibold transition"
-            style="border-color: var(--explore-border); color: var(--explore-danger-text, #ef4444)"
-            type="button"
-            @click="place && emit('delete', place)"
-          >
-            <Icon name="tabler:trash" size="14" />
-            Удалить
-          </button>
-        </div>
+
         <div
           v-if="isOffline"
           class="shrink-0 px-3 pb-2 pt-1"
@@ -251,16 +207,6 @@ onBeforeUnmount(() => {
   border-color: var(--explore-border);
   box-shadow: 0 -16px 40px var(--explore-overlay-shadow);
   padding-bottom: env(safe-area-inset-bottom);
-}
-
-.place-bottom-sheet-content :deep(.explore-place-popup),
-.place-bottom-sheet-content :deep(.explore-place-popup-loading) {
-  width: 100% !important;
-  max-width: 100% !important;
-  max-height: none !important;
-  overflow: visible !important;
-  border-radius: 0;
-  background: transparent;
 }
 
 .place-sheet-enter-active,

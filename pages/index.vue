@@ -30,6 +30,12 @@ async function handleProviderSignIn(provider: "github" | "google") {
     activeProvider.value = null;
   }
 }
+
+watchEffect(() => {
+  if (authStore.user) {
+    navigateTo("/dashboard");
+  }
+});
 </script>
 
 <template>

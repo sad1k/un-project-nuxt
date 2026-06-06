@@ -9,8 +9,9 @@ const QuerySchema = z.object({
 
 export default defineAuthenticatedHandler(async (event) => {
   const query = await getValidatedQuery(event, QuerySchema.parse);
+  const apiKey = env.GOOGLE_PLACES_API_KEY;
 
-  if (!env.GOOGLE_PLACES_API_KEY) {
+  if (!apiKey) {
     throw createError({
       statusCode: 404,
       statusMessage: "Фото места недоступно",
@@ -19,7 +20,7 @@ export default defineAuthenticatedHandler(async (event) => {
 
   const url = new URL(`https://places.googleapis.com/v1/${query.name}/media`);
   url.searchParams.set("maxWidthPx", "720");
-  url.searchParams.set("key", env.GOOGLE_PLACES_API_KEY);
+  url.searchParams.set("key", apiKey);
 
   const response = await fetch(url);
   if (!response.ok || !response.body) {
