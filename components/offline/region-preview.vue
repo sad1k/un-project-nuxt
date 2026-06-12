@@ -175,7 +175,7 @@ onBeforeUnmount(() => {
           <div class="relative min-h-0 flex-1 bg-[var(--explore-surface-hover)]">
             <div
               ref="mapContainer"
-              class="absolute inset-0"
+              class="h-full w-full"
             />
 
             <!-- Loading scrim -->
