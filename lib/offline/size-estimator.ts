@@ -11,9 +11,9 @@ const BASE_OVERHEAD_BYTES = 2 * 1024 * 1024; // ~2 MB for the archive index + st
  * downloaded size is decided when the archive byte-ranges are actually
  * requested at runtime.
  */
-export function estimateRegionSize(bbox: Bbox): { bytes: number; tiles: number } {
+export function estimateRegionSize(bbox: Bbox, maxZoom = MAX_ZOOM): { bytes: number; tiles: number } {
   let tiles = 0;
-  for (let z = MIN_ZOOM; z <= MAX_ZOOM; z += 1)
+  for (let z = MIN_ZOOM; z <= maxZoom; z += 1)
     tiles += tilesAtZoom(bbox, z);
 
   return {
