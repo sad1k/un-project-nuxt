@@ -10,3 +10,11 @@ test("size estimator is parameterized by max zoom", async () => {
   assert.match(source, /export function estimateRegionSize\(bbox: Bbox, maxZoom = MAX_ZOOM\)/);
   assert.match(source, /z <= maxZoom/);
 });
+
+test("offline region record persists the chosen detail level", async () => {
+  const storeSource = await readFile("lib/offline/region-store.ts", "utf8");
+  // Field on both the record and the input (schemaless — no DB version bump).
+  const maxZoomFields = storeSource.match(/maxZoom\?: number;/g) ?? [];
+  assert.equal(maxZoomFields.length, 2, "maxZoom on both OfflineRegion and OfflineRegionInput");
+  assert.match(storeSource, /maxZoom: input\.maxZoom,/);
+});

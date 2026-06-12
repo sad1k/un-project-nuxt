@@ -27,6 +27,7 @@ export type OfflineRegion = {
   status: OfflineRegionStatus;
   tilesDone?: number;
   totalTiles?: number;
+  maxZoom?: number;
   routePoints?: RouteMapPoint[];
   routeGeometry?: [number, number][] | null;
 };
@@ -38,6 +39,7 @@ export type OfflineRegionInput = {
   regionLabel?: string | null;
   status?: OfflineRegionStatus;
   totalTiles?: number;
+  maxZoom?: number;
   routePoints?: RouteMapPoint[];
 };
 
@@ -150,6 +152,7 @@ export async function addRegion(input: OfflineRegionInput): Promise<OfflineRegio
     status: input.status ?? "metadata",
     tilesDone: 0,
     totalTiles: input.totalTiles,
+    maxZoom: input.maxZoom,
     routePoints: input.routePoints ? toPlainRoutePoints(input.routePoints) : undefined,
     routeGeometry: null,
   };
