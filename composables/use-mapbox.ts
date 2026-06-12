@@ -2,14 +2,13 @@ import type { RouteLeg, RouteMapPoint } from "~/lib/explore/route-map";
 
 import { createPlacePopupLoadingHTML } from "~/components/explore/place-popup";
 import { createMarkerElement, createPopupHTML, updateMarkerLabel } from "~/components/explore/route-marker";
+import { fetchMapboxRoadRouteCoordinates } from "~/lib/explore/road-route";
 
 const ROUTE_LINE_LAYER_ID = "explore-route-line";
 const ROUTE_LINE_SOURCE_ID = "explore-route-line";
 const ROUTE_LEG_LABEL_LAYER_ID = "explore-route-leg-labels";
 const ROUTE_LEG_LABEL_SOURCE_ID = "explore-route-leg-labels";
 const ROUTE_DETAIL_ZOOM = 10;
-const MAPBOX_DIRECTIONS_MAX_WAYPOINTS = 25;
-const MAPBOX_DIRECTIONS_PROFILE = "walking";
 const DEFAULT_MAP_CENTER: [number, number] = [30, 15];
 const DEFAULT_MAP_ZOOM = 1.5;
 const MAP_THEME_STYLES = {
@@ -78,54 +77,6 @@ async function getMapboxGL() {
     mapboxModule = await import("mapbox-gl");
   }
   return mapboxModule.default || mapboxModule;
-}
-
-async function fetchMapboxRoadRouteCoordinates(points: RouteMapPoint[]) {
-  if (points.length > MAPBOX_DIRECTIONS_MAX_WAYPOINTS)
-    return [];
-
-  const waypointPath = points
-    .map(point => `${point.lng.toFixed(6)},${point.lat.toFixed(6)}`)
-    .join(";");
-  const params = new URLSearchParams({
-    access_token: mapboxAccessToken,
-    alternatives: "false",
-    geometries: "geojson",
-    overview: "full",
-    steps: "false",
-  });
-  const url = `https://api.mapbox.com/directions/v5/mapbox/${MAPBOX_DIRECTIONS_PROFILE}/${waypointPath}?${params}`;
-
-  try {
-    const response = await fetch(url);
-    if (!response.ok)
-      return [];
-
-    const payload = await response.json() as {
-      routes?: Array<{
-        geometry?: {
-          coordinates?: unknown;
-        };
-      }>;
-    };
-    const coordinates = payload.routes?.[0]?.geometry?.coordinates;
-    if (!Array.isArray(coordinates))
-      return [];
-
-    return coordinates.filter(isLngLatCoordinate);
-  }
-  catch {
-    return [];
-  }
-}
-
-function isLngLatCoordinate(input: unknown): input is [number, number] {
-  return Array.isArray(input)
-    && input.length >= 2
-    && typeof input[0] === "number"
-    && typeof input[1] === "number"
-    && Number.isFinite(input[0])
-    && Number.isFinite(input[1]);
 }
 
 function isValidRouteMapPoint(point: RouteMapPoint) {
@@ -637,7 +588,7 @@ export function useMapbox() {
     if (!map || !mapboxAccessToken || routeCoordinates.length < 2)
       return;
 
-    const roadCoordinates = await fetchMapboxRoadRouteCoordinates(routeCoordinates);
+    const roadCoordinates = await fetchMapboxRoadRouteCoordinates(routeCoordinates, mapboxAccessToken);
     if (!roadCoordinates.length || requestId !== routeGeometryRequestId || map !== mapInstance.value)
       return;
 

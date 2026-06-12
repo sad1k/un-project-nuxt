@@ -6,6 +6,7 @@ import { test } from "node:test";
 const source = await readFile("lib/explore/route-map.ts", "utf8");
 const explorePageSource = await readFile("pages/explore.vue", "utf8");
 const mapboxSource = await readFile("composables/use-mapbox.ts", "utf8");
+const roadRouteSource = await readFile("lib/explore/road-route.ts", "utf8");
 const routePanelSource = await readFile("components/explore/route-panel.vue", "utf8");
 const routeDaySelectorSource = await readFile("components/explore/route-day-selector.vue", "utf8");
 const routeDistanceSummarySource = await readFile("components/explore/route-distance-summary.vue", "utf8");
@@ -77,10 +78,12 @@ test("Explore page renders selected route sections through the route-map model",
 });
 
 test("Mapbox route rendering uses road geometry with a safe direct-line fallback", () => {
-  assert.match(mapboxSource, /directions\/v5\/mapbox/);
-  assert.match(mapboxSource, /MAPBOX_DIRECTIONS_PROFILE = "walking"/);
-  assert.match(mapboxSource, /geometries: "geojson"/);
-  assert.match(mapboxSource, /overview: "full"/);
+  // Directions-API specifics moved to the shared lib/explore/road-route.ts
+  // module so the offline download flow can reuse the fetcher.
+  assert.match(roadRouteSource, /directions\/v5\/mapbox/);
+  assert.match(roadRouteSource, /MAPBOX_DIRECTIONS_PROFILE = "walking"/);
+  assert.match(roadRouteSource, /geometries: "geojson"/);
+  assert.match(roadRouteSource, /overview: "full"/);
   assert.match(mapboxSource, /drawRouteLine\(points\)/);
   assert.match(mapboxSource, /drawRoadRouteLine\(points, requestId\)/);
   assert.match(mapboxSource, /routeCoordinates\.length < 2/);
