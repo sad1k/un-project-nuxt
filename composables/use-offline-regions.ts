@@ -84,7 +84,7 @@ export function useOfflineRegions() {
     patchLocal(id, { routeGeometry: geometry });
   }
 
-  async function download(regionId: string, bbox: Bbox): Promise<DownloadResult> {
+  async function download(regionId: string, bbox: Bbox, maxZoom?: number): Promise<DownloadResult> {
     if (downloadControllers.has(regionId))
       throw new Error("Region download is already in progress");
 
@@ -104,6 +104,7 @@ export function useOfflineRegions() {
       const result = await runDownload({
         regionId,
         bbox,
+        maxZoom,
         signal: controller.signal,
         onProgress,
       });
