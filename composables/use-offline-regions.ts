@@ -8,6 +8,7 @@ import {
   listRegions as storeList,
   removeRegion as storeRemove,
   touchRegion as storeTouch,
+  updateRegion as storeUpdate,
 } from "~/lib/offline/region-store";
 
 // Module-level singleton — every component that calls useOfflineRegions()
@@ -78,6 +79,11 @@ export function useOfflineRegions() {
     regionsState.value = await storeList();
   }
 
+  async function setRouteGeometry(id: string, geometry: [number, number][] | null): Promise<void> {
+    await storeUpdate(id, { routeGeometry: geometry });
+    patchLocal(id, { routeGeometry: geometry });
+  }
+
   async function download(regionId: string, bbox: Bbox): Promise<DownloadResult> {
     if (downloadControllers.has(regionId))
       throw new Error("Region download is already in progress");
@@ -140,6 +146,7 @@ export function useOfflineRegions() {
     remove,
     touch,
     refresh,
+    setRouteGeometry,
     download,
     cancelDownload,
     isDownloading,

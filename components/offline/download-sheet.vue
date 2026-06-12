@@ -3,6 +3,7 @@ import { toast } from "vue-sonner";
 
 import type { RouteMapPoint } from "~/lib/explore/route-map";
 
+import { fetchMapboxRoadRouteCoordinates } from "~/lib/explore/road-route";
 import { type Bbox, bboxAreaKm2 } from "~/lib/offline/bbox-from-route";
 import { formatSizeMB } from "~/lib/offline/size-estimator";
 import { countTiles } from "~/lib/offline/tile-enumerator";
@@ -207,6 +208,15 @@ async function onConfirm() {
   }
 
   saveState.value = "downloading";
+
+  // Capture the road-following line once, while we're still online — it's
+  // what the offline preview draws instead of straight segments. Runs
+  // concurrently with the tile download; any failure (no token, >25 points,
+  // network) just leaves routeGeometry null and the preview falls back.
+  const mapboxToken = typeof config.public.mapboxToken === "string" ? config.public.mapboxToken : "";
+  void fetchMapboxRoadRouteCoordinates(payload.routePoints, mapboxToken)
+    .then(coordinates => offlineRegions.setRouteGeometry(region.id, coordinates.length >= 2 ? coordinates : null))
+    .catch(() => {});
 
   try {
     const result = await offlineRegions.download(region.id, payload.bbox);

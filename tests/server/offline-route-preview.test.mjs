@@ -48,3 +48,15 @@ test("download flow forwards the actual route points into the region record", as
   const sheetSource = await readFile("components/offline/download-sheet.vue", "utf8");
   assert.match(sheetSource, /routePoints: payload\.routePoints/);
 });
+
+test("road geometry is captured once at download time", async () => {
+  const composableSource = await readFile("composables/use-offline-regions.ts", "utf8");
+  assert.match(composableSource, /async function setRouteGeometry/);
+  assert.match(composableSource, /setRouteGeometry,/);
+
+  const sheetSource = await readFile("components/offline/download-sheet.vue", "utf8");
+  assert.match(sheetSource, /fetchMapboxRoadRouteCoordinates/);
+  assert.match(sheetSource, /setRouteGeometry/);
+  // Geometry capture must not block or fail the tile download.
+  assert.match(sheetSource, /\.catch\(/);
+});
