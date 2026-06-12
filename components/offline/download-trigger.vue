@@ -15,7 +15,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  request: [payload: { bbox: Bbox; estimatedBytes: number; pointCount: number }];
+  request: [payload: { bbox: Bbox; estimatedBytes: number; pointCount: number; routePoints: RouteMapPoint[] }];
   openManager: [];
 }>();
 
@@ -84,6 +84,7 @@ function onClick() {
     bbox: bbox.value,
     estimatedBytes: sizeEstimate.value.bytes,
     pointCount: props.routePoints.length,
+    routePoints: [...props.routePoints],
   });
 }
 </script>

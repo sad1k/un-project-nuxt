@@ -1,6 +1,8 @@
 <script lang="ts" setup>
 import { toast } from "vue-sonner";
 
+import type { RouteMapPoint } from "~/lib/explore/route-map";
+
 import { type Bbox, bboxAreaKm2 } from "~/lib/offline/bbox-from-route";
 import { formatSizeMB } from "~/lib/offline/size-estimator";
 import { countTiles } from "~/lib/offline/tile-enumerator";
@@ -18,6 +20,7 @@ const props = defineProps<{
     bbox: Bbox;
     estimatedBytes: number;
     pointCount: number;
+    routePoints: RouteMapPoint[];
   } | null;
   /** Optional human-readable label, e.g. the trip's selected city. */
   regionLabel?: string;
@@ -25,7 +28,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   close: [];
-  confirm: [payload: { bbox: Bbox; estimatedBytes: number; pointCount: number }];
+  confirm: [payload: { bbox: Bbox; estimatedBytes: number; pointCount: number; routePoints: RouteMapPoint[] }];
 }>();
 
 const STORAGE_LIMIT_BYTES = 200 * 1024 * 1024; // ~200 MB soft cap
@@ -191,6 +194,7 @@ async function onConfirm() {
       regionLabel: props.regionLabel ?? null,
       status: "metadata",
       totalTiles: totalTilesPreview.value,
+      routePoints: payload.routePoints,
     });
     activeRegionId.value = region.id;
     emit("confirm", payload);

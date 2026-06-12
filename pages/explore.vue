@@ -366,6 +366,7 @@ type OfflineDownloadPayload = {
   bbox: Bbox;
   estimatedBytes: number;
   pointCount: number;
+  routePoints: RouteMapPoint[];
 };
 
 const offlineDownloadRequest = ref<OfflineDownloadPayload | null>(null);

@@ -37,3 +37,14 @@ test("offline region record persists route points and geometry", async () => {
   // in parallel with the tile download).
   assert.match(storeSource, /"routeGeometry"/);
 });
+
+test("download flow forwards the actual route points into the region record", async () => {
+  const triggerSource = await readFile("components/offline/download-trigger.vue", "utf8");
+  assert.match(triggerSource, /routePoints: \[\.\.\.props\.routePoints\]/);
+
+  const exploreSource = await readFile("pages/explore.vue", "utf8");
+  assert.match(exploreSource, /routePoints: RouteMapPoint\[\];/);
+
+  const sheetSource = await readFile("components/offline/download-sheet.vue", "utf8");
+  assert.match(sheetSource, /routePoints: payload\.routePoints/);
+});
