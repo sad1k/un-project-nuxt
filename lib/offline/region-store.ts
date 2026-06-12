@@ -1,3 +1,5 @@
+import type { RouteMapPoint } from "~/lib/explore/route-map";
+
 import type { Bbox } from "./bbox-from-route";
 
 // Persisted catalogue of downloaded offline regions plus the raw tile
@@ -25,6 +27,8 @@ export type OfflineRegion = {
   status: OfflineRegionStatus;
   tilesDone?: number;
   totalTiles?: number;
+  routePoints?: RouteMapPoint[];
+  routeGeometry?: [number, number][] | null;
 };
 
 export type OfflineRegionInput = {
@@ -34,10 +38,11 @@ export type OfflineRegionInput = {
   regionLabel?: string | null;
   status?: OfflineRegionStatus;
   totalTiles?: number;
+  routePoints?: RouteMapPoint[];
 };
 
 export type OfflineRegionPatch = Partial<
-  Pick<OfflineRegion, "status" | "actualBytes" | "tilesDone" | "totalTiles" | "lastUsed">
+  Pick<OfflineRegion, "status" | "actualBytes" | "tilesDone" | "totalTiles" | "lastUsed" | "routeGeometry">
 >;
 
 export type TileRecord = {
@@ -63,6 +68,14 @@ export function tileKey(regionId: string, z: number, x: number, y: number): stri
 // plain tuple before it reaches the store.
 function toPlainBbox(bbox: Bbox): Bbox {
   return [bbox[0], bbox[1], bbox[2], bbox[3]];
+}
+
+// Same structured-clone hazard as `toPlainBbox`: route points arrive as Vue
+// reactive proxies from component props, and IndexedDB's structured clone
+// throws DataCloneError on them. RouteMapPoint is flat, so a shallow copy
+// per point is enough.
+function toPlainRoutePoints(points: RouteMapPoint[]): RouteMapPoint[] {
+  return points.map(point => ({ ...point }));
 }
 
 let dbPromise: Promise<IDBDatabase> | null = null;
@@ -137,6 +150,8 @@ export async function addRegion(input: OfflineRegionInput): Promise<OfflineRegio
     status: input.status ?? "metadata",
     tilesDone: 0,
     totalTiles: input.totalTiles,
+    routePoints: input.routePoints ? toPlainRoutePoints(input.routePoints) : undefined,
+    routeGeometry: null,
   };
 
   const db = await openDb();

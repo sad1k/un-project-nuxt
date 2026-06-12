@@ -23,3 +23,17 @@ test("road route fetcher is shared, not private to use-mapbox", async () => {
     "use-mapbox must not keep a local copy of the directions fetcher",
   );
 });
+
+test("offline region record persists route points and geometry", async () => {
+  const storeSource = await readFile("lib/offline/region-store.ts", "utf8");
+  // New fields on the record + input.
+  assert.match(storeSource, /routePoints\?: RouteMapPoint\[\];/);
+  assert.match(storeSource, /routeGeometry\?: \[number, number\]\[\] \| null;/);
+  // Vue reactive proxies throw DataCloneError in IndexedDB (same hazard
+  // toPlainBbox already guards) — points must be cloned to plain objects.
+  assert.match(storeSource, /function toPlainRoutePoints/);
+  assert.match(storeSource, /toPlainRoutePoints\(input\.routePoints\)/);
+  // routeGeometry must be patchable after the fact (it arrives async,
+  // in parallel with the tile download).
+  assert.match(storeSource, /"routeGeometry"/);
+});
