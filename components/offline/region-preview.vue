@@ -1,7 +1,9 @@
 <script lang="ts" setup>
+import type { RouteMapPoint } from "~/lib/explore/route-map";
 import type { OfflineRegion } from "~/lib/offline/region-store";
 
 import { createMarkerElement, createPopupHTML } from "~/components/explore/route-marker";
+import { formatRouteDistance, getRouteDayGroups } from "~/lib/explore/route-map";
 import { ensureOfflineProtocol } from "~/lib/offline/maplibre-protocol";
 import { buildOfflineStyle } from "~/lib/offline/offline-style";
 
@@ -41,6 +43,33 @@ const regionDisplayName = computed(() => {
 });
 
 const tilesAvailable = computed(() => Boolean(props.region?.tilesDone));
+
+const hasRoute = computed(() => Boolean(props.region?.routePoints?.length));
+
+const dayGroups = computed(() =>
+  props.region?.routePoints?.length ? getRouteDayGroups(props.region.routePoints) : [],
+);
+
+// List numbering must match the marker numbering (global order across days).
+const pointNumbers = computed(() => {
+  const numbers = new Map<string, number>();
+  (props.region?.routePoints ?? []).forEach((point, index) => numbers.set(point.id, index + 1));
+  return numbers;
+});
+
+function pointMetaLabel(point: RouteMapPoint): string {
+  const parts: string[] = [];
+  if (point.estimatedDurationMinutes)
+    parts.push(`${point.estimatedDurationMinutes} мин`);
+  const distance = formatRouteDistance(point.approximateDistanceMeters ?? null);
+  if (distance)
+    parts.push(distance);
+  return parts.join(" · ");
+}
+
+function onPointClick(point: RouteMapPoint) {
+  mapInstance?.flyTo({ center: [point.lng, point.lat], zoom: 15 });
+}
 
 async function initMap(region: OfflineRegion) {
   if (!mapContainer.value)
@@ -225,49 +254,98 @@ onBeforeUnmount(() => {
             </button>
           </header>
 
-          <!-- Map canvas -->
-          <div class="relative min-h-0 flex-1 bg-[var(--explore-surface-hover)]">
-            <div
-              ref="mapContainer"
-              class="h-full w-full"
-            />
-
-            <!-- Loading scrim -->
-            <div
-              v-if="!mapLoaded && !initError"
-              class="explore-loading-scrim pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2"
-            >
-              <Icon
-                name="tabler:loader-2"
-                size="32"
-                class="animate-spin text-brand-gold"
+          <!-- Body: map + route point list -->
+          <div class="flex min-h-0 flex-1 max-md:flex-col">
+            <!-- Map canvas -->
+            <div class="relative min-h-0 flex-1 bg-[var(--explore-surface-hover)]">
+              <div
+                ref="mapContainer"
+                class="h-full w-full"
               />
-              <p class="explore-text-soft font-mono text-[10px] uppercase tracking-[0.24em]">
-                Рендер из IndexedDB
-              </p>
+
+              <!-- Loading scrim -->
+              <div
+                v-if="!mapLoaded && !initError"
+                class="explore-loading-scrim pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2"
+              >
+                <Icon
+                  name="tabler:loader-2"
+                  size="32"
+                  class="animate-spin text-brand-gold"
+                />
+                <p class="explore-text-soft font-mono text-[10px] uppercase tracking-[0.24em]">
+                  Рендер из IndexedDB
+                </p>
+              </div>
+
+              <!-- Empty / error -->
+              <div
+                v-if="initError || !tilesAvailable"
+                class="absolute inset-x-0 bottom-3 mx-auto max-w-md rounded-xl border border-[var(--explore-warning-border)] bg-[var(--explore-warning-bg)] px-4 py-3 text-center text-xs text-[var(--explore-warning-text)]"
+              >
+                <p v-if="initError" class="font-bold">
+                  {{ initError }}
+                </p>
+                <p v-else class="font-bold">
+                  Тайлы ещё не скачаны для этого региона
+                </p>
+                <p class="mt-1 opacity-80">
+                  Откройте sheet «Скачать офлайн» и дождитесь завершения загрузки.
+                </p>
+              </div>
             </div>
 
-            <!-- Empty / error -->
-            <div
-              v-if="initError || !tilesAvailable"
-              class="absolute inset-x-0 bottom-3 mx-auto max-w-md rounded-xl border border-[var(--explore-warning-border)] bg-[var(--explore-warning-bg)] px-4 py-3 text-center text-xs text-[var(--explore-warning-text)]"
+            <!-- Route point list -->
+            <aside
+              v-if="hasRoute"
+              class="shrink-0 overflow-y-auto border-[var(--explore-border)] max-md:max-h-[38%] max-md:border-t md:w-[280px] md:border-l"
+              aria-label="Точки маршрута"
             >
-              <p v-if="initError" class="font-bold">
-                {{ initError }}
-              </p>
-              <p v-else class="font-bold">
-                Тайлы ещё не скачаны для этого региона
-              </p>
-              <p class="mt-1 opacity-80">
-                Откройте sheet «Скачать офлайн» и дождитесь завершения загрузки.
-              </p>
-            </div>
+              <div
+                v-for="group in dayGroups"
+                :key="group.day"
+                class="px-4 py-3"
+              >
+                <p class="explore-section-label mb-2 text-[10px] font-bold uppercase tracking-[0.2em]">
+                  День {{ group.day }}
+                </p>
+                <ul class="space-y-1">
+                  <li v-for="point in group.points" :key="point.id">
+                    <button
+                      type="button"
+                      class="flex w-full items-start gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors hover:bg-[var(--explore-surface-hover)]"
+                      :aria-label="`Показать на карте: ${point.name}`"
+                      @click="onPointClick(point)"
+                    >
+                      <span class="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--explore-marker-generated)] text-[10px] font-bold text-[var(--explore-primary-text)]">
+                        {{ pointNumbers.get(point.id) }}
+                      </span>
+                      <span class="min-w-0">
+                        <span class="block truncate text-xs font-bold text-[var(--explore-text)]">{{ point.name }}</span>
+                        <span
+                          v-if="pointMetaLabel(point)"
+                          class="block font-mono text-[10px] text-[var(--explore-text-soft)]"
+                        >
+                          {{ pointMetaLabel(point) }}
+                        </span>
+                      </span>
+                    </button>
+                  </li>
+                </ul>
+              </div>
+            </aside>
           </div>
 
           <!-- Footer -->
           <footer class="flex shrink-0 items-center justify-between gap-3 border-t border-[var(--explore-border)] px-5 py-2.5 text-[11px] text-[var(--explore-text-muted)]">
             <span class="font-mono">
               {{ region.tilesDone ?? 0 }} тайлов · {{ Math.round(region.actualBytes / 1024 / 1024 * 10) / 10 }} МБ
+            </span>
+            <span
+              v-if="!hasRoute"
+              class="text-[var(--explore-text-faint)]"
+            >
+              Маршрут не сохранён — скачайте регион заново
             </span>
             <span class="font-mono text-[var(--explore-text-faint)]">
               idb-offline://{{ region.id.slice(0, 8) }}…

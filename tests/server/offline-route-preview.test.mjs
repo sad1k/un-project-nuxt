@@ -73,3 +73,13 @@ test("offline preview renders the stored route as line + markers", async () => {
   // Markers are torn down with the map.
   assert.match(previewSource, /marker\.remove\(\)/);
 });
+
+test("offline preview lists route points grouped by day", async () => {
+  const previewSource = await readFile("components/offline/region-preview.vue", "utf8");
+  assert.match(previewSource, /getRouteDayGroups/);
+  assert.match(previewSource, /formatRouteDistance/);
+  // Tapping a list row recenters the map on that point.
+  assert.match(previewSource, /flyTo/);
+  // Regions downloaded before this feature degrade gracefully with a hint.
+  assert.match(previewSource, /Маршрут не сохранён/);
+});
