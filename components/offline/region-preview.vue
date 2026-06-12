@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import type { OfflineRegion } from "~/lib/offline/region-store";
 
+import { createMarkerElement, createPopupHTML } from "~/components/explore/route-marker";
 import { ensureOfflineProtocol } from "~/lib/offline/maplibre-protocol";
 import { buildOfflineStyle } from "~/lib/offline/offline-style";
 
@@ -17,11 +18,18 @@ const emit = defineEmits<{
   close: [];
 }>();
 
+const ROUTE_LINE_SOURCE_ID = "offline-route-line";
+const ROUTE_LINE_LAYER_ID = "offline-route-line";
+
 const colorMode = useColorMode();
 const mapContainer = ref<HTMLElement | null>(null);
 const mapLoaded = ref(false);
 const initError = ref<string | null>(null);
-let mapInstance: { remove: () => void } | null = null;
+let mapInstance: {
+  remove: () => void;
+  flyTo: (options: { center: [number, number]; zoom: number }) => void;
+} | null = null;
+let routeMarkers: Array<{ remove: () => void }> = [];
 
 const isOpen = computed(() => Boolean(props.region));
 const regionDisplayName = computed(() => {
@@ -63,8 +71,51 @@ async function initMap(region: OfflineRegion) {
 
     map.addControl(new ml.NavigationControl({ showCompass: false }), "bottom-right");
 
+    // Route overlay: GeoJSON line (road geometry captured at download time,
+    // straight segments as fallback) + numbered HTML markers with popups.
+    // HTML markers don't need glyphs, which the offline style deliberately
+    // lacks; popups reuse the explore look (day badge + name).
+    const renderRouteOverlay = () => {
+      const points = region.routePoints ?? [];
+      if (!points.length)
+        return;
+
+      const lineCoordinates = region.routeGeometry && region.routeGeometry.length >= 2
+        ? region.routeGeometry
+        : points.map(point => [point.lng, point.lat]);
+
+      if (lineCoordinates.length >= 2) {
+        map.addSource(ROUTE_LINE_SOURCE_ID, {
+          type: "geojson",
+          data: {
+            type: "Feature",
+            properties: {},
+            geometry: { type: "LineString", coordinates: lineCoordinates },
+          },
+        } as never);
+        map.addLayer({
+          id: ROUTE_LINE_LAYER_ID,
+          type: "line",
+          source: ROUTE_LINE_SOURCE_ID,
+          layout: { "line-join": "round", "line-cap": "round" },
+          paint: { "line-color": "#2dd4bf", "line-opacity": 0.9, "line-width": 4 },
+        } as never);
+      }
+
+      points.forEach((point, index) => {
+        const { element } = createMarkerElement(point, index, index * 40);
+        const popup = new ml.Popup({ offset: 18, closeButton: false }).setHTML(createPopupHTML(point));
+        const marker = new ml.Marker({ element })
+          .setLngLat([point.lng, point.lat])
+          .setPopup(popup)
+          .addTo(map);
+        routeMarkers.push(marker);
+      });
+    };
+
     map.on("load", () => {
       mapLoaded.value = true;
+      renderRouteOverlay();
     });
 
     map.on("error", (event: { error?: { message?: string } }) => {
@@ -84,6 +135,9 @@ async function initMap(region: OfflineRegion) {
 }
 
 function teardownMap() {
+  for (const marker of routeMarkers)
+    marker.remove();
+  routeMarkers = [];
   if (mapInstance) {
     mapInstance.remove();
     mapInstance = null;

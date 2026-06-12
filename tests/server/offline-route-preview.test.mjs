@@ -60,3 +60,16 @@ test("road geometry is captured once at download time", async () => {
   // Geometry capture must not block or fail the tile download.
   assert.match(sheetSource, /\.catch\(/);
 });
+
+test("offline preview renders the stored route as line + markers", async () => {
+  const previewSource = await readFile("components/offline/region-preview.vue", "utf8");
+  // HTML markers + popups (no glyph dependency — offline style has none).
+  assert.match(previewSource, /createMarkerElement/);
+  assert.match(previewSource, /createPopupHTML/);
+  // GeoJSON line with straight-segment fallback when capture failed.
+  assert.match(previewSource, /LineString/);
+  assert.match(previewSource, /routeGeometry/);
+  assert.match(previewSource, /points\.map\(point => \[point\.lng, point\.lat\]\)/);
+  // Markers are torn down with the map.
+  assert.match(previewSource, /marker\.remove\(\)/);
+});
