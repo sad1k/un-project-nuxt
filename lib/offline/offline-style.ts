@@ -41,7 +41,7 @@ const PALETTES: Record<StyleTheme, ColorPalette> = {
   },
 };
 
-export function buildOfflineStyle(regionId: string, theme: StyleTheme = "dark"): Record<string, unknown> {
+export function buildOfflineStyle(regionId: string, theme: StyleTheme = "dark", maxZoom = 14): Record<string, unknown> {
   const palette = PALETTES[theme];
   return {
     version: 8,
@@ -50,7 +50,7 @@ export function buildOfflineStyle(regionId: string, theme: StyleTheme = "dark"):
         type: "vector",
         tiles: [buildOfflineTileUrl(regionId)],
         minzoom: 0,
-        maxzoom: 14,
+        maxzoom: maxZoom,
       },
     },
     layers: [

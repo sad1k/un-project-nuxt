@@ -89,7 +89,7 @@ async function initMap(region: OfflineRegion) {
 
     const map = new ml.Map({
       container: mapContainer.value,
-      style: buildOfflineStyle(region.id, theme) as never,
+      style: buildOfflineStyle(region.id, theme, region.maxZoom ?? 14) as never,
       bounds: [
         [west, south],
         [east, north],

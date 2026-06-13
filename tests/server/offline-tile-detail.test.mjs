@@ -41,3 +41,14 @@ test("download sheet offers detail presets and threads the choice", async () => 
   assert.match(sheetSource, /maxZoom: selectedMaxZoom\.value/);
   assert.match(sheetSource, /download\(region\.id, payload\.bbox, selectedMaxZoom\.value\)/);
 });
+
+test("offline preview style declares the downloaded zoom range", async () => {
+  // Source maxzoom must match what was downloaded: declare 14 while only
+  // z0-12 exists and MapLibre shows blank past z12 instead of overzooming.
+  const styleSource = await readFile("lib/offline/offline-style.ts", "utf8");
+  assert.match(styleSource, /maxZoom = 14/);
+  assert.match(styleSource, /maxzoom: maxZoom/);
+
+  const previewSource = await readFile("components/offline/region-preview.vue", "utf8");
+  assert.match(previewSource, /buildOfflineStyle\(region\.id, theme, region\.maxZoom \?\? 14\)/);
+});
