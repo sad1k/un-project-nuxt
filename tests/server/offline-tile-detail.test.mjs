@@ -26,3 +26,18 @@ test("regions composable forwards maxZoom to the downloader", async () => {
   assert.match(composableSource, /async function download\(regionId: string, bbox: Bbox, maxZoom\?: number\)/);
   assert.match(composableSource, /regionId,[\t\v\f\r \xA0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000\uFEFF]*\n\s*bbox,[\t\v\f\r \xA0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000\uFEFF]*\n\s*maxZoom,/);
 });
+
+test("download sheet offers detail presets and threads the choice", async () => {
+  const sheetSource = await readFile("components/offline/download-sheet.vue", "utf8");
+  for (const label of ["\u042D\u043A\u043E\u043D\u043E\u043C\u0438\u044F", "\u0421\u0442\u0430\u043D\u0434\u0430\u0440\u0442", "\u041C\u0430\u043A\u0441\u0438\u043C\u0443\u043C"])
+    assert.ok(sheetSource.includes(label), `${label} preset present`);
+  assert.match(sheetSource, /maxZoom: 12/);
+  assert.match(sheetSource, /maxZoom: 14/);
+  assert.match(sheetSource, /maxZoom: 15/);
+  // Size, quota and tile counts follow the selected preset\u2026
+  assert.match(sheetSource, /estimateRegionSize\(props\.payload\.bbox, selectedMaxZoom\.value\)/);
+  assert.match(sheetSource, /countTiles\(props\.payload\.bbox, 0, selectedMaxZoom\.value\)/);
+  // \u2026and the choice reaches both the record and the downloader.
+  assert.match(sheetSource, /maxZoom: selectedMaxZoom\.value/);
+  assert.match(sheetSource, /download\(region\.id, payload\.bbox, selectedMaxZoom\.value\)/);
+});

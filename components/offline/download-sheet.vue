@@ -5,7 +5,7 @@ import type { RouteMapPoint } from "~/lib/explore/route-map";
 
 import { fetchMapboxRoadRouteCoordinates } from "~/lib/explore/road-route";
 import { type Bbox, bboxAreaKm2 } from "~/lib/offline/bbox-from-route";
-import { formatSizeMB } from "~/lib/offline/size-estimator";
+import { estimateRegionSize, formatSizeMB } from "~/lib/offline/size-estimator";
 import { countTiles } from "~/lib/offline/tile-enumerator";
 
 // Modal sheet shown when the user taps the offline-download trigger.
@@ -36,12 +36,37 @@ const STORAGE_LIMIT_BYTES = 200 * 1024 * 1024; // ~200 MB soft cap
 const KM_PER_DEGREE_LAT = 111;
 const SAVED_CLOSE_DELAY_MS = 700;
 
+// Detail presets: maxZoom is the deepest tile level fetched. The PMTiles
+// archive tops out at z15 (real extra geometry); past the chosen level
+// MapLibre overzooms vector tiles, which stays sharp but loses features
+// that only exist in deeper tiles (e.g. buildings are absent in z12).
+const DETAIL_PRESETS = [
+  { key: "compact", maxZoom: 12, label: "Экономия", description: "Контуры города, без зданий" },
+  { key: "standard", maxZoom: 14, label: "Стандарт", description: "Улицы и здания" },
+  { key: "max", maxZoom: 15, label: "Максимум", description: "Вся геометрия: здания, дорожки" },
+] as const;
+type DetailLevelKey = (typeof DETAIL_PRESETS)[number]["key"];
+
 const config = useRuntimeConfig();
 const colorMode = useColorMode();
 
 const isOpen = computed(() => Boolean(props.payload));
 
-const sizeLabel = computed(() => (props.payload ? formatSizeMB(props.payload.estimatedBytes) : ""));
+const detailLevel = ref<DetailLevelKey>("standard");
+const selectedMaxZoom = computed(() =>
+  DETAIL_PRESETS.find(preset => preset.key === detailLevel.value)?.maxZoom ?? 14,
+);
+const selectedEstimateBytes = computed(() =>
+  props.payload ? estimateRegionSize(props.payload.bbox, selectedMaxZoom.value).bytes : 0,
+);
+
+function presetSizeLabel(maxZoom: number): string {
+  if (!props.payload)
+    return "";
+  return formatSizeMB(estimateRegionSize(props.payload.bbox, maxZoom).bytes);
+}
+
+const sizeLabel = computed(() => (props.payload ? formatSizeMB(selectedEstimateBytes.value) : ""));
 
 const areaLabel = computed(() => {
   if (!props.payload)
@@ -85,7 +110,7 @@ const currentUsedBytes = computed(() =>
 const projectedTotalBytes = computed(() => {
   if (!props.payload)
     return currentUsedBytes.value;
-  return currentUsedBytes.value + props.payload.estimatedBytes;
+  return currentUsedBytes.value + selectedEstimateBytes.value;
 });
 
 const sizeQuotaPercent = computed(() =>
@@ -104,7 +129,7 @@ const quotaWarning = computed<QuotaWarning>(() => {
     return "exceeds-cap";
   if (projectedTotalBytes.value > STORAGE_LIMIT_BYTES * NEAR_CAP_FRACTION)
     return "near-cap";
-  if (props.payload.estimatedBytes > LARGE_SINGLE_REGION_BYTES)
+  if (selectedEstimateBytes.value > LARGE_SINGLE_REGION_BYTES)
     return "large-single";
   return null;
 });
@@ -152,7 +177,7 @@ const activeRegion = computed(() => {
 const totalTilesPreview = computed(() => {
   if (!props.payload)
     return 0;
-  return countTiles(props.payload.bbox);
+  return countTiles(props.payload.bbox, 0, selectedMaxZoom.value);
 });
 
 const progressPercent = computed(() => {
@@ -190,12 +215,13 @@ async function onConfirm() {
   try {
     region = await offlineRegions.add({
       bbox: payload.bbox,
-      estimatedBytes: payload.estimatedBytes,
+      estimatedBytes: selectedEstimateBytes.value,
       pointCount: payload.pointCount,
       regionLabel: props.regionLabel ?? null,
       status: "metadata",
       totalTiles: totalTilesPreview.value,
       routePoints: payload.routePoints,
+      maxZoom: selectedMaxZoom.value,
     });
     activeRegionId.value = region.id;
     emit("confirm", payload);
@@ -219,7 +245,7 @@ async function onConfirm() {
     .catch(() => {});
 
   try {
-    const result = await offlineRegions.download(region.id, payload.bbox);
+    const result = await offlineRegions.download(region.id, payload.bbox, selectedMaxZoom.value);
     if (result.cancelled) {
       // User aborted — drop the partially-downloaded region entirely
       // so they don't end up with a half-cooked entry in the manager.
@@ -269,6 +295,7 @@ watch(() => props.payload, (next) => {
   if (next) {
     saveState.value = "idle";
     activeRegionId.value = null;
+    detailLevel.value = "standard";
   }
   saveError.value = null;
 });
@@ -383,6 +410,34 @@ onBeforeUnmount(() => {
               </div>
             </div>
 
+            <!-- Detail level -->
+            <fieldset :disabled="saveState !== 'idle' && saveState !== 'error'">
+              <legend class="explore-section-label mb-2 text-[11px] font-bold uppercase tracking-[0.2em]">
+                Детализация карты
+              </legend>
+              <div class="grid grid-cols-3 gap-2 max-md:grid-cols-1">
+                <label
+                  v-for="preset in DETAIL_PRESETS"
+                  :key="preset.key"
+                  class="cursor-pointer rounded-xl border px-3 py-2.5 transition-colors"
+                  :class="detailLevel === preset.key
+                    ? 'border-[var(--explore-accent-strong)] bg-[var(--explore-surface-soft)]'
+                    : 'border-[var(--explore-border)] hover:bg-[var(--explore-surface-hover)]'"
+                >
+                  <input
+                    v-model="detailLevel"
+                    type="radio"
+                    name="offline-detail-level"
+                    :value="preset.key"
+                    class="sr-only"
+                  >
+                  <span class="block text-xs font-bold text-[var(--explore-text)]">{{ preset.label }}</span>
+                  <span class="mt-0.5 block text-[10px] leading-4 text-[var(--explore-text-soft)]">{{ preset.description }}</span>
+                  <span class="mt-1 block font-mono text-[10px] text-[var(--explore-text-muted)]">≈ {{ presetSizeLabel(preset.maxZoom) }}</span>
+                </label>
+              </div>
+            </fieldset>
+
             <!-- Size + quota -->
             <div class="rounded-xl border border-[var(--explore-border)] bg-[var(--explore-surface-soft)] p-4">
               <div class="mb-2 flex items-baseline justify-between gap-2">
@@ -405,7 +460,7 @@ onBeforeUnmount(() => {
                 v-if="currentUsedBytes > 0"
                 class="mt-2 font-mono text-[10px] text-[var(--explore-text-faint)]"
               >
-                Уже занято {{ formatSizeMB(currentUsedBytes) }} · добавится {{ formatSizeMB(payload?.estimatedBytes ?? 0) }} · итого {{ formatSizeMB(projectedTotalBytes) }}
+                Уже занято {{ formatSizeMB(currentUsedBytes) }} · добавится {{ formatSizeMB(selectedEstimateBytes) }} · итого {{ formatSizeMB(projectedTotalBytes) }}
               </p>
             </div>
 
