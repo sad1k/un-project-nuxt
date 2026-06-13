@@ -419,7 +419,7 @@ onBeforeUnmount(() => {
                 <label
                   v-for="preset in DETAIL_PRESETS"
                   :key="preset.key"
-                  class="cursor-pointer rounded-xl border px-3 py-2.5 transition-colors"
+                  class="cursor-pointer rounded-xl border px-3 py-2.5 transition-colors focus-within:ring-2 focus-within:ring-[var(--explore-accent-strong)] focus-within:ring-offset-1"
                   :class="detailLevel === preset.key
                     ? 'border-[var(--explore-accent-strong)] bg-[var(--explore-surface-soft)]'
                     : 'border-[var(--explore-border)] hover:bg-[var(--explore-surface-hover)]'"
