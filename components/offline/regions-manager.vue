@@ -114,6 +114,7 @@ async function onDelete(region: OfflineRegion) {
           pointCount: region.pointCount,
           regionLabel: region.regionLabel,
           status: region.status,
+          maxZoom: region.maxZoom,
         });
       },
     },
