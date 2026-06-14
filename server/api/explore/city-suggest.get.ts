@@ -40,7 +40,7 @@ async function fetchMapboxSuggestions(query: string, sessionToken: string | unde
     const url = new URL("https://api.mapbox.com/search/searchbox/v1/suggest");
     const params = new URLSearchParams({
       access_token: accessToken,
-      language: "en",
+      language: "ru",
       limit: DEFAULT_CITY_SUGGESTION_LIMIT.toString(),
       q: query,
       types: "place,locality",
@@ -66,16 +66,17 @@ async function fetchNominatimSuggestions(query: string): Promise<ExploreCitySugg
   try {
     const url = new URL("https://nominatim.openstreetmap.org/search");
     const params = new URLSearchParams({
-      addressdetails: "1",
-      featureType: "city",
-      format: "json",
-      limit: DEFAULT_CITY_SUGGESTION_LIMIT.toString(),
-      q: query,
+      "accept-language": "ru",
+      "addressdetails": "1",
+      "featureType": "city",
+      "format": "json",
+      "limit": DEFAULT_CITY_SUGGESTION_LIMIT.toString(),
+      "q": query,
     });
     url.search = params.toString();
 
     const response = await fetch(url, {
-      headers: { "User-Agent": "WanderLog Explore Search" },
+      headers: { "Accept-Language": "ru", "User-Agent": "WanderLog Explore Search" },
     });
 
     if (!response.ok)

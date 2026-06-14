@@ -65,6 +65,7 @@ async function retrieveMapboxCity(providerId: string, sessionToken: string | und
   const url = new URL(`https://api.mapbox.com/search/searchbox/v1/retrieve/${encodeURIComponent(providerId)}`);
   const params = new URLSearchParams({
     access_token: accessToken,
+    language: "ru",
   });
 
   if (sessionToken)

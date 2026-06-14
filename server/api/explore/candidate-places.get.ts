@@ -47,7 +47,7 @@ async function fetchMapboxCandidatePlaces(input: {
       const url = new URL("https://api.mapbox.com/search/searchbox/v1/suggest");
       const params = new URLSearchParams({
         access_token: input.accessToken,
-        language: "en",
+        language: "ru",
         limit: "3",
         proximity: `${input.long},${input.lat}`,
         q: `${interestLabel(interest)} in ${input.cityName}`,
