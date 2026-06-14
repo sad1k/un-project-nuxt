@@ -93,6 +93,42 @@ const activeSuggestionIndex = ref(-1);
 const dropdownOpen = computed(() => Boolean(query.value.trim())
   && (suggestions.value.length > 0 || cityLoading.value || Boolean(cityError.value)));
 
+// Animated placeholder (rotating questions, ChatGPT-style)
+const PLACEHOLDER_PHRASES = [
+  "Куда едем?",
+  "Город мечты?",
+  "Куда отправимся?",
+  "Что посмотрим?",
+  "Какое направление?",
+];
+const placeholderIndex = ref(0);
+const showAnimatedPlaceholder = computed(() => query.value.trim().length === 0);
+
+let placeholderTimer: ReturnType<typeof setInterval> | undefined;
+
+function startPlaceholderRotation() {
+  if (placeholderTimer)
+    return;
+  const reduceMotion = typeof window !== "undefined"
+    && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  if (reduceMotion)
+    return; // keep a single static phrase
+  placeholderTimer = setInterval(() => {
+    placeholderIndex.value = (placeholderIndex.value + 1) % PLACEHOLDER_PHRASES.length;
+  }, 2800);
+}
+
+function stopPlaceholderRotation() {
+  if (placeholderTimer) {
+    clearInterval(placeholderTimer);
+    placeholderTimer = undefined;
+  }
+}
+
+onMounted(() => {
+  startPlaceholderRotation();
+});
+
 let debounceTimer: ReturnType<typeof setTimeout> | undefined;
 const sessionToken = createSessionToken();
 
@@ -116,6 +152,7 @@ watch(selectedCity, (city) => {
 onBeforeUnmount(() => {
   if (debounceTimer)
     clearTimeout(debounceTimer);
+  stopPlaceholderRotation();
 });
 
 async function loadSuggestions(nextQuery: string) {
@@ -337,30 +374,41 @@ function onTouchEnd(event: TouchEvent) {
           >
             <Icon name="tabler:chevron-left" size="18" />
           </button>
-          <div v-else class="w-8 shrink-0" />
+          <div v-else-if="currentStep !== 'city'" class="w-8 shrink-0" />
 
           <div class="relative min-w-0 flex-1 overflow-hidden">
             <Transition :name="slideDirection === 'forward' ? 'slide-left' : 'slide-right'" mode="out-in">
               <div :key="currentStep" class="flex h-12 items-center">
                 <!-- City -->
-                <div v-if="currentStep === 'city'" class="relative flex w-full items-center px-1">
+                <div v-if="currentStep === 'city'" class="relative flex w-full items-center">
                   <Icon
-                    class="explore-text-faint absolute left-2"
+                    class="explore-text-faint absolute left-2 z-10"
                     name="tabler:map-pin-search"
                     size="16"
                   />
                   <input
                     v-model="query"
                     aria-autocomplete="list"
+                    aria-label="Поиск города"
                     :aria-expanded="dropdownOpen"
                     autocomplete="off"
-                    class="explore-wizard-input w-full rounded-full bg-transparent px-8 py-2 text-sm outline-none"
-                    placeholder="Куда едем?"
+                    class="explore-wizard-input w-full rounded-full bg-transparent pl-8 pr-9 py-2 text-sm outline-none"
                     type="search"
                     @keydown.down.prevent="moveActiveSuggestion(1)"
                     @keydown.up.prevent="moveActiveSuggestion(-1)"
                     @keydown.enter.prevent="selectActiveSuggestion"
                   >
+                  <div
+                    v-if="showAnimatedPlaceholder"
+                    aria-hidden="true"
+                    class="explore-wizard-placeholder pointer-events-none absolute inset-y-0 left-8 right-9 flex items-center overflow-hidden"
+                  >
+                    <Transition name="placeholder-roll" mode="out-in">
+                      <span :key="placeholderIndex" class="block truncate">
+                        {{ PLACEHOLDER_PHRASES[placeholderIndex] }}
+                      </span>
+                    </Transition>
+                  </div>
                   <Icon
                     v-if="cityLoading"
                     class="explore-text-faint absolute right-2 animate-spin"
@@ -441,7 +489,7 @@ function onTouchEnd(event: TouchEvent) {
           >
             <Icon name="tabler:chevron-right" size="18" />
           </button>
-          <div v-else class="w-8 shrink-0" />
+          <div v-else-if="currentStep !== 'city'" class="w-8 shrink-0" />
         </div>
 
         <!-- Progress dots -->
@@ -545,6 +593,34 @@ function onTouchEnd(event: TouchEvent) {
 }
 .explore-wizard-input::placeholder {
   color: var(--explore-text-faint);
+}
+
+.explore-wizard-placeholder {
+  color: var(--explore-text-faint);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.placeholder-roll-enter-active,
+.placeholder-roll-leave-active {
+  transition:
+    transform 300ms ease,
+    opacity 300ms ease;
+}
+.placeholder-roll-enter-from {
+  transform: translateY(70%);
+  opacity: 0;
+}
+.placeholder-roll-leave-to {
+  transform: translateY(-70%);
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .placeholder-roll-enter-active,
+  .placeholder-roll-leave-active {
+    transition: none;
+  }
 }
 
 .explore-wizard-dot {
