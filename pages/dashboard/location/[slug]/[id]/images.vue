@@ -91,40 +91,24 @@ async function uploadImage() {
       Управление изображениями для {{ currentLocationLog?.name || "Загрузка..." }}
     </h2>
     <div class="flex gap-4">
-      <div v-if="currentLocationLog && !loading">
-        <div class="w-[250px] h-[160px]">
-          <div class="flex flex-col gap-2 h-full">
-            <div class="hidden">
-              <p v-if="!imageUrl" class="text-center">
-                Выберите изображение для загрузки
-              </p>
-              <img
-                v-else-if="imageUrl"
-                :src="imageUrl"
-                class="w-full h-full object-contain"
-                alt="Изображение"
-              >
-              <span
-                v-if="loading"
-                class=" size-10 mx-auto absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 loading loading-spinner loading-lg"
-              />
-            </div>
+      <div v-if="currentLocationLog && !loading" class="w-[250px] shrink-0">
+        <div class="flex flex-col gap-2">
+          <div class="overflow-hidden rounded-lg border border-base-300">
             <ClientOnly>
               <FileUpload @on-change="onFileChange">
                 <FileUploadGrid />
               </FileUpload>
             </ClientOnly>
-
-            <button
-              v-if="imageFile"
-              class="btn btn-primary"
-              :disabled="loading"
-              @click="uploadImage"
-            >
-              Загрузить
-              изображение
-            </button>
           </div>
+
+          <button
+            v-if="imageFile"
+            class="btn btn-primary"
+            :disabled="loading"
+            @click="uploadImage"
+          >
+            Загрузить изображение
+          </button>
         </div>
       </div>
 
