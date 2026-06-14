@@ -509,7 +509,7 @@ function onCloseOfflinePreview() {
       <AppUserMenu />
     </div>
 
-    <div class="absolute right-4 top-16 z-30 flex items-center gap-2 md:top-20 max-md:flex-wrap max-md:justify-end max-md:gap-1.5">
+    <div class="absolute right-4 top-16 z-30 flex items-center gap-2 md:top-20 max-md:z-40 max-md:flex-wrap max-md:justify-end max-md:gap-1.5">
       <AppRouteGenerationIndicator floating />
       <ExploreResultsActions />
     </div>
