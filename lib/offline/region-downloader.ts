@@ -11,9 +11,22 @@ import { countTiles, enumerateTiles } from "./tile-enumerator";
 // updates the UI can react to. Errors and cancellation propagate
 // through the returned promise — both leave the region in a recoverable
 // state (status: "error" with whatever was already persisted).
+//
+// A city region is thousands of range requests against the same-origin
+// PMTiles proxy. Over a download that long a single connection routinely
+// drops/resets (surfacing as `TypeError: Failed to fetch`) — or the dev
+// server briefly chokes — and without tolerance that one blip rejects the
+// whole batch and aborts an almost-complete region. So each tile is retried
+// a few times with exponential backoff, and concurrency is kept modest to
+// avoid hammering the proxy and the browser's per-host connection pool.
 
 export const BATCH_SIZE = 24;
-export const CONCURRENCY = 6;
+export const CONCURRENCY = 4;
+// Per-tile retry budget: total attempts before a tile's failure is fatal to
+// the region. 3 → up to two retries after the first try.
+export const TILE_FETCH_ATTEMPTS = 3;
+// Exponential backoff base between tile retries: 250ms → 500ms → 1s.
+export const TILE_RETRY_BASE_MS = 250;
 export const PROGRESS_THROTTLE_MS = 200;
 
 export type DownloadProgress = {
@@ -86,7 +99,7 @@ export async function downloadRegion(options: DownloadOptions): Promise<Download
 
       const fetched = await Promise.all(
         fetchBatch.map(async ({ z, x, y }) => {
-          const data = await fetchTileBytes(z, x, y);
+          const data = await fetchTileWithRetry(z, x, y, signal);
           return data ? { regionId, z, x, y, data } : null;
         }),
       );
@@ -136,6 +149,55 @@ export async function downloadRegion(options: DownloadOptions): Promise<Download
     emitProgress(true);
     throw error;
   }
+}
+
+// Fetch a single tile, retrying transient failures with exponential backoff.
+// A transient network blip (dropped/reset connection to the tile proxy →
+// `TypeError: Failed to fetch`) is retried up to `attempts` times; only after
+// the budget is exhausted does the error propagate and fail the region. The
+// abort signal short-circuits both the attempt loop and any pending backoff so
+// cancellation stays responsive.
+export async function fetchTileWithRetry(
+  z: number,
+  x: number,
+  y: number,
+  signal?: AbortSignal,
+  attempts = TILE_FETCH_ATTEMPTS,
+): Promise<Uint8Array | null> {
+  for (let attempt = 1; ; attempt += 1) {
+    if (signal?.aborted)
+      throw new CancelledError();
+    try {
+      return await fetchTileBytes(z, x, y);
+    }
+    catch (error) {
+      // Out of retries — let the failure abort the region.
+      if (attempt >= attempts)
+        throw error;
+      await delay(TILE_RETRY_BASE_MS * 2 ** (attempt - 1), signal);
+    }
+  }
+}
+
+// Promise-based sleep that rejects with CancelledError the moment the signal
+// aborts, so a long backoff never delays a user-requested cancellation.
+function delay(ms: number, signal?: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted) {
+      reject(new CancelledError());
+      return;
+    }
+    let timer: ReturnType<typeof setTimeout>;
+    const onAbort = () => {
+      clearTimeout(timer);
+      reject(new CancelledError());
+    };
+    timer = setTimeout(() => {
+      signal?.removeEventListener("abort", onAbort);
+      resolve();
+    }, ms);
+    signal?.addEventListener("abort", onAbort, { once: true });
+  });
 }
 
 function takeNextBatch<T>(iterator: Generator<T, void, unknown>, count: number): T[] {
