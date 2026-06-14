@@ -3,6 +3,7 @@ import type { RouteMapPoint } from "~/lib/explore/route-map";
 import type { OfflineRegion } from "~/lib/offline/region-store";
 
 import { createMarkerElement, createPopupHTML } from "~/components/explore/route-marker";
+import { buildRouteExportLink, type RouteExportProvider } from "~/lib/explore/route-export";
 import { formatRouteDistance, getRouteDayGroups } from "~/lib/explore/route-map";
 import { ensureOfflineProtocol } from "~/lib/offline/maplibre-protocol";
 import { buildOfflineStyle } from "~/lib/offline/offline-style";
@@ -71,6 +72,17 @@ function onPointClick(point: RouteMapPoint) {
   mapInstance?.flyTo({ center: [point.lng, point.lat], zoom: 15 });
 }
 
+// Open the saved route in an external navigation app. The links work once the
+// device is back online; offline they just hand off to the OS/browser.
+function onOpenInMaps(provider: RouteExportProvider) {
+  const points = props.region?.routePoints;
+  if (!points?.length)
+    return;
+  const link = buildRouteExportLink(provider, points);
+  if (link)
+    window.open(link.url, "_blank", "noopener,noreferrer");
+}
+
 async function initMap(region: OfflineRegion) {
   if (!mapContainer.value)
     return;
@@ -100,10 +112,24 @@ async function initMap(region: OfflineRegion) {
 
     map.addControl(new ml.NavigationControl({ showCompass: false }), "bottom-right");
 
+    // "You are here" — GPS works offline on devices with a real receiver
+    // (satellite-based; no network needed). High accuracy so the offline map is
+    // usable for on-the-ground orientation; the dot/accuracy ring are rendered
+    // client-side and need no glyphs.
+    map.addControl(
+      new ml.GeolocateControl({
+        positionOptions: { enableHighAccuracy: true, timeout: 10000 },
+        trackUserLocation: true,
+        showUserLocation: true,
+        showAccuracyCircle: true,
+      }),
+      "bottom-right",
+    );
+
     // Route overlay: GeoJSON line (road geometry captured at download time,
     // straight segments as fallback) + numbered HTML markers with popups.
-    // HTML markers don't need glyphs, which the offline style deliberately
-    // lacks; popups reuse the explore look (day badge + name).
+    // HTML markers + popups are independent of the base-map label glyphs;
+    // popups reuse the explore look (day badge + name).
     const renderRouteOverlay = () => {
       const points = region.routePoints ?? [];
       if (!points.length)
@@ -301,6 +327,31 @@ onBeforeUnmount(() => {
               class="shrink-0 overflow-y-auto border-[var(--explore-border)] max-md:max-h-[38%] max-md:border-t md:w-[280px] md:border-l"
               aria-label="Точки маршрута"
             >
+              <div class="border-b border-[var(--explore-border)] px-4 py-3">
+                <p class="explore-section-label mb-2 text-[10px] font-bold uppercase tracking-[0.2em]">
+                  Открыть маршрут в
+                </p>
+                <div class="flex gap-2">
+                  <button
+                    type="button"
+                    class="explore-icon-button flex flex-1 items-center justify-center gap-1.5 rounded-lg border px-2.5 py-2 text-xs font-bold transition-colors hover:text-brand-gold"
+                    aria-label="Открыть маршрут в Google Картах"
+                    @click="onOpenInMaps('google')"
+                  >
+                    <Icon name="tabler:brand-google-maps" size="14" />
+                    Google
+                  </button>
+                  <button
+                    type="button"
+                    class="explore-icon-button flex flex-1 items-center justify-center gap-1.5 rounded-lg border px-2.5 py-2 text-xs font-bold transition-colors hover:text-brand-gold"
+                    aria-label="Открыть маршрут в Яндекс Картах"
+                    @click="onOpenInMaps('yandex')"
+                  >
+                    <Icon name="tabler:map-2" size="14" />
+                    Яндекс
+                  </button>
+                </div>
+              </div>
               <div
                 v-for="group in dayGroups"
                 :key="group.day"

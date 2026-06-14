@@ -576,6 +576,7 @@ function onCloseOfflinePreview() {
     <div class="pointer-events-none absolute bottom-6 left-[80px] z-30 flex flex-col gap-2 max-md:bottom-[96px] max-md:left-3">
       <ExploreManualPointsControl />
       <ExploreRouteEditControl />
+      <ExploreRouteExportControl :route-points="selectedRoutePoints" />
       <OfflineDownloadTrigger
         :route-points="selectedRoutePoints"
         @request="onOfflineDownloadRequest"
