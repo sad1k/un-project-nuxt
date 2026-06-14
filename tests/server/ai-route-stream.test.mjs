@@ -47,6 +47,21 @@ test("OpenAI-compatible client can use OpenRouter Qwen route defaults", () => {
   assert.match(providerSource, /model\.startsWith\("qwen\/qwen3\.5-"\)/);
 });
 
+test("OpenAI-compatible client disables reasoning for DeepSeek reasoning models", () => {
+  assert.match(providerSource, /isDeepSeekReasoningModel/);
+  assert.match(providerSource, /model\.startsWith\("deepseek\/deepseek-v4"\)/);
+  assert.match(providerSource, /model\.startsWith\("deepseek\/deepseek-v3\.2"\)/);
+  assert.match(providerSource, /reasoning: \{\s*enabled: false,?\s*\}/);
+});
+
+test("OpenAI-compatible client pins OpenRouter provider order with fallbacks", () => {
+  assert.match(envSource, /OPENROUTER_PROVIDER_ORDER/);
+  assert.match(providerSource, /getOpenRouterProviderOrder/);
+  assert.match(providerSource, /env\.OPENROUTER_PROVIDER_ORDER/);
+  assert.match(providerSource, /order: providerOrder/);
+  assert.match(providerSource, /allow_fallbacks: true/);
+});
+
 test("OpenAI-compatible client can use AIHubMix OpenAI-compatible defaults", () => {
   assert.match(envSource, /"aihubmix"/);
   assert.match(envSource, /AIHUBMIX_API_KEY/);

@@ -283,14 +283,27 @@ function getChatCompletionProviderOptions() {
     };
   }
 
+  if (isDeepSeekReasoningModel(model)) {
+    return {
+      ...providerOptions,
+      reasoning: {
+        enabled: false,
+      },
+    };
+  }
+
   return providerOptions;
 }
 
 function getRouteResponseFormatOptions() {
   if (env.AI_ROUTE_PROVIDER === "openrouter") {
+    const providerOrder = getOpenRouterProviderOrder();
     return {
       provider: {
         require_parameters: true,
+        // Prefer the configured provider(s) but keep fallbacks so one provider's
+        // rate limit / outage doesn't fail the whole generation.
+        ...(providerOrder.length ? { order: providerOrder, allow_fallbacks: true } : {}),
       },
       response_format: {
         type: "json_object",
@@ -311,6 +324,20 @@ function getRouteResponseFormatOptions() {
 
 function isQwenHybridThinkingModel(model: string) {
   return model.startsWith("qwen3.5-") || model.startsWith("qwen/qwen3.5-");
+}
+
+function isDeepSeekReasoningModel(model: string) {
+  return model.startsWith("deepseek/deepseek-v4")
+    || model.startsWith("deepseek-v4")
+    || model.startsWith("deepseek/deepseek-v3.2")
+    || model.startsWith("deepseek-v3.2");
+}
+
+function getOpenRouterProviderOrder() {
+  return (env.OPENROUTER_PROVIDER_ORDER ?? "")
+    .split(",")
+    .map(slug => slug.trim())
+    .filter(Boolean);
 }
 
 function getProviderApiKey() {

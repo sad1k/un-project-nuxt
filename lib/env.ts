@@ -65,6 +65,7 @@ const EnvSchema = z.object({
   MISTRAL_ROUTE_MODEL: z.string().optional(),
   OPENROUTER_API_KEY: z.string().optional(),
   OPENROUTER_ROUTE_MODEL: z.string().optional(),
+  OPENROUTER_PROVIDER_ORDER: z.string().optional(),
   AIHUBMIX_API_KEY: z.string().optional(),
   AIHUBMIX_ROUTE_MODEL: z.string().optional(),
   AI_ROUTE_MOCK_ENABLED: EnvBooleanSchema,
