@@ -56,7 +56,8 @@ test("feed globe component owns a dedicated Mapbox globe lifecycle", () => {
 test("feed globe follows the active color theme", () => {
   assert.match(globeComponentSource, /useColorMode\(\)/);
   assert.match(globeComponentSource, /mapbox:\/\/styles\/mapbox\/dark-v11/);
-  assert.match(globeComponentSource, /mapbox:\/\/styles\/mapbox\/light-v11/);
+  // Light theme uses the colorful outdoors-v12 style, matching the /explore globe.
+  assert.match(globeComponentSource, /mapbox:\/\/styles\/mapbox\/outdoors-v12/);
   assert.match(globeComponentSource, /watch\(mapStyle/);
   assert.match(globeComponentSource, /map\.setStyle\(mapStyle\.value\)/);
   assert.match(globeComponentSource, /applyThemeFog/);
@@ -64,6 +65,20 @@ test("feed globe follows the active color theme", () => {
   assert.match(globeComponentSource, /feed-globe--dark/);
   assert.match(globeComponentSource, /feed-globe-photo-card--light/);
   assert.match(globeComponentSource, /feed-globe-photo-card--dark/);
+});
+
+test("feed globe localizes Mapbox labels to Russian like the explore globe", async () => {
+  const localizeSource = await readFile("lib/map/localize-labels.ts", "utf8");
+
+  // The feed globe must run the shared localizer whenever it shows chrome/labels,
+  // so place/POI names render in Russian instead of the default Latin names.
+  assert.match(globeComponentSource, /from "~\/lib\/map\/localize-labels"/);
+  assert.match(globeComponentSource, /localizeMapLabels\(map\)/);
+
+  // The shared helper prefers name_ru and falls back to the default name.
+  assert.match(localizeSource, /MAP_LABEL_LANGUAGE = "ru"/);
+  assert.match(localizeSource, /coalesce/);
+  assert.match(localizeSource, /name_\$\{MAP_LABEL_LANGUAGE\}/);
 });
 
 test("feed globe marker animation does not override Mapbox coordinate transforms", () => {

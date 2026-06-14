@@ -5,6 +5,7 @@ import { createNearbyMarkerElement, createNearbyPopupHTML } from "~/components/e
 import { createPlacePopupLoadingHTML } from "~/components/explore/place-popup";
 import { createMarkerElement, createPopupHTML, updateMarkerLabel } from "~/components/explore/route-marker";
 import { fetchMapboxRoadRouteCoordinates } from "~/lib/explore/road-route";
+import { localizeMapLabels } from "~/lib/map/localize-labels";
 
 const ROUTE_LINE_LAYER_ID = "explore-route-line";
 const ROUTE_LINE_SOURCE_ID = "explore-route-line";
@@ -18,11 +19,6 @@ const MAP_THEME_STYLES = {
   light: "mapbox://styles/mapbox/outdoors-v12",
 } as const;
 const SATELLITE_MAP_STYLE = "mapbox://styles/mapbox/satellite-streets-v12";
-// Localize all place/POI/road labels to Russian. The classic Mapbox styles above
-// are built on the Streets v8 tileset, which ships per-language name fields
-// (name_ru, name_en, …); we swap each symbol layer's text-field to prefer name_ru
-// and fall back to the local/default name where a translation is missing.
-const MAP_LABEL_LANGUAGE = "ru";
 
 // Module-level shared state so all components share the same instance.
 const mapInstance = shallowRef<any>(null);
@@ -129,34 +125,6 @@ function applyExploreFog(map: any) {
     "space-color": isDark ? "rgb(2, 6, 23)" : "rgb(224, 235, 242)",
     "star-intensity": isDark ? 0.22 : 0,
   });
-}
-
-function localizeMapLabels(map: any) {
-  const layers = map.getStyle()?.layers ?? [];
-  const localizedTextField = [
-    "coalesce",
-    ["get", `name_${MAP_LABEL_LANGUAGE}`],
-    ["get", "name"],
-  ];
-
-  for (const layer of layers) {
-    if (layer.type !== "symbol")
-      continue;
-
-    // Only retarget label layers that render a place/POI name. Layers keyed on
-    // other fields (road shields via "ref", our route labels via "label", …)
-    // don't contain "name" and are left untouched.
-    const textField = layer.layout?.["text-field"];
-    if (!textField || !JSON.stringify(textField).includes("name"))
-      continue;
-
-    try {
-      map.setLayoutProperty(layer.id, "text-field", localizedTextField);
-    }
-    catch {
-      // Some symbol layers reject text-field overrides (e.g. icon-only); skip them.
-    }
-  }
 }
 
 function pauseGlobeSpin(resumeDelay = 3000) {

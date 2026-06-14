@@ -2,6 +2,8 @@
 import type { PublicFeedGlobePost } from "~/composables/use-feed-globe";
 import type { FeedGlobeOverflowIndicator } from "~/lib/feed/globe-density";
 
+import { localizeMapLabels } from "~/lib/map/localize-labels";
+
 const props = withDefaults(defineProps<{
   realistic?: boolean;
   hideChrome?: boolean;
@@ -48,7 +50,9 @@ const mapStyle = computed(() => {
   if (props.realistic)
     return "mapbox://styles/mapbox/satellite-streets-v12";
 
-  return isDarkTheme.value ? "mapbox://styles/mapbox/dark-v11" : "mapbox://styles/mapbox/light-v11";
+  // Match the colorful /explore globe: outdoors-v12 (light) is a rich topographic
+  // style, vs. the washed-out light-v11 this used before. Dark stays dark-v11.
+  return isDarkTheme.value ? "mapbox://styles/mapbox/dark-v11" : "mapbox://styles/mapbox/outdoors-v12";
 });
 const themeClass = computed(() => isDarkTheme.value ? "feed-globe--dark" : "feed-globe--light");
 const showFallbackGlobe = computed(() => !hasMapboxToken.value || !mapLoaded.value || Boolean(mapError.value));
@@ -145,6 +149,8 @@ async function initMap() {
       applyThemeFog();
       if (props.hideChrome)
         hideLabels();
+      else
+        localizeMapLabels(map);
       mapError.value = "";
       mapLoaded.value = true;
       resizeMap();
