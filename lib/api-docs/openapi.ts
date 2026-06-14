@@ -832,6 +832,31 @@ export const openApiSpec: OpenApiDocument = {
         },
       },
     },
+    "/api/explore/nearby-places": {
+      get: {
+        tags: ["Explore"],
+        summary: "Find real places near a location marker, ranked by distance",
+        description: "Proximity POI search around the user's draggable location marker. Returns places with coordinates so they can be drawn on the map and adopted as route stops.",
+        operationId: "listExploreNearbyPlaces",
+        parameters: [
+          queryParam("lat", "Marker latitude", { type: "number", minimum: -90, maximum: 90 }, true),
+          queryParam("long", "Marker longitude", { type: "number", minimum: -180, maximum: 180 }, true),
+          queryParam("interests", "Comma-separated Explore interests", { type: "string" }),
+          queryParam("limit", "Maximum number of places to return", { type: "integer", minimum: 1, maximum: 24 }),
+        ],
+        responses: {
+          200: ok({
+            type: "object",
+            required: ["places"],
+            properties: {
+              places: arrayOf({ $ref: "#/components/schemas/CandidatePlace" }),
+            },
+          }),
+          401: problemResponses[401],
+          422: problemResponses[422],
+        },
+      },
+    },
     "/api/explore/weather-tips": {
       get: {
         tags: ["Explore"],

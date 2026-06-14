@@ -20,6 +20,7 @@ const mapbox = useMapbox();
 const { activePoints, activeVariantId, generateRoute, isGenerating, restoreRouteSession, saveRoutePointToDiary, updateRoutePoint, deleteRoutePoint } = useAiRouteSession();
 const { isEditMode, setEditMode } = useRouteEditMode();
 const userRoutePoints = useUserRoutePoints();
+const nearby = useNearbyPlaces();
 const { requestContext, selectedCity } = useExploreContext();
 const placeIntelligence = usePlaceIntelligence();
 const route = useRoute();
@@ -198,6 +199,7 @@ watch(
       return;
     if (addMode) {
       setEditMode(false);
+      nearby.deactivate();
       mapbox.enablePointPlacement(onPlaceUserPoint);
     }
     else {
@@ -214,6 +216,7 @@ watch(
       return;
     if (editMode) {
       userRoutePoints.setAddMode(false);
+      nearby.deactivate();
       mapbox.enableMarkerDragging((sourceId, lngLat) => {
         void updateRoutePoint(sourceId, { coordinates: { lat: lngLat.lat, long: lngLat.lng } });
       });
@@ -224,6 +227,63 @@ watch(
   },
   { immediate: true },
 );
+
+// Activating the nearby search is mutually exclusive with the manual-point and
+// edit map interaction modes, so they don't fight over the same map gestures.
+watch(nearby.isActive, (active) => {
+  if (active) {
+    userRoutePoints.setAddMode(false);
+    setEditMode(false);
+  }
+});
+
+// Mirror the location marker onto the map; dragging it moves the search origin.
+watch(
+  [nearby.marker, mapbox.mapLoaded],
+  ([marker, loaded]) => {
+    if (!loaded)
+      return;
+    if (marker)
+      void mapbox.setLocationMarker(marker, { onDragEnd: coords => nearby.setMarker(coords) });
+    else
+      mapbox.removeLocationMarker();
+  },
+  { immediate: true },
+);
+
+// Paint the nearby suggestions as map markers — dropping any the user already
+// adopted as a stop, since those now render as their own user-place marker.
+watch(
+  [nearby.places, nearby.selectedId, nearby.addedIds, mapbox.mapLoaded],
+  ([places, selectedId, addedIds, loaded]) => {
+    if (!loaded)
+      return;
+    const adopted = new Set(addedIds);
+    void mapbox.setNearbyMarkers(
+      places.filter(place => !adopted.has(place.id)),
+      {
+        selectedId,
+        onSelect: place => nearby.select(nearby.selectedId.value === place.id ? null : place.id),
+      },
+    );
+  },
+  { immediate: true },
+);
+
+// Re-center only on an explicit "find me" action, not on every drag refresh.
+watch(nearby.recenterRequest, () => {
+  const marker = nearby.marker.value;
+  if (marker && mapbox.mapLoaded.value)
+    mapbox.flyToPoint({ lat: marker.lat, lng: marker.lng }, { zoom: 15 });
+});
+
+watch(nearby.selectedId, (id) => {
+  if (!id || !mapbox.mapLoaded.value)
+    return;
+  const place = nearby.places.value.find(item => item.id === id);
+  if (place)
+    mapbox.flyToPoint({ lat: place.coordinates.lat, lng: place.coordinates.long });
+});
 
 function onPlaceUserPoint(coordinates: { lng: number; lat: number }) {
   const base = selectedRoutePoints.value;
@@ -240,6 +300,9 @@ onBeforeUnmount(() => {
   userRoutePoints.setAddMode(false);
   setEditMode(false);
   mapbox.disableMarkerDragging();
+  nearby.deactivate();
+  mapbox.removeLocationMarker();
+  mapbox.clearNearbyMarkers();
 });
 
 watch(routeMapPoints, (points) => {
@@ -524,6 +587,9 @@ function onCloseOfflinePreview() {
     <ExploreWizard />
     <AppSideRail mode="overlay" />
     <AppMobileToolbar />
+    <!-- Nearby-places panel: standalone overlay (entry lives in the wizard), so
+         it self-positions as a bottom sheet on mobile / left panel on desktop. -->
+    <ExploreNearbyPlacesControl />
 
     <Transition name="place-sheet">
       <div

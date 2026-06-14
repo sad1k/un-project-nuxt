@@ -26,6 +26,11 @@ const {
   toggleInterest,
 } = useExploreContext();
 const aiRouteSession = useAiRouteSession();
+const nearby = useNearbyPlaces();
+
+function activateNearby() {
+  void nearby.activate();
+}
 
 const stepIndex = ref(0);
 const slideDirection = ref<"forward" | "back">("forward");
@@ -246,10 +251,45 @@ function onTouchEnd(event: TouchEvent) {
 <template>
   <div
     class="pointer-events-none absolute z-[60] transition-all"
-    :class="collapsed && showRouteSession
-      ? 'left-3 right-3 top-[104px] md:bottom-6 md:left-1/2 md:right-auto md:top-auto md:w-[min(96vw,520px)] md:-translate-x-1/2'
-      : 'bottom-[88px] left-1/2 w-[min(96vw,520px)] -translate-x-1/2 md:bottom-6'"
+    :class="[
+      collapsed && showRouteSession
+        ? 'left-3 right-3 top-[104px] md:bottom-6 md:left-1/2 md:right-auto md:top-auto md:w-[min(96vw,520px)] md:-translate-x-1/2'
+        : 'bottom-[88px] left-1/2 w-[min(96vw,520px)] -translate-x-1/2 md:bottom-6',
+      { 'max-md:hidden': nearby.isActive.value },
+    ]"
   >
+    <!-- Primary "near me" entry: an alternative to picking a city. Hidden while
+         the city dropdown is open (same space) and once the nearby panel is
+         active. -->
+    <div
+      v-if="!collapsed && currentStep === 'city' && !dropdownOpen && !nearby.isActive.value"
+      class="mb-2 flex justify-center"
+    >
+      <button
+        class="explore-nearby-entry pointer-events-auto flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold backdrop-blur-md transition"
+        data-testid="explore-nearby-entry"
+        type="button"
+        @click="activateNearby"
+      >
+        <Icon
+          :class="nearby.status.value === 'locating' ? 'animate-spin' : ''"
+          :name="nearby.status.value === 'locating'
+            ? 'tabler:loader-2'
+            : nearby.status.value === 'denied'
+              ? 'tabler:location-off'
+              : 'tabler:current-location'"
+          size="16"
+        />
+        <span>{{
+          nearby.status.value === "locating"
+            ? "Определяем…"
+            : nearby.status.value === "denied"
+              ? "Нет доступа — повторить"
+              : "Рядом со мной"
+        }}</span>
+      </button>
+    </div>
+
     <Transition name="badge" mode="out-in">
       <button
         v-if="collapsed"
@@ -469,6 +509,17 @@ function onTouchEnd(event: TouchEvent) {
 }
 .explore-wizard-badge:hover {
   background: var(--explore-surface-strong);
+}
+
+.explore-nearby-entry {
+  background: var(--explore-surface);
+  color: var(--explore-text);
+  border-color: var(--explore-border);
+  box-shadow: 0 12px 32px var(--explore-shadow);
+}
+.explore-nearby-entry:hover {
+  background: var(--explore-surface-strong);
+  color: var(--color-brand-gold);
 }
 
 .explore-wizard-shell {

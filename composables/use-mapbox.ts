@@ -1,5 +1,7 @@
+import type { ExploreNearbyPlace } from "~/lib/explore/nearby";
 import type { RouteLeg, RouteMapPoint } from "~/lib/explore/route-map";
 
+import { createNearbyMarkerElement, createNearbyPopupHTML } from "~/components/explore/nearby-marker";
 import { createPlacePopupLoadingHTML } from "~/components/explore/place-popup";
 import { createMarkerElement, createPopupHTML, updateMarkerLabel } from "~/components/explore/route-marker";
 import { fetchMapboxRoadRouteCoordinates } from "~/lib/explore/road-route";
@@ -45,6 +47,24 @@ let activeTheme: keyof typeof MAP_THEME_STYLES = "dark";
 let activeStyleMode: "theme" | "satellite" = "theme";
 let pointPlacementHandler: ((event: any) => void) | null = null;
 let markerDragHandler: ((routePointId: string, lngLat: { lng: number; lat: number }) => void) | null = null;
+
+// "Nearby places" feature: a single draggable location marker plus a set of
+// lightweight suggestion markers. They live outside the route marker map so the
+// route line and route reconciliation never weave them in.
+type NearbyMarkerEntry = {
+  marker: any;
+  element: HTMLDivElement;
+  popup: any | null;
+  detach: () => void;
+};
+const nearbyMarkerMap = new Map<string, NearbyMarkerEntry>();
+let locationMarker: any = null;
+let locationMarkerDragHandler: ((coords: { lat: number; lng: number }) => void) | null = null;
+
+type NearbyMarkerOptions = {
+  selectedId?: string | null;
+  onSelect?: (place: ExploreNearbyPlace) => void;
+};
 
 type GeoJsonFeatureCollection = {
   type: "FeatureCollection";
@@ -874,6 +894,128 @@ export function useMapbox() {
     });
   }
 
+  async function setLocationMarker(
+    coords: { lat: number; lng: number },
+    options?: { onDragEnd?: (coords: { lat: number; lng: number }) => void },
+  ) {
+    const map = mapInstance.value;
+    const mb = await getMapboxGL();
+    if (!map)
+      return;
+
+    locationMarkerDragHandler = options?.onDragEnd ?? null;
+
+    if (locationMarker) {
+      locationMarker.setLngLat([coords.lng, coords.lat]);
+      return;
+    }
+
+    // Reuse the existing "current-location" marker visual (a rounded "Вы" chip).
+    const point: RouteMapPoint = {
+      id: "current-location",
+      sourceId: "current-location",
+      markerKind: "current-location",
+      sequence: 0,
+      day: 1,
+      name: "Вы здесь",
+      lat: coords.lat,
+      lng: coords.lng,
+    };
+    const { element } = createMarkerElement(point, 0, 0);
+    const marker = new mb.Marker({ element, draggable: true })
+      .setLngLat([coords.lng, coords.lat])
+      .addTo(map);
+
+    marker.on("dragstart", () => pauseGlobeSpin(600000));
+    marker.on("dragend", () => {
+      const lngLat = marker.getLngLat();
+      locationMarkerDragHandler?.({ lat: lngLat.lat, lng: lngLat.lng });
+    });
+
+    locationMarker = marker;
+  }
+
+  function removeLocationMarker() {
+    locationMarker?.remove();
+    locationMarker = null;
+    locationMarkerDragHandler = null;
+  }
+
+  async function setNearbyMarkers(places: ExploreNearbyPlace[], options: NearbyMarkerOptions = {}) {
+    const map = mapInstance.value;
+    const mb = await getMapboxGL();
+    if (!map)
+      return;
+
+    const touch = isTouchDevice();
+    const seenIds = new Set<string>();
+
+    places.forEach((place, index) => {
+      seenIds.add(place.id);
+      // Small list, infrequent changes: rebuild each marker so selection state
+      // and ordering stay correct without bespoke reconciliation.
+      nearbyMarkerMap.get(place.id)?.detach();
+      nearbyMarkerMap.get(place.id)?.marker.remove();
+
+      const element = createNearbyMarkerElement(place, index, options.selectedId === place.id);
+      const marker = new mb.Marker({ element })
+        .setLngLat([place.coordinates.long, place.coordinates.lat])
+        .addTo(map);
+
+      const popup = touch
+        ? null
+        : new mb.Popup({
+            offset: 16,
+            className: "explore-route-popup",
+            maxWidth: "min(240px, calc(100vw - 32px))",
+            closeButton: false,
+            closeOnClick: false,
+          }).setHTML(createNearbyPopupHTML(place));
+
+      const controller = new AbortController();
+      const { signal } = controller;
+
+      element.addEventListener("click", (event) => {
+        event.stopPropagation();
+        options.onSelect?.(place);
+      }, { signal });
+
+      if (popup) {
+        element.addEventListener("mouseenter", () => {
+          popup.setLngLat([place.coordinates.long, place.coordinates.lat]).addTo(map);
+        }, { signal });
+        element.addEventListener("mouseleave", () => popup.remove(), { signal });
+      }
+
+      nearbyMarkerMap.set(place.id, {
+        marker,
+        element,
+        popup,
+        detach: () => {
+          controller.abort();
+          popup?.remove();
+        },
+      });
+    });
+
+    for (const [id, entry] of nearbyMarkerMap) {
+      if (seenIds.has(id))
+        continue;
+
+      entry.detach();
+      entry.marker.remove();
+      nearbyMarkerMap.delete(id);
+    }
+  }
+
+  function clearNearbyMarkers() {
+    for (const entry of nearbyMarkerMap.values()) {
+      entry.detach();
+      entry.marker.remove();
+    }
+    nearbyMarkerMap.clear();
+  }
+
   function destroy() {
     if (animationFrameId)
       cancelAnimationFrame(animationFrameId);
@@ -884,6 +1026,8 @@ export function useMapbox() {
     disableMarkerDragging();
     clearMarkers();
     clearRoute();
+    clearNearbyMarkers();
+    removeLocationMarker();
     mapInstance.value?.remove();
     mapInstance.value = null;
     mapLoaded.value = false;
@@ -908,6 +1052,10 @@ export function useMapbox() {
     disablePointPlacement,
     enableMarkerDragging,
     disableMarkerDragging,
+    setLocationMarker,
+    removeLocationMarker,
+    setNearbyMarkers,
+    clearNearbyMarkers,
     toggleMapStyle,
     setMapTheme,
     destroy,
