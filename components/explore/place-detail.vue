@@ -296,51 +296,101 @@ watch(gallery, (next) => {
     </div>
 
     <!-- Sticky actions -->
-    <div class="shrink-0 border-t px-4 py-3" style="border-color: var(--explore-border); background: var(--explore-popup-backdrop)">
-      <div class="flex flex-wrap gap-2">
+    <div class="shrink-0 border-t px-4 py-3 max-md:py-2" style="border-color: var(--explore-border); background: var(--explore-popup-backdrop)">
+      <!-- Mobile: small action buttons packed in a single row -->
+      <div class="flex flex-wrap items-center gap-1.5 md:hidden">
         <button
           type="button"
-          class="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg text-xs font-bold transition hover:opacity-90"
+          class="flex h-8 items-center gap-1 rounded-lg px-2.5 text-[11px] font-bold transition hover:opacity-90"
           style="background: var(--explore-text-strong); color: var(--explore-surface-strong)"
           @click="emit('save', place)"
         >
-          <Icon name="tabler:bookmark" size="15" />Сохранить
+          <Icon name="tabler:bookmark" size="13" />Сохранить
         </button>
         <button
           type="button"
-          class="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border text-xs font-bold transition hover:opacity-90"
+          class="flex h-8 items-center gap-1 rounded-lg border px-2.5 text-[11px] font-bold transition hover:opacity-90"
           style="border-color: var(--explore-border); color: var(--explore-text-muted)"
           @click="emit('directions', place)"
         >
-          <Icon name="tabler:route" size="15" />Маршрут
+          <Icon name="tabler:route" size="13" />Маршрут
         </button>
-      </div>
-      <button
-        v-if="isOnline && place.markerKind === 'generated'"
-        type="button"
-        class="mt-2 flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border text-xs font-bold transition hover:opacity-90"
-        style="border-color: var(--explore-warning-border); background: var(--explore-warning-bg); color: var(--explore-warning-text)"
-        @click="emit('story', place)"
-      >
-        <Icon name="tabler:headphones" size="15" />Слушать историю
-      </button>
-      <div v-if="editable && place.markerKind === 'generated'" class="mt-2 flex gap-2">
         <button
+          v-if="isOnline && place.markerKind === 'generated'"
           type="button"
-          class="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border text-xs font-semibold transition"
+          class="flex h-8 items-center gap-1 rounded-lg border px-2.5 text-[11px] font-bold transition hover:opacity-90"
+          style="border-color: var(--explore-warning-border); background: var(--explore-warning-bg); color: var(--explore-warning-text)"
+          @click="emit('story', place)"
+        >
+          <Icon name="tabler:headphones" size="13" />История
+        </button>
+        <button
+          v-if="editable && place.markerKind === 'generated'"
+          type="button"
+          class="flex h-8 items-center gap-1 rounded-lg border px-2.5 text-[11px] font-semibold transition"
           style="border-color: var(--explore-border); color: var(--explore-text-muted)"
           @click="emit('edit', place)"
         >
-          <Icon name="tabler:edit" size="14" />Изменить
+          <Icon name="tabler:edit" size="13" />Изменить
         </button>
         <button
+          v-if="editable && place.markerKind === 'generated'"
           type="button"
-          class="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border text-xs font-semibold transition"
+          class="flex h-8 items-center gap-1 rounded-lg border px-2.5 text-[11px] font-semibold transition"
           style="border-color: var(--explore-border); color: var(--explore-danger-text, #ef4444)"
           @click="emit('delete', place)"
         >
-          <Icon name="tabler:trash" size="14" />Удалить
+          <Icon name="tabler:trash" size="13" />Удалить
         </button>
+      </div>
+
+      <!-- Desktop: full-width labeled buttons -->
+      <div class="hidden md:block">
+        <div class="flex flex-wrap gap-2">
+          <button
+            type="button"
+            class="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg text-xs font-bold transition hover:opacity-90"
+            style="background: var(--explore-text-strong); color: var(--explore-surface-strong)"
+            @click="emit('save', place)"
+          >
+            <Icon name="tabler:bookmark" size="15" />Сохранить
+          </button>
+          <button
+            type="button"
+            class="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border text-xs font-bold transition hover:opacity-90"
+            style="border-color: var(--explore-border); color: var(--explore-text-muted)"
+            @click="emit('directions', place)"
+          >
+            <Icon name="tabler:route" size="15" />Маршрут
+          </button>
+        </div>
+        <button
+          v-if="isOnline && place.markerKind === 'generated'"
+          type="button"
+          class="mt-2 flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border text-xs font-bold transition hover:opacity-90"
+          style="border-color: var(--explore-warning-border); background: var(--explore-warning-bg); color: var(--explore-warning-text)"
+          @click="emit('story', place)"
+        >
+          <Icon name="tabler:headphones" size="15" />Слушать историю
+        </button>
+        <div v-if="editable && place.markerKind === 'generated'" class="mt-2 flex gap-2">
+          <button
+            type="button"
+            class="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border text-xs font-semibold transition"
+            style="border-color: var(--explore-border); color: var(--explore-text-muted)"
+            @click="emit('edit', place)"
+          >
+            <Icon name="tabler:edit" size="14" />Изменить
+          </button>
+          <button
+            type="button"
+            class="flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border text-xs font-semibold transition"
+            style="border-color: var(--explore-border); color: var(--explore-danger-text, #ef4444)"
+            @click="emit('delete', place)"
+          >
+            <Icon name="tabler:trash" size="14" />Удалить
+          </button>
+        </div>
       </div>
     </div>
   </div>
