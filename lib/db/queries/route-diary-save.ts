@@ -193,15 +193,8 @@ function createLocationLogData(variant: SelectAiRouteVariant, point: SelectAiRou
   };
 }
 
-function createRoutePointDescription(variant: SelectAiRouteVariant, point: SelectAiRoutePoint) {
-  return [
-    variant.title ? `Route: ${variant.title}` : "AI generated route stop.",
-    variant.summary,
-    point.rationale,
-  ]
-    .filter(Boolean)
-    .join("\n\n")
-    .slice(0, 1000);
+function createRoutePointDescription(_variant: SelectAiRouteVariant, point: SelectAiRoutePoint) {
+  return (point.rationale ?? "").trim().slice(0, 1000);
 }
 
 function getRoutePointStartTime(variant: SelectAiRouteVariant, point: SelectAiRoutePoint) {
