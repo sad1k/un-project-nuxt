@@ -170,7 +170,7 @@ try {
     swSrc: join(ROOT, "public/wanderlog-sw.js"),
     swDest: join(OUT_PUBLIC, "wanderlog-sw.js"),
     globDirectory: OUT_PUBLIC,
-    globPatterns: ["**/*.{js,css,html,svg,png,ico,webmanifest}"],
+    globPatterns: ["**/*.{js,css,html,svg,png,ico,webmanifest,pbf}"],
     globIgnores: ["**/sw.js", "**/wanderlog-sw.js", "**/wanderlog-sw.mjs"],
     maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
   });

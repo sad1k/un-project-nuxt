@@ -135,7 +135,8 @@ export default defineNuxtConfig({
     filename: "wanderlog-sw.js",
     injectManifest: {
       globPatterns: [
-        "**/*.{js,css,html,svg,png,ico,webmanifest}",
+        // `pbf` covers the offline label glyph ranges under public/fonts/.
+        "**/*.{js,css,html,svg,png,ico,webmanifest,pbf}",
       ],
       globIgnores: [
         "**/sw.js",

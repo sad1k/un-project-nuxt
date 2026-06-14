@@ -27,7 +27,8 @@ self.addEventListener("install", (event) => {
 registerRoute(
   ({ url }) => url.pathname.startsWith("/_nuxt/")
     || url.pathname.startsWith("/icons/")
-    || url.pathname.startsWith("/screenshots/"),
+    || url.pathname.startsWith("/screenshots/")
+    || url.pathname.startsWith("/fonts/"),
   new StaleWhileRevalidate({ cacheName: "wl-static-v1" }),
 );
 
