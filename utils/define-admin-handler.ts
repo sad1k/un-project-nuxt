@@ -29,7 +29,7 @@ export default function defineAdminHandler<T>(handler: (event: AdminEvent) => T)
   });
 }
 
-async function hasAdminRole(currentUser: UserWithId) {
+export async function hasAdminRole(currentUser: UserWithId) {
   if (currentUser.role === "admin")
     return true;
 

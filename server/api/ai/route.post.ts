@@ -8,6 +8,7 @@ import {
   createAiRouteVariant,
   findAiRouteSessionByIdForUser,
 } from "~/lib/db/queries/ai-route";
+import { hasAdminRole } from "~/utils/define-admin-handler";
 import defineAuthenticatedHandler from "~/utils/define-authenticated-handler";
 
 const ROUTE_GENERATION_DAILY_LIMIT = 20;
@@ -17,16 +18,19 @@ export default defineAuthenticatedHandler(async (event) => {
   const body = await readValidatedBody(event, RouteGenerationRequestSchema.parse);
   const userId = event.context.user.id;
 
-  const recentCount = await countAiRouteVariantsForUserSince(
-    userId,
-    Date.now() - ROUTE_GENERATION_WINDOW_MS,
-  );
+  // Admins are exempt from the per-user daily generation cap.
+  if (!await hasAdminRole(event.context.user)) {
+    const recentCount = await countAiRouteVariantsForUserSince(
+      userId,
+      Date.now() - ROUTE_GENERATION_WINDOW_MS,
+    );
 
-  if (recentCount >= ROUTE_GENERATION_DAILY_LIMIT) {
-    throw createError({
-      statusCode: 429,
-      statusMessage: `Превышен лимит генераций маршрута: ${ROUTE_GENERATION_DAILY_LIMIT} запросов в сутки`,
-    });
+    if (recentCount >= ROUTE_GENERATION_DAILY_LIMIT) {
+      throw createError({
+        statusCode: 429,
+        statusMessage: `Превышен лимит генераций маршрута: ${ROUTE_GENERATION_DAILY_LIMIT} запросов в сутки`,
+      });
+    }
   }
 
   const selectedContext = await buildSelectedRouteContext(userId, body.context);
