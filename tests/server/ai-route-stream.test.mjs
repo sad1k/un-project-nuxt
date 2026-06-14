@@ -119,6 +119,11 @@ test("OpenAI-compatible client can use Mistral conversations defaults", () => {
   assert.match(providerSource, /provider_unavailable/);
 });
 
+test("runner normalizes estimatedStart to a trimmed string and drops ambiguous non-strings", () => {
+  assert.match(runnerSource, /normalizeProviderEstimatedStart/);
+  assert.match(runnerSource, /estimatedStart: normalizeProviderEstimatedStart/);
+});
+
 test("provider parser handles multiple data events and done markers in source", () => {
   assert.match(providerSource, /split\(\/\\r\?\\n\\r\?\\n\/\)/);
   assert.match(providerSource, /\[DONE\]/);

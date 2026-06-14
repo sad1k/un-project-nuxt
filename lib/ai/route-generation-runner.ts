@@ -789,6 +789,7 @@ function normalizeProviderRoutePoint(point: Record<string, unknown>) {
       point.estimatedDurationMinutes ?? point.durationMinutes ?? point.visitDurationMinutes,
     ),
     estimatedPriceLevel,
+    estimatedStart: normalizeProviderEstimatedStart(point.estimatedStart ?? point.startTime ?? point.arrival),
     id: normalizeProviderPointId(point),
     name: getProviderPointName(point),
     priceConfidence: estimatedPriceLevel && estimatedPriceLevel !== "unknown"
@@ -885,6 +886,17 @@ function normalizeProviderConfidence(input: unknown) {
     return input;
 
   return "medium";
+}
+
+function normalizeProviderEstimatedStart(input: unknown) {
+  if (typeof input === "string" && input.trim())
+    return input.trim().slice(0, 40);
+
+  // A non-string estimatedStart (e.g. a model emitting a number) is ambiguous —
+  // an offset, minutes-since-midnight and an HHMM clock value are indistinguishable —
+  // so we drop it rather than fabricate a wrong time that would flow into saved diary
+  // timestamps. The field is optional, so an omitted time is the honest result.
+  return undefined;
 }
 
 function normalizeProviderNumber(input: unknown) {
