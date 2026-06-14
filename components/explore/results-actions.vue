@@ -49,6 +49,11 @@ const diaryToneClasses = computed(() => {
 
 const openPopover = ref<PopoverKey | null>(null);
 const shareStatus = ref<"idle" | "copied" | "error">("idle");
+
+// Hide the route-step carousel while one of these popovers is open as a mobile
+// bottom sheet, so the two don't overlap in the lower-screen band.
+const { setPanelOpen } = useExplorePanelState();
+watch(openPopover, value => setPanelOpen("results", Boolean(value)));
 const shareUrl = computed(() => {
   if (!aiRouteSession.sessionId.value)
     return "";
@@ -116,6 +121,7 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+  setPanelOpen("results", false);
   document.removeEventListener("click", onDocumentClick);
   document.removeEventListener("keydown", onDocumentKey);
 });

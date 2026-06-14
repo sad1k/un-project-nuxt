@@ -17,6 +17,9 @@ const emit = defineEmits<{
 
 const aiRouteSession = useAiRouteSession();
 const placeIntelligence = usePlaceIntelligence();
+const { isAddMode } = useUserRoutePoints();
+const { isEditMode } = useRouteEditMode();
+const { anyPanelOpen } = useExplorePanelState();
 const selectedDay = useState<number | null>("explore-selected-route-day", () => null);
 const selectedStoryRoutePointId = useState<string | null>("explore-selected-story-route-point-id", () => null);
 
@@ -111,7 +114,10 @@ const showCarousel = computed(() => Boolean(
   aiRouteSession.sessionId.value
   || aiRouteSession.isGenerating.value
   || aiRouteSession.activePoints.value.length,
-));
+)
+// A tool panel / action popover open as a bottom sheet shares the lower band
+// with the carousel — hide the cards so the two surfaces don't collide.
+&& !isAddMode.value && !isEditMode.value && !anyPanelOpen.value);
 
 function heroImageFor(point: RouteMapPoint): string | null {
   if (point.markerKind !== "generated")

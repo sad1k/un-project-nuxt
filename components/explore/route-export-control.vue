@@ -14,6 +14,11 @@ const props = defineProps<{
 const open = ref(false);
 const root = ref<HTMLElement | null>(null);
 
+// Tell the route-step carousel to step aside while this bottom-sheet menu is open
+// (mobile), so the menu doesn't collide with the route cards.
+const { setPanelOpen } = useExplorePanelState();
+watch(open, value => setPanelOpen("export", value));
+
 const visible = computed(() => props.routePoints.length >= 2);
 
 const providers: Array<{ id: RouteExportProvider; label: string; icon: string }> = [
@@ -49,6 +54,7 @@ onMounted(() => {
   window.addEventListener("keydown", onKey);
 });
 onBeforeUnmount(() => {
+  setPanelOpen("export", false);
   if (typeof window === "undefined")
     return;
   window.removeEventListener("click", onDocClick);
