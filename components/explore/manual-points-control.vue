@@ -101,7 +101,7 @@ async function completeWithAssistant() {
     <Transition name="manual-panel">
       <div
         v-if="isAddMode"
-        class="explore-popover w-72 max-w-[calc(100vw-1.5rem)] rounded-xl border p-3"
+        class="explore-popover w-72 max-w-[calc(100vw-1.5rem)] rounded-xl border p-3 max-md:fixed max-md:inset-x-3 max-md:bottom-[88px] max-md:left-3 max-md:right-3 max-md:top-auto max-md:z-50 max-md:max-h-[70vh] max-md:w-auto max-md:max-w-none max-md:overflow-y-auto"
       >
         <div class="flex items-center justify-between gap-2">
           <span class="flex items-center gap-2 text-sm font-semibold">
@@ -216,7 +216,8 @@ async function completeWithAssistant() {
 
     <button
       :aria-pressed="isAddMode"
-      class="explore-control flex h-10 items-center gap-2 rounded-xl border px-3 shadow-lg backdrop-blur-xl transition"
+      :aria-label="isAddMode ? 'Добавление точек' : 'Свои точки'"
+      class="explore-control flex h-10 items-center gap-2 rounded-xl border px-3 shadow-lg backdrop-blur-xl transition max-md:relative max-md:h-11 max-md:w-11 max-md:justify-center max-md:gap-0 max-md:px-0"
       :class="isAddMode ? 'text-brand-gold' : 'hover:text-brand-gold'"
       :style="isAddMode ? 'border-color: color-mix(in srgb, var(--color-brand-gold) 45%, transparent)' : ''"
       data-testid="explore-manual-points-toggle"
@@ -224,10 +225,10 @@ async function completeWithAssistant() {
       @click="handleToggleAddMode"
     >
       <Icon name="tabler:map-pin-plus" size="16" />
-      <span class="text-xs font-semibold">{{ isAddMode ? "Добавление точек" : "Свои точки" }}</span>
+      <span class="text-xs font-semibold max-md:hidden">{{ isAddMode ? "Добавление точек" : "Свои точки" }}</span>
       <span
         v-if="count"
-        class="flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white"
+        class="flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white max-md:absolute max-md:-right-1.5 max-md:-top-1.5"
         style="background: var(--explore-marker-user)"
       >{{ count }}</span>
     </button>

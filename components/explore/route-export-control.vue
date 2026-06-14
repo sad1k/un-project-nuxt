@@ -64,16 +64,16 @@ onBeforeUnmount(() => {
   >
     <button
       type="button"
-      class="explore-control inline-flex items-center gap-2.5 rounded-2xl border px-3.5 py-2 shadow-lg backdrop-blur-xl transition-all hover:text-brand-gold"
+      class="explore-control inline-flex items-center gap-2.5 rounded-2xl border px-3.5 py-2 shadow-lg backdrop-blur-xl transition-all hover:text-brand-gold max-md:h-11 max-md:w-11 max-md:justify-center max-md:gap-0 max-md:rounded-xl max-md:px-0 max-md:py-0"
       :aria-expanded="open"
       aria-haspopup="menu"
       aria-label="Открыть маршрут во внешних картах"
       @click="open = !open"
     >
-      <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--explore-surface-soft)] text-[var(--explore-accent-strong)]">
+      <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--explore-surface-soft)] text-[var(--explore-accent-strong)] max-md:h-auto max-md:w-auto max-md:rounded-none max-md:bg-transparent">
         <Icon name="tabler:external-link" size="14" />
       </span>
-      <span class="flex flex-col items-start leading-tight">
+      <span class="flex flex-col items-start leading-tight max-md:hidden">
         <span class="text-xs font-bold text-[var(--explore-text)]">Открыть в картах</span>
         <span class="font-mono text-[10px] text-[var(--explore-text-soft)]">Google · Яндекс</span>
       </span>
@@ -83,7 +83,7 @@ onBeforeUnmount(() => {
       <div
         v-if="open"
         role="menu"
-        class="explore-panel absolute bottom-[calc(100%+8px)] left-0 z-50 w-56 overflow-hidden rounded-xl border p-1 shadow-xl"
+        class="explore-panel absolute z-50 overflow-hidden rounded-xl border p-1 shadow-xl max-md:fixed max-md:inset-x-3 max-md:bottom-[88px] max-md:left-3 max-md:right-3 max-md:top-auto max-md:w-auto md:bottom-[calc(100%+8px)] md:left-0 md:w-56"
       >
         <button
           v-for="provider in providers"

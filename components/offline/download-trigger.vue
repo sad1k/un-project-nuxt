@@ -94,18 +94,18 @@ function onClick() {
     <button
       v-if="visible"
       type="button"
-      class="explore-control pointer-events-auto inline-flex items-center gap-2.5 rounded-2xl border px-3.5 py-2 shadow-lg backdrop-blur-xl transition-all hover:text-brand-gold"
+      class="explore-control pointer-events-auto inline-flex items-center gap-2.5 rounded-2xl border px-3.5 py-2 shadow-lg backdrop-blur-xl transition-all hover:text-brand-gold max-md:h-11 max-md:w-11 max-md:justify-center max-md:gap-0 max-md:rounded-xl max-md:px-0 max-md:py-0"
       :aria-label="ariaLabel"
       :title="titleText"
       @click="onClick"
     >
       <span
-        class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-colors"
+        class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-colors max-md:h-auto max-md:w-auto max-md:rounded-none max-md:bg-transparent"
         :class="iconWrapperClass"
       >
         <Icon :name="iconName" size="14" />
       </span>
-      <span class="flex flex-col items-start leading-tight">
+      <span class="flex flex-col items-start leading-tight max-md:hidden">
         <span class="text-xs font-bold text-[var(--explore-text)]">{{ primaryLabel }}</span>
         <span class="font-mono text-[10px] text-[var(--explore-text-soft)]">{{ secondaryLabel }}</span>
       </span>

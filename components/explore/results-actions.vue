@@ -156,12 +156,12 @@ async function share() {
 <template>
   <div
     v-if="showRouteSession"
-    class="pointer-events-auto flex items-center gap-2"
+    class="pointer-events-auto flex items-center gap-2 max-md:flex-wrap max-md:justify-end max-md:gap-1.5"
     data-results-actions
   >
     <span
       v-if="diaryLabel"
-      class="flex h-9 items-center gap-1.5 rounded-full border px-2.5 text-xs font-semibold backdrop-blur-md transition"
+      class="flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-2.5 text-xs font-semibold backdrop-blur-md transition max-md:h-11"
       :class="diaryToneClasses"
     >
       <Icon
@@ -174,7 +174,7 @@ async function share() {
     <div class="relative">
       <button
         aria-label="Weather"
-        class="explore-results-button flex h-9 w-9 items-center justify-center rounded-full border backdrop-blur-md transition"
+        class="explore-results-button flex h-9 w-9 shrink-0 items-center justify-center rounded-full border backdrop-blur-md transition max-md:h-11 max-md:w-11"
         :class="openPopover === 'weather' ? 'explore-results-button-active' : ''"
         type="button"
         @click="toggle('weather')"
@@ -198,7 +198,7 @@ async function share() {
     <div class="relative">
       <button
         aria-label="History"
-        class="explore-results-button flex h-9 w-9 items-center justify-center rounded-full border backdrop-blur-md transition"
+        class="explore-results-button flex h-9 w-9 shrink-0 items-center justify-center rounded-full border backdrop-blur-md transition max-md:h-11 max-md:w-11"
         :class="openPopover === 'history' ? 'explore-results-button-active' : ''"
         type="button"
         @click="toggle('history')"
@@ -218,7 +218,7 @@ async function share() {
     <div class="relative">
       <button
         aria-label="Follow-up"
-        class="explore-results-button flex h-9 w-9 items-center justify-center rounded-full border backdrop-blur-md transition"
+        class="explore-results-button flex h-9 w-9 shrink-0 items-center justify-center rounded-full border backdrop-blur-md transition max-md:h-11 max-md:w-11"
         :class="openPopover === 'followUp' ? 'explore-results-button-active' : ''"
         type="button"
         @click="toggle('followUp')"
@@ -238,7 +238,7 @@ async function share() {
     <div class="relative">
       <button
         aria-label="Share"
-        class="explore-results-button flex h-9 w-9 items-center justify-center rounded-full border backdrop-blur-md transition"
+        class="explore-results-button flex h-9 w-9 shrink-0 items-center justify-center rounded-full border backdrop-blur-md transition max-md:h-11 max-md:w-11"
         :class="openPopover === 'share' ? 'explore-results-button-active' : ''"
         type="button"
         @click="toggle('share')"
@@ -284,7 +284,7 @@ async function share() {
     <div class="relative">
       <button
         aria-label="Удалить маршрут"
-        class="explore-results-button flex h-9 w-9 items-center justify-center rounded-full border backdrop-blur-md transition"
+        class="explore-results-button flex h-9 w-9 shrink-0 items-center justify-center rounded-full border backdrop-blur-md transition max-md:h-11 max-md:w-11"
         :class="openPopover === 'reset' ? 'explore-results-button-danger' : ''"
         type="button"
         @click="toggle('reset')"

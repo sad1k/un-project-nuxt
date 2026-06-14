@@ -37,7 +37,7 @@ async function executeClear() {
     <Transition name="edit-panel">
       <div
         v-if="isEditMode"
-        class="explore-popover w-72 max-w-[calc(100vw-1.5rem)] rounded-xl border p-3"
+        class="explore-popover w-72 max-w-[calc(100vw-1.5rem)] rounded-xl border p-3 max-md:fixed max-md:inset-x-3 max-md:bottom-[88px] max-md:left-3 max-md:right-3 max-md:top-auto max-md:z-50 max-md:w-auto max-md:max-w-none"
       >
         <div class="flex items-center justify-between gap-2">
           <span class="flex items-center gap-2 text-sm font-semibold">
@@ -112,7 +112,8 @@ async function executeClear() {
 
     <button
       :aria-pressed="isEditMode"
-      class="explore-control flex h-10 items-center gap-2 rounded-xl border px-3 shadow-lg backdrop-blur-xl transition"
+      :aria-label="isEditMode ? 'Редактирование маршрута' : 'Редактировать маршрут'"
+      class="explore-control flex h-10 items-center gap-2 rounded-xl border px-3 shadow-lg backdrop-blur-xl transition max-md:relative max-md:h-11 max-md:w-11 max-md:justify-center max-md:gap-0 max-md:px-0"
       :class="isEditMode ? 'text-brand-gold' : 'hover:text-brand-gold'"
       :style="isEditMode ? 'border-color: color-mix(in srgb, var(--color-brand-gold) 45%, transparent)' : ''"
       :disabled="isGenerating"
@@ -120,10 +121,10 @@ async function executeClear() {
       @click="onToggle"
     >
       <Icon name="tabler:pencil" size="16" />
-      <span class="text-xs font-semibold">{{ isEditMode ? "Редактирование…" : "Редактировать маршрут" }}</span>
+      <span class="text-xs font-semibold max-md:hidden">{{ isEditMode ? "Редактирование…" : "Редактировать маршрут" }}</span>
       <span
         v-if="count"
-        class="flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white"
+        class="flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white max-md:absolute max-md:-right-1.5 max-md:-top-1.5"
         style="background: var(--explore-marker-ai)"
       >{{ count }}</span>
     </button>

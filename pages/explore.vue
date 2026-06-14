@@ -509,7 +509,7 @@ function onCloseOfflinePreview() {
       <AppUserMenu />
     </div>
 
-    <div class="absolute right-4 top-16 z-30 flex items-center gap-2 md:top-20">
+    <div class="absolute right-4 top-16 z-30 flex items-center gap-2 md:top-20 max-md:flex-wrap max-md:justify-end max-md:gap-1.5">
       <AppRouteGenerationIndicator floating />
       <ExploreResultsActions />
     </div>
@@ -573,7 +573,7 @@ function onCloseOfflinePreview() {
       </button>
     </div>
 
-    <div class="pointer-events-none absolute bottom-6 left-[80px] z-30 flex flex-col gap-2 max-md:bottom-[96px] max-md:left-3">
+    <div class="pointer-events-none absolute bottom-6 left-[80px] z-30 flex flex-col gap-2 max-md:bottom-auto max-md:left-3 max-md:top-16 max-md:gap-2.5">
       <ExploreManualPointsControl />
       <ExploreRouteEditControl />
       <ExploreRouteExportControl :route-points="selectedRoutePoints" />
@@ -595,7 +595,7 @@ function onCloseOfflinePreview() {
     <Transition name="place-sheet">
       <div
         v-if="editingPoint"
-        class="explore-popover pointer-events-auto absolute bottom-6 left-[80px] z-40 w-72 max-w-[calc(100vw-1.5rem)] rounded-xl border p-3 max-md:bottom-[96px] max-md:left-3"
+        class="explore-popover pointer-events-auto absolute bottom-6 left-[80px] z-40 w-72 max-w-[calc(100vw-1.5rem)] rounded-xl border p-3 max-md:fixed max-md:inset-x-3 max-md:bottom-[88px] max-md:left-3 max-md:right-3 max-md:top-auto max-md:z-50 max-md:w-auto max-md:max-w-none"
       >
         <div class="mb-2 flex items-center justify-between">
           <span class="text-sm font-semibold">{{ editingPoint.name }}</span>

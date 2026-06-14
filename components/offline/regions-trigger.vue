@@ -17,14 +17,14 @@ const visible = computed(() => offlineRegions.isLoaded.value && count.value > 0)
     <button
       v-if="visible"
       type="button"
-      class="explore-control pointer-events-auto inline-flex items-center gap-2.5 rounded-2xl border px-3.5 py-2 shadow-lg backdrop-blur-xl transition-all hover:text-brand-gold"
+      class="explore-control pointer-events-auto inline-flex items-center gap-2.5 rounded-2xl border px-3.5 py-2 shadow-lg backdrop-blur-xl transition-all hover:text-brand-gold max-md:h-11 max-md:w-11 max-md:justify-center max-md:gap-0 max-md:rounded-xl max-md:px-0 max-md:py-0"
       :aria-label="`Открыть сохранённые офлайн-регионы (${count})`"
       @click="$emit('open')"
     >
-      <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--explore-success-bg)] text-[var(--explore-success-text)]">
+      <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--explore-success-bg)] text-[var(--explore-success-text)] max-md:h-auto max-md:w-auto max-md:rounded-none max-md:bg-transparent">
         <Icon name="tabler:cloud-check" size="14" />
       </span>
-      <span class="flex flex-col items-start leading-tight">
+      <span class="flex flex-col items-start leading-tight max-md:hidden">
         <span class="text-xs font-bold text-[var(--explore-text)]">
           Офлайн-регионы
         </span>

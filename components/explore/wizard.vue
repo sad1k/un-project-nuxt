@@ -290,7 +290,7 @@ function onTouchEnd(event: TouchEvent) {
     class="pointer-events-none absolute z-[60] transition-all"
     :class="[
       collapsed && showRouteSession
-        ? 'left-3 right-3 top-[104px] md:bottom-6 md:left-1/2 md:right-auto md:top-auto md:w-[min(96vw,520px)] md:-translate-x-1/2'
+        ? 'left-16 right-3 top-[104px] md:bottom-6 md:left-1/2 md:right-auto md:top-auto md:w-[min(96vw,520px)] md:-translate-x-1/2'
         : 'bottom-[88px] left-1/2 w-[min(96vw,520px)] -translate-x-1/2 md:bottom-6',
       { 'max-md:hidden': nearby.isActive.value },
     ]"
