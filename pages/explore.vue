@@ -573,7 +573,7 @@ function onCloseOfflinePreview() {
       </button>
     </div>
 
-    <div class="pointer-events-none absolute bottom-6 left-[80px] z-30 flex flex-col gap-2 max-md:bottom-auto max-md:left-3 max-md:top-16 max-md:gap-2.5">
+    <div class="pointer-events-none absolute bottom-6 left-[80px] z-30 flex flex-col gap-2 max-md:bottom-auto max-md:left-3 max-md:top-16 max-md:z-40 max-md:gap-2.5">
       <ExploreManualPointsControl />
       <ExploreRouteEditControl />
       <ExploreRouteExportControl :route-points="selectedRoutePoints" />
