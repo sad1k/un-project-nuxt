@@ -142,6 +142,26 @@ export default defineNuxtConfig({
         "**/sw.js",
         "**/wanderlog-sw.js",
       ],
+      manifestTransforms: [
+        // The prerendered `/offline` route is emitted as BOTH `offline.html`
+        // and `offline/index.html`. Workbox collapses both to the same
+        // `/offline` cache key at runtime, throwing
+        // `add-to-cache-list-conflicting-entries` and failing the service
+        // worker install (status: redundant). Dedupe by the NORMALIZED route
+        // URL (strip `index.html` / `.html` / trailing slash) — comparing raw
+        // urls is not enough because the two collide only after normalization.
+        (entries) => {
+          const seen = new Set<string>();
+          const manifest = entries.filter((entry) => {
+            const key = entry.url.replace(/(?:index)?\.html$/, "").replace(/\/$/, "");
+            if (seen.has(key))
+              return false;
+            seen.add(key);
+            return true;
+          });
+          return { manifest, warnings: [] };
+        },
+      ],
       maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
     },
     manifest: false,
