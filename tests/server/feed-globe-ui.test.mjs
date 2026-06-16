@@ -81,6 +81,15 @@ test("feed globe localizes Mapbox labels to Russian like the explore globe", asy
   assert.match(localizeSource, /name_\$\{MAP_LABEL_LANGUAGE\}/);
 });
 
+test("feed globe throttles backface culling instead of running it every spin frame", () => {
+  // The spin loop and continuous camera events must go through the throttled
+  // scheduler, not call the O(markers) visibility sync directly every frame.
+  assert.match(globeComponentSource, /function scheduleMarkerVisibility/);
+  assert.match(globeComponentSource, /map\.setCenter\(center\);[\t\v\f\r \xA0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000\uFEFF]*\n\s*scheduleMarkerVisibility\(\)/);
+  assert.match(globeComponentSource, /map\.on\("move", scheduleMarkerVisibility\)/);
+  assert.match(globeComponentSource, /map\.on\("moveend", updateMarkerVisibility\)/);
+});
+
 test("feed globe marker animation does not override Mapbox coordinate transforms", () => {
   assert.match(globeComponentSource, /:global\(\.feed-globe-point\)/);
   assert.match(globeComponentSource, /@keyframes feed-globe-arrive/);

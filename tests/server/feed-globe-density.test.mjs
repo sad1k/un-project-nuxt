@@ -33,6 +33,15 @@ test("density helper emits overflow indicators with hidden counts", () => {
   assert.match(densitySource, /long:\s*anchor\.long/);
 });
 
+test("density helper applies a global visible ceiling and folds excess into overflow", () => {
+  assert.match(densitySource, /DEFAULT_MAX_VISIBLE_TOTAL/);
+  assert.match(densitySource, /maxVisible = options\.maxVisible \?\? DEFAULT_MAX_VISIBLE_TOTAL/);
+  assert.match(densitySource, /orderedVisible\.slice\(0,\s*maxVisible\)/);
+  assert.match(densitySource, /orderedVisible\.slice\(maxVisible\)/);
+  // Demoted points still register as hidden/fading and bump their bucket's count.
+  assert.match(densitySource, /existing\.hiddenCount \+= 1/);
+});
+
 test("bucket key groups points by rounded local radius", () => {
   assert.match(densitySource, /export function getFeedGlobeBucketKey/);
   assert.match(densitySource, /Math\.floor\(\(point\.lat \+ 90\) \/ bucketSizeDegrees\)/);

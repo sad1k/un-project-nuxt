@@ -90,10 +90,13 @@ onMounted(async () => {
     await initMap();
 });
 
+// `applyDensity` replaces these refs with fresh arrays, so a shallow watch fires
+// correctly — a deep watch would re-traverse the whole point list on every live
+// SSE tick for no benefit.
 watch([globe.visiblePoints, globe.overflowIndicators], () => {
   renderMarkers();
   focusMapOnPoints();
-}, { deep: true });
+});
 
 watch(mapStyle, () => {
   if (!map)
@@ -187,9 +190,12 @@ async function initMap() {
       map.on("wheel", pauseSpin);
       map.on("click", closeSelectedPhotoPopup);
     }
-    map.on("move", updateMarkerVisibility);
-    map.on("rotate", updateMarkerVisibility);
-    map.on("zoom", updateMarkerVisibility);
+    // Continuous camera events (every spin frame, every drag tick) only need
+    // throttled backface culling; a final settle runs on moveend.
+    map.on("move", scheduleMarkerVisibility);
+    map.on("rotate", scheduleMarkerVisibility);
+    map.on("zoom", scheduleMarkerVisibility);
+    map.on("moveend", updateMarkerVisibility);
 
     resizeObserver = new ResizeObserver(() => {
       resizeMap();
@@ -399,7 +405,7 @@ function startSpin() {
     const center = map.getCenter();
     center.lng += props.spinSpeed;
     map.setCenter(center);
-    updateMarkerVisibility();
+    scheduleMarkerVisibility();
     spinFrame = requestAnimationFrame(spin);
   };
   spinFrame = requestAnimationFrame(spin);
@@ -450,6 +456,19 @@ function escapeHtml(value: string) {
     .replaceAll(">", "&gt;")
     .replaceAll("\"", "&quot;")
     .replaceAll("'", "&#039;");
+}
+
+// Backface culling iterates every marker, so running it on each spin frame /
+// drag tick is O(markers) work 60×/sec. ~90ms cadence is visually seamless
+// (the globe drifts < 0.02° in that window) while cutting the cost ~6×.
+let lastVisibilitySync = 0;
+function scheduleMarkerVisibility() {
+  const now = performance.now();
+  if (now - lastVisibilitySync < 90)
+    return;
+
+  lastVisibilitySync = now;
+  updateMarkerVisibility();
 }
 
 function updateMarkerVisibility() {
