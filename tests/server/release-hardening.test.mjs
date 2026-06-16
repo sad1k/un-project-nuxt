@@ -38,7 +38,6 @@ test("public runtime config does not expose server-only provider credentials", (
   for (const secretName of [
     "OPENAI_API_KEY",
     "CEREBRAS_API_KEY",
-    "MISTRAL_API_KEY",
     "OPENROUTER_API_KEY",
     "TURSO_AUTH_TOKEN",
     "S3_SECRET_KEY",

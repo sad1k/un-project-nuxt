@@ -4,7 +4,7 @@
   "private": true,
   "packageManager": "pnpm@10.24.0+sha512.01ff8ae71b4419903b65c60fb2dc9d34cf8bb6e06d03bde112ef38f7a34d6904c424ba66bea5cdcf12890230bf39f9580473140ed9c946fef328b6e5238a345a",
   "scripts": {
-    "build": "NODE_OPTIONS=--max-old-space-size=8192 nuxt build",
+    "build": "nuxt build",
     "postbuild": "node scripts/fix-output-public.mjs",
     "dev": "nuxt dev",
     "generate": "nuxt generate",
@@ -40,7 +40,6 @@
     "@iconify-json/tabler": "^1.2.35",
     "@indoorequal/vue-maplibre-gl": "^8.4.0",
     "@libsql/client": "^0.15.7",
-    "@mistralai/mistralai": "^2.2.1",
     "@nuxt/eslint": "1.4.1",
     "@nuxt/icon": "1.13.0",
     "@nuxtjs/color-mode": "3.5.2",

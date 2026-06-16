@@ -53,7 +53,7 @@ const EnvSchema = z.object({
   // by default so the budget stays for photos; set to true to allow it when the free providers
   // (2GIS/Google) return no review text. Unset/empty -> false.
   TRIPADVISOR_REVIEWS_ENABLED: EnvBooleanSchema,
-  AI_ROUTE_PROVIDER: z.enum(["openai_compatible", "cerebras", "mistral", "openrouter", "aihubmix"]).default("openai_compatible"),
+  AI_ROUTE_PROVIDER: z.enum(["openai_compatible", "cerebras", "openrouter", "aihubmix"]).default("openai_compatible"),
   OPENAI_API_KEY: z.string().optional(),
   OPENAI_BASE_URL: z.string().url().optional(),
   OPENAI_ROUTE_API: z.enum(["responses", "chat_completions"]).default("responses"),
@@ -61,8 +61,6 @@ const EnvSchema = z.object({
   OPENAI_TTS_MODEL: z.string().default("gpt-4o-mini-tts"),
   OPENAI_TTS_VOICE: z.string().default("coral"),
   CEREBRAS_API_KEY: z.string().optional(),
-  MISTRAL_API_KEY: z.string().optional(),
-  MISTRAL_ROUTE_MODEL: z.string().optional(),
   OPENROUTER_API_KEY: z.string().optional(),
   OPENROUTER_ROUTE_MODEL: z.string().optional(),
   OPENROUTER_PROVIDER_ORDER: z.string().optional(),

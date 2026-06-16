@@ -11,14 +11,10 @@ export type ProviderStreamEvent = Record<string, unknown>;
 const DEFAULT_OPENAI_BASE_URL = "https://api.openai.com/v1";
 const DEFAULT_CEREBRAS_BASE_URL = "https://api.cerebras.ai/v1";
 const DEFAULT_CEREBRAS_ROUTE_MODEL = "llama3.1-8b";
-const DEFAULT_MISTRAL_BASE_URL = "https://api.mistral.ai/v1";
-const DEFAULT_MISTRAL_ROUTE_MODEL = "mistral-medium-latest";
 const DEFAULT_OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 const DEFAULT_OPENROUTER_ROUTE_MODEL = "qwen/qwen3.5-flash-02-23";
 const DEFAULT_AIHUBMIX_BASE_URL = "https://aihubmix.com/v1";
 const DEFAULT_AIHUBMIX_ROUTE_MODEL = "gpt-4o-mini";
-const MISTRAL_ROUTE_MAX_TOKENS = 8192;
-const MISTRAL_ROUTE_TIMEOUT_MS = 120_000;
 const PROVIDER_USER_AGENT = "WanderLog/1.0";
 const OPENROUTER_APP_TITLE = "WanderLog";
 
@@ -45,13 +41,6 @@ export async function* fetchOpenAiCompatibleRouteStream(
   if (!apiKey)
     throw new Error(getMissingApiKeyCode());
 
-  if (env.AI_ROUTE_PROVIDER === "mistral") {
-    const providerEvent = await fetchMistralConversationRoute(input, apiKey);
-    if (providerEvent)
-      yield providerEvent;
-    return;
-  }
-
   const response = await fetch(`${getOpenAiBaseUrl()}/${getOpenAiRoutePath()}`, {
     method: "POST",
     headers: {
@@ -61,7 +50,7 @@ export async function* fetchOpenAiCompatibleRouteStream(
       "User-Agent": PROVIDER_USER_AGENT,
       ...getProviderRequestHeaders(),
     } as HeadersInit,
-    body: JSON.stringify(createProviderRequestBody(input, shouldStreamProviderResponse())),
+    body: JSON.stringify(createProviderRequestBody(input, true)),
   });
 
   if (!response.ok || !response.body) {
@@ -130,7 +119,6 @@ export function sanitizeProviderError(status: number | string) {
     status === 401
     || status === "missing_openai_api_key"
     || status === "missing_cerebras_api_key"
-    || status === "missing_mistral_api_key"
     || status === "missing_openrouter_api_key"
     || status === "missing_aihubmix_api_key"
     || status === "provider_auth_failed"
@@ -177,7 +165,7 @@ export function extractProviderTextDelta(input: Record<string, unknown>) {
   if (typeof input.output_text === "string")
     return input.output_text;
 
-  return extractMistralConversationText(input) || extractChatCompletionText(input);
+  return extractChatCompletionText(input);
 }
 
 export function getRouteProviderDiagnostics() {
@@ -211,16 +199,9 @@ function createProviderRequestBody(input: OpenAiCompatibleRouteStreamInput, stre
   };
 }
 
-function shouldStreamProviderResponse() {
-  return env.AI_ROUTE_PROVIDER !== "mistral";
-}
-
 function getOpenAiBaseUrl() {
   if (env.AI_ROUTE_PROVIDER === "cerebras")
     return DEFAULT_CEREBRAS_BASE_URL;
-
-  if (env.AI_ROUTE_PROVIDER === "mistral")
-    return DEFAULT_MISTRAL_BASE_URL;
 
   if (env.AI_ROUTE_PROVIDER === "openrouter")
     return DEFAULT_OPENROUTER_BASE_URL;
@@ -238,9 +219,6 @@ function getOpenAiRoutePath() {
 }
 
 function getOpenAiRouteApi() {
-  if (env.AI_ROUTE_PROVIDER === "mistral")
-    return "conversations";
-
   return env.AI_ROUTE_PROVIDER === "cerebras" || env.AI_ROUTE_PROVIDER === "openrouter" || env.AI_ROUTE_PROVIDER === "aihubmix"
     ? "chat_completions"
     : env.OPENAI_ROUTE_API;
@@ -249,9 +227,6 @@ function getOpenAiRouteApi() {
 function getOpenAiRouteModel() {
   if (env.AI_ROUTE_PROVIDER === "cerebras" && env.OPENAI_ROUTE_MODEL === "gpt-5.1")
     return DEFAULT_CEREBRAS_ROUTE_MODEL;
-
-  if (env.AI_ROUTE_PROVIDER === "mistral")
-    return env.MISTRAL_ROUTE_MODEL?.trim() || DEFAULT_MISTRAL_ROUTE_MODEL;
 
   if (env.AI_ROUTE_PROVIDER === "openrouter")
     return env.OPENROUTER_ROUTE_MODEL?.trim() || DEFAULT_OPENROUTER_ROUTE_MODEL;
@@ -350,9 +325,6 @@ function getRouteProviderApiKey() {
   if (env.AI_ROUTE_PROVIDER === "cerebras")
     return env.CEREBRAS_API_KEY;
 
-  if (env.AI_ROUTE_PROVIDER === "mistral")
-    return env.MISTRAL_API_KEY;
-
   if (env.AI_ROUTE_PROVIDER === "openrouter")
     return env.OPENROUTER_API_KEY;
 
@@ -363,9 +335,6 @@ function getRouteProviderApiKey() {
 }
 
 function getMissingApiKeyCode() {
-  if (env.AI_ROUTE_PROVIDER === "mistral")
-    return "missing_mistral_api_key";
-
   if (env.AI_ROUTE_PROVIDER === "openrouter")
     return "missing_openrouter_api_key";
 
@@ -420,38 +389,6 @@ async function fetchCerebrasWithPowerShell(
   const output = await runPowerShell(script, requestBody, apiKey);
   const parsed = parseJson(output);
   return isRecord(parsed) ? parsed : null;
-}
-
-async function fetchMistralConversationRoute(
-  input: OpenAiCompatibleRouteStreamInput,
-  apiKey: string,
-) {
-  const { Mistral } = await import("@mistralai/mistralai");
-  const client = new Mistral({ apiKey });
-  const response = await client.beta.conversations.start(
-    {
-      inputs: [
-        {
-          role: "user",
-          content: JSON.stringify(input.input),
-        },
-      ],
-      model: getOpenAiRouteModel(),
-      instructions: input.instructions,
-      completionArgs: {
-        temperature: input.temperature ?? 0.3,
-        maxTokens: MISTRAL_ROUTE_MAX_TOKENS,
-        topP: 1,
-        responseFormat: {
-          type: "json_object",
-        },
-      },
-      tools: [],
-    },
-    { timeoutMs: MISTRAL_ROUTE_TIMEOUT_MS },
-  );
-
-  return response as unknown as ProviderStreamEvent;
 }
 
 async function runPowerShell(script: string, input: string, cerebrasApiKey: string) {
@@ -565,23 +502,6 @@ function extractChatCompletionText(input: Record<string, unknown>) {
     .map(extractChoiceText)
     .filter(Boolean)
     .join("");
-}
-
-function extractMistralConversationText(input: Record<string, unknown>) {
-  if (!Array.isArray(input.outputs))
-    return "";
-
-  return input.outputs
-    .map(extractMistralOutputText)
-    .filter(Boolean)
-    .join("");
-}
-
-function extractMistralOutputText(input: unknown) {
-  if (!isRecord(input))
-    return "";
-
-  return extractContent(input);
 }
 
 function extractChoiceText(input: unknown) {

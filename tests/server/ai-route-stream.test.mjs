@@ -77,8 +77,6 @@ test("OpenAI-compatible client can use AIHubMix OpenAI-compatible defaults", () 
 test("OpenAI-compatible client can use Cerebras provider defaults", () => {
   assert.match(envSource, /AI_ROUTE_PROVIDER/);
   assert.match(envSource, /CEREBRAS_API_KEY/);
-  assert.match(envSource, /MISTRAL_API_KEY/);
-  assert.match(envSource, /MISTRAL_ROUTE_MODEL/);
   assert.match(providerSource, /https:\/\/api\.cerebras\.ai\/v1/);
   assert.match(providerSource, /llama3\.1-8b/);
   assert.match(providerSource, /getProviderApiKey/);
@@ -93,30 +91,6 @@ test("OpenAI-compatible client can use Cerebras provider defaults", () => {
   assert.match(providerSource, /queue_exceeded/);
   assert.match(providerSource, /high traffic/);
   assert.match(providerSource, /provider_rate_limited/);
-});
-
-test("OpenAI-compatible client can use Mistral conversations defaults", () => {
-  assert.match(envSource, /"mistral"/);
-  assert.match(providerSource, /https:\/\/api\.mistral\.ai\/v1/);
-  assert.match(providerSource, /mistral-medium-latest/);
-  assert.match(providerSource, /MISTRAL_API_KEY/);
-  assert.match(providerSource, /MISTRAL_ROUTE_MODEL/);
-  assert.match(providerSource, /missing_mistral_api_key/);
-  assert.match(providerSource, /env\.AI_ROUTE_PROVIDER === "mistral"/);
-  assert.match(providerSource, /fetchMistralConversationRoute/);
-  assert.match(providerSource, /beta\.conversations\.start/);
-  assert.match(providerSource, /MISTRAL_ROUTE_MAX_TOKENS/);
-  assert.match(providerSource, /maxTokens: MISTRAL_ROUTE_MAX_TOKENS/);
-  assert.match(providerSource, /MISTRAL_ROUTE_TIMEOUT_MS/);
-  assert.match(providerSource, /timeoutMs/);
-  assert.match(providerSource, /responseFormat/);
-  assert.match(providerSource, /json_object/);
-  assert.match(providerSource, /extractMistralConversationText/);
-  assert.match(providerSource, /shouldStreamProviderResponse/);
-  assert.match(providerSource, /env\.AI_ROUTE_PROVIDER !== "mistral"/);
-  assert.match(providerSource, /conversations/);
-  assert.match(providerSource, /isProviderTimeoutMessage/);
-  assert.match(providerSource, /provider_unavailable/);
 });
 
 test("runner normalizes estimatedStart to a trimmed string and drops ambiguous non-strings", () => {
