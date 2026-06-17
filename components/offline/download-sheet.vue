@@ -515,6 +515,23 @@ onBeforeUnmount(() => {
                 </li>
               </ul>
             </div>
+
+            <!-- Cold-start caveat: a fully-closed PWA can't be relaunched offline -->
+            <div
+              class="explore-status-info rounded-xl border px-4 py-3 text-xs"
+              role="note"
+            >
+              <div class="flex items-start gap-2">
+                <Icon
+                  name="tabler:info-circle"
+                  size="14"
+                  class="mt-0.5 shrink-0"
+                />
+                <p class="font-medium leading-5">
+                  Не закрывайте приложение полностью: после полного закрытия открыть его в офлайн-режиме не получится. Чтобы пользоваться картой без интернета, держите приложение открытым (можно свернуть).
+                </p>
+              </div>
+            </div>
           </div>
 
           <!-- Footer (sticky) -->

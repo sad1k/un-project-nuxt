@@ -83,7 +83,7 @@ export function useOfflineQueue() {
 
     const spec = mapToRequest(kind);
     try {
-      const csrf = csrfFn?.()?.csrf?.value;
+      const csrf = csrfFn?.()?.csrf;
       const response = await fetch(spec.url, {
         method: spec.method,
         body: JSON.stringify(spec.body),
@@ -159,7 +159,7 @@ export function useOfflineQueue() {
         return;
       }
 
-      const csrf = csrfFn?.()?.csrf?.value;
+      const csrf = csrfFn?.()?.csrf;
       const headers: Record<string, string> = {
         "x-client-op-id": op.opId,
         ...(csrf ? { "csrf-token": csrf } : {}),

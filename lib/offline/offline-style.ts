@@ -96,26 +96,60 @@ export function buildOfflineStyle(regionId: string, theme: StyleTheme = "dark", 
         "minzoom": 13,
         "paint": { "fill-color": palette.building, "fill-opacity": 0.7 },
       },
+      // Roads, drawn minor → major so arterials sit on top. Protomaps' `roads`
+      // layer tags each feature with a `kind`: highway, major_road, medium_road,
+      // minor_road, path, rail, ferry, aeroway. Ordinary city streets are
+      // overwhelmingly `major_road` / `minor_road` — `highway` is reserved for
+      // motorway/trunk and is absent from most cities. (The old style split on
+      // `kind == "highway"`, which matched nothing, collapsing every street into
+      // a single dim hair-thin line and rendering rail/ferry as roads.) We map
+      // the street kinds to a width/colour hierarchy and skip rail/ferry/aeroway.
+      {
+        "id": "roads-path",
+        "type": "line",
+        "source": "offline",
+        "source-layer": "roads",
+        "minzoom": 14,
+        "filter": ["==", ["get", "kind"], "path"],
+        "paint": {
+          "line-color": palette.roadMinor,
+          "line-width": ["interpolate", ["linear"], ["zoom"], 14, 0.4, 16, 1],
+          "line-dasharray": [2, 2],
+        },
+      },
       {
         "id": "roads-minor",
         "type": "line",
         "source": "offline",
         "source-layer": "roads",
-        "filter": ["!=", ["get", "kind"], "highway"],
+        "minzoom": 12,
+        "filter": ["in", ["get", "kind"], ["literal", ["minor_road", "other"]]],
         "paint": {
           "line-color": palette.roadMinor,
-          "line-width": ["interpolate", ["linear"], ["zoom"], 8, 0.4, 14, 1.4],
+          "line-width": ["interpolate", ["linear"], ["zoom"], 12, 0.5, 16, 2.2],
         },
       },
       {
-        "id": "roads-highway",
+        "id": "roads-medium",
         "type": "line",
         "source": "offline",
         "source-layer": "roads",
-        "filter": ["==", ["get", "kind"], "highway"],
+        "filter": ["==", ["get", "kind"], "medium_road"],
         "paint": {
           "line-color": palette.road,
-          "line-width": ["interpolate", ["linear"], ["zoom"], 6, 0.8, 14, 3],
+          "line-width": ["interpolate", ["linear"], ["zoom"], 10, 0.6, 16, 3],
+          "line-opacity": 0.85,
+        },
+      },
+      {
+        "id": "roads-major",
+        "type": "line",
+        "source": "offline",
+        "source-layer": "roads",
+        "filter": ["in", ["get", "kind"], ["literal", ["highway", "major_road"]]],
+        "paint": {
+          "line-color": palette.road,
+          "line-width": ["interpolate", ["linear"], ["zoom"], 6, 0.8, 14, 3, 16, 5],
         },
       },
       // Text labels for orientation. Glyphs resolve through the
@@ -146,6 +180,7 @@ export function buildOfflineStyle(regionId: string, theme: StyleTheme = "dark", 
         "source": "offline",
         "source-layer": "roads",
         "minzoom": 13,
+        "filter": ["in", ["get", "kind"], ["literal", ["highway", "major_road", "medium_road", "minor_road"]]],
         "layout": {
           "symbol-placement": "line",
           "text-field": LABEL_TEXT_FIELD,

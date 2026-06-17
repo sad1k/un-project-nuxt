@@ -166,7 +166,7 @@ async function deleteLocation() {
         </h2>
         <div
           v-if="location && location.locationLogs && location.locationLogs.length"
-          class="flex flex-col gap-2 md:grid md:grid-cols-2 md:gap-4"
+          class="flex flex-col gap-2 md:flex-row md:flex-wrap md:gap-4"
         >
           <LocationCard
             v-for="log in location.locationLogs"

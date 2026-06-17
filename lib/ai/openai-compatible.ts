@@ -17,6 +17,10 @@ const DEFAULT_AIHUBMIX_BASE_URL = "https://aihubmix.com/v1";
 const DEFAULT_AIHUBMIX_ROUTE_MODEL = "gpt-4o-mini";
 const PROVIDER_USER_AGENT = "WanderLog/1.0";
 const OPENROUTER_APP_TITLE = "WanderLog";
+// Hard caps so a single generation cannot run away on output tokens or time and
+// burn provider budget. Generous enough for a maximal multi-day route.
+const ROUTE_MAX_OUTPUT_TOKENS = 16_384;
+const PROVIDER_STREAM_TIMEOUT_MS = 120_000;
 
 export class ProviderRequestError extends Error {
   providerBodyPreview: string;
@@ -41,64 +45,90 @@ export async function* fetchOpenAiCompatibleRouteStream(
   if (!apiKey)
     throw new Error(getMissingApiKeyCode());
 
-  const response = await fetch(`${getOpenAiBaseUrl()}/${getOpenAiRoutePath()}`, {
-    method: "POST",
-    headers: {
-      "Accept": "application/json",
-      "Authorization": `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-      "User-Agent": PROVIDER_USER_AGENT,
-      ...getProviderRequestHeaders(),
-    } as HeadersInit,
-    body: JSON.stringify(createProviderRequestBody(input, true)),
-  });
+  // Abort the request if the provider stalls (no bytes) for too long, so a hung
+  // stream cannot hold the connection open and accrue cost indefinitely.
+  const controller = new AbortController();
+  let idleTimer: ReturnType<typeof setTimeout> | null = null;
+  const armIdleTimeout = () => {
+    if (idleTimer)
+      clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => controller.abort(new Error("provider_stream_timeout")), PROVIDER_STREAM_TIMEOUT_MS);
+  };
+  const clearIdleTimeout = () => {
+    if (idleTimer) {
+      clearTimeout(idleTimer);
+      idleTimer = null;
+    }
+  };
 
-  if (!response.ok || !response.body) {
-    const bodyPreview = await readProviderErrorBody(response);
-    if (shouldRetryCerebrasWithPowerShell(response, bodyPreview)) {
-      const providerEvent = await fetchCerebrasWithPowerShell(input, apiKey);
+  try {
+    armIdleTimeout();
+    const response = await fetch(`${getOpenAiBaseUrl()}/${getOpenAiRoutePath()}`, {
+      method: "POST",
+      headers: {
+        "Accept": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        "User-Agent": PROVIDER_USER_AGENT,
+        ...getProviderRequestHeaders(),
+      } as HeadersInit,
+      body: JSON.stringify(createProviderRequestBody(input, true)),
+      signal: controller.signal,
+    });
+
+    if (!response.ok || !response.body) {
+      const bodyPreview = await readProviderErrorBody(response);
+      if (shouldRetryCerebrasWithPowerShell(response, bodyPreview)) {
+        const providerEvent = await fetchCerebrasWithPowerShell(input, apiKey);
+        if (providerEvent)
+          yield providerEvent;
+        return;
+      }
+
+      throw new ProviderRequestError(
+        sanitizeProviderError(response.status),
+        response,
+        bodyPreview,
+      );
+    }
+
+    if (!isEventStreamResponse(response)) {
+      const providerEvent = await parseProviderJsonResponse(response);
       if (providerEvent)
         yield providerEvent;
       return;
     }
 
-    throw new ProviderRequestError(
-      sanitizeProviderError(response.status),
-      response,
-      bodyPreview,
-    );
-  }
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
 
-  if (!isEventStreamResponse(response)) {
-    const providerEvent = await parseProviderJsonResponse(response);
-    if (providerEvent)
-      yield providerEvent;
-    return;
-  }
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done)
+        break;
 
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
+      // Each received chunk resets the stall timer so a legitimately long
+      // generation is not cut off — only a truly idle connection aborts.
+      armIdleTimeout();
+      buffer += decoder.decode(value, { stream: true });
+      const [ready, rest] = splitReadySseBlocks(buffer);
+      buffer = rest;
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done)
-      break;
+      for (const event of parseOpenAiSseLines(ready))
+        yield event;
+    }
 
-    buffer += decoder.decode(value, { stream: true });
-    const [ready, rest] = splitReadySseBlocks(buffer);
-    buffer = rest;
+    const finalText = decoder.decode();
+    if (finalText)
+      buffer += finalText;
 
-    for (const event of parseOpenAiSseLines(ready))
+    for (const event of parseOpenAiSseLines(buffer))
       yield event;
   }
-
-  const finalText = decoder.decode();
-  if (finalText)
-    buffer += finalText;
-
-  for (const event of parseOpenAiSseLines(buffer))
-    yield event;
+  finally {
+    clearIdleTimeout();
+  }
 }
 
 export function parseOpenAiSseLines(input: string): ProviderStreamEvent[] {
@@ -186,6 +216,7 @@ function createProviderRequestBody(input: OpenAiCompatibleRouteStreamInput, stre
       ],
       stream,
       temperature: input.temperature ?? 0.3,
+      max_tokens: ROUTE_MAX_OUTPUT_TOKENS,
       ...getChatCompletionProviderOptions(),
     };
   }
@@ -196,6 +227,7 @@ function createProviderRequestBody(input: OpenAiCompatibleRouteStreamInput, stre
     input: input.input,
     stream,
     temperature: input.temperature ?? 0.3,
+    max_output_tokens: ROUTE_MAX_OUTPUT_TOKENS,
   };
 }
 

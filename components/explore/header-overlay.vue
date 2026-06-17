@@ -13,7 +13,7 @@ function isActive(path: string) {
 
 <template>
   <header class="pointer-events-none absolute left-0 right-0 top-0 z-30 px-3 pt-3 md:left-14 md:px-6">
-    <div class="pointer-events-auto flex min-h-12 items-center gap-3 rounded-2xl border border-[var(--explore-border)] bg-[var(--explore-surface)] px-3 py-2 text-[var(--explore-text)] shadow-2xl shadow-[var(--explore-overlay-shadow)] backdrop-blur-2xl md:h-12 md:rounded-none md:border-transparent md:bg-transparent md:p-0 md:shadow-none md:backdrop-blur-0">
+    <div class="pointer-events-auto flex min-h-12 items-center gap-3 rounded-2xl border border-[var(--explore-border)] bg-[var(--explore-surface)] px-3 py-2 text-[var(--explore-text)] shadow-md shadow-[var(--explore-overlay-shadow)] backdrop-blur-2xl md:h-12 md:rounded-none md:border-transparent md:bg-transparent md:p-0 md:shadow-none md:backdrop-blur-0">
       <NuxtLink
         class="flex shrink-0 items-center gap-2 font-headline text-sm font-bold uppercase tracking-tight text-[var(--explore-text)] transition hover:text-brand-gold md:text-lg"
         to="/dashboard"

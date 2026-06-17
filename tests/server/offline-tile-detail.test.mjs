@@ -42,6 +42,22 @@ test("download sheet offers detail presets and threads the choice", async () => 
   assert.match(sheetSource, /download\(region\.id, payload\.bbox, selectedMaxZoom\.value\)/);
 });
 
+test("offline road layers match Protomaps' kind vocabulary, not a phantom 'highway'", async () => {
+  // Protomaps' `roads` layer tags features by kind: highway, major_road,
+  // medium_road, minor_road, path, rail, ferry, aeroway. Ordinary city streets
+  // are major_road / minor_road; plain "highway" is reserved for motorways and
+  // is absent from most cities. The original style split roads on
+  // `kind == "highway"`, so the prominent layer matched nothing and every
+  // street collapsed into one dim hair-thin line (and rail rendered as a road).
+  const styleSource = await readFile("lib/offline/offline-style.ts", "utf8");
+
+  // Prominent arterials must be selected by the real kinds…
+  assert.match(styleSource, /"major_road"/);
+  assert.match(styleSource, /"minor_road"/);
+  // …and the catch-all "everything that isn't a highway" filter must be gone.
+  assert.doesNotMatch(styleSource, /\[\s*"!=",\s*\[\s*"get",\s*"kind"\s*\],\s*"highway"\s*\]/);
+});
+
 test("offline preview style declares the downloaded zoom range", async () => {
   // Source maxzoom must match what was downloaded: declare 14 while only
   // z0-12 exists and MapLibre shows blank past z12 instead of overzooming.

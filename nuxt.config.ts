@@ -166,7 +166,12 @@ export default defineNuxtConfig({
     },
     manifest: false,
     devOptions: {
-      enabled: false,
+      // Dev-only: build & register the injectManifest SW so push/offline can be
+      // tested on the dev server. The custom SW uses ESM workbox imports, so it
+      // must be served as a module. Revert `enabled` to false for normal dev.
+      enabled: true,
+      type: "module",
+      suppressWarnings: true,
     },
     client: {
       installPrompt: false,
