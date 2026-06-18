@@ -447,7 +447,7 @@ export function useMapbox() {
       if (activeRoutePopup !== popup)
         return;
 
-      popup.remove();
+      popup?.remove();
       activeRoutePopup = null;
       activeRoutePopupCloseTimeout = null;
     }, 1000);
